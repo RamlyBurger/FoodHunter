@@ -15,18 +15,30 @@ use App\Patterns\Observer\QueueSubject;
 use App\Patterns\Observer\NotificationObserver;
 use App\Patterns\Observer\DashboardObserver;
 use App\Patterns\Observer\AnalyticsObserver;
+use App\Services\PickupRateLimiterService;
+use App\Services\PickupDataProtectionService;
 
 class VendorOrderController extends Controller
 {
     private QueueSubject $queueSubject;
+    private PickupRateLimiterService $rateLimiter;
+    private PickupDataProtectionService $dataProtection;
 
-    public function __construct()
-    {
+    public function __construct(
+        PickupRateLimiterService $rateLimiter,
+        PickupDataProtectionService $dataProtection
+    ) {
         // Initialize Observer Pattern - Queue Subject
         $this->queueSubject = new QueueSubject();
         $this->queueSubject->attach(new NotificationObserver());
         $this->queueSubject->attach(new DashboardObserver());
         $this->queueSubject->attach(new AnalyticsObserver());
+        
+        // [94] Initialize rate limiter service
+        $this->rateLimiter = $rateLimiter;
+        
+        // [132] Initialize data protection service
+        $this->dataProtection = $dataProtection;
     }
     /**
      * Display vendor's orders with filtering and statistics
@@ -106,6 +118,14 @@ class VendorOrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         try {
+            // [94] Check rate limit for vendor queue updates
+            $vendor = Auth::user();
+            $rateCheck = $this->rateLimiter->canVendorUpdateQueue($vendor->user_id);
+            
+            if (!$rateCheck['allowed']) {
+                return back()->with('error', $rateCheck['message']);
+            }
+            
             $request->validate([
                 'status' => 'required|in:pending,accepted,preparing,ready,completed,cancelled',
             ]);
@@ -115,6 +135,9 @@ class VendorOrderController extends Controller
                 ->firstOrFail();
             
             $oldStatus = $order->status;
+            
+            // Record the action
+            $this->rateLimiter->recordVendorQueueUpdate($vendor->user_id);
             
             // Use State Pattern to manage order state transitions
             $stateManager = new OrderStateManager($order);
@@ -135,6 +158,14 @@ class VendorOrderController extends Controller
                 $stateManager->moveToNext();
                 // Notify observers about order collected
                 $this->queueSubject->notify($order->fresh(), 'collected');
+                
+                // [132] Purge pickup cache after completion
+                if ($order->pickup) {
+                    $this->dataProtection->purgePickupCache(
+                        $order->pickup->pickup_id, 
+                        $order->user_id
+                    );
+                }
             } elseif ($request->status === 'cancelled') {
                 $success = $stateManager->cancel();
                 if ($success) {

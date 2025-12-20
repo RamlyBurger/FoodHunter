@@ -6,11 +6,36 @@ use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\MenuItem;
 use App\Models\UserRedeemedReward;
+use App\Services\CartRateLimiterService;
+use App\Services\CartDataProtectionService;
+use App\Services\OutputEncodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CartController extends Controller
 {
+    private CartRateLimiterService $rateLimiter;
+    private CartDataProtectionService $dataProtection;
+    private OutputEncodingService $outputEncoder;
+
+    public function __construct(
+        CartRateLimiterService $rateLimiter,
+        CartDataProtectionService $dataProtection,
+        OutputEncodingService $outputEncoder
+    ) {
+        $this->rateLimiter = $rateLimiter;
+        $this->dataProtection = $dataProtection;
+        $this->outputEncoder = $outputEncoder;
+        
+        // Apply cache control headers to sensitive endpoints
+        $this->middleware(function ($request, $next) {
+            $response = $next($request);
+            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            $response->headers->set('Pragma', 'no-cache');
+            return $response;
+        });
+    }
+
     /**
      * Get cart items
      * 
@@ -89,6 +114,18 @@ class CartController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+        
+        // [94] Check rate limit
+        $rateCheck = $this->rateLimiter->canAddToCart($user->user_id);
+        if (!$rateCheck['allowed']) {
+            return response()->json([
+                'success' => false,
+                'message' => $rateCheck['message'],
+                'retry_after' => $rateCheck['reset_in']
+            ], 429);
+        }
+        
         $validator = Validator::make($request->all(), [
             'item_id' => 'required|exists:menu_items,item_id',
             'quantity' => 'required|integer|min:1|max:10',
@@ -102,8 +139,10 @@ class CartController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
-        $user = $request->user();
+        
+        // Record rate-limited action
+        $this->rateLimiter->recordAction($user->user_id, 'cart_add');
+        
         $itemId = $request->item_id;
         $quantity = $request->quantity;
         $specialRequest = $request->special_request ? strip_tags($request->special_request) : null;
@@ -154,6 +193,9 @@ class CartController extends Controller
 
         // Get updated cart count
         $cartCount = CartItem::where('user_id', $user->user_id)->sum('quantity');
+        
+        // [132] Purge cart cache to ensure fresh data
+        $this->dataProtection->purgeCartCache($user->user_id);
 
         return response()->json([
             'success' => true,
@@ -175,6 +217,18 @@ class CartController extends Controller
      */
     public function update(Request $request, $cartId)
     {
+        $user = $request->user();
+        
+        // [94] Check rate limit
+        $rateCheck = $this->rateLimiter->canUpdateCart($user->user_id);
+        if (!$rateCheck['allowed']) {
+            return response()->json([
+                'success' => false,
+                'message' => $rateCheck['message'],
+                'retry_after' => $rateCheck['reset_in']
+            ], 429);
+        }
+        
         $validator = Validator::make($request->all(), [
             'quantity' => 'required|integer|min:1|max:10',
             'special_request' => 'nullable|string|max:500',
@@ -187,8 +241,9 @@ class CartController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
-        $user = $request->user();
+        
+        // Record rate-limited action
+        $this->rateLimiter->recordAction($user->user_id, 'cart_update');
 
         $cartItem = CartItem::where('cart_id', $cartId)
             ->where('user_id', $user->user_id)
@@ -211,6 +266,9 @@ class CartController extends Controller
         // Calculate new totals
         $itemSubtotal = $cartItem->menuItem->price * $cartItem->quantity;
         $cartSummary = $this->getCartSummary($user->user_id);
+        
+        // [132] Purge cart cache
+        $this->dataProtection->purgeCartCache($user->user_id);
 
         return response()->json([
             'success' => true,
@@ -247,6 +305,9 @@ class CartController extends Controller
         $cartItem->delete();
 
         $cartSummary = $this->getCartSummary($user->user_id);
+        
+        // [132] Purge cart cache
+        $this->dataProtection->purgeCartCache($user->user_id);
 
         return response()->json([
             'success' => true,
@@ -267,8 +328,24 @@ class CartController extends Controller
     public function clear(Request $request)
     {
         $user = $request->user();
+        
+        // [94] Check rate limit
+        $rateCheck = $this->rateLimiter->canClearCart($user->user_id);
+        if (!$rateCheck['allowed']) {
+            return response()->json([
+                'success' => false,
+                'message' => $rateCheck['message'],
+                'retry_after' => $rateCheck['reset_in']
+            ], 429);
+        }
+        
+        // Record rate-limited action
+        $this->rateLimiter->recordAction($user->user_id, 'cart_clear');
 
         CartItem::where('user_id', $user->user_id)->delete();
+        
+        // [132] Purge cart cache
+        $this->dataProtection->purgeCartCache($user->user_id);
 
         return response()->json([
             'success' => true,
@@ -304,6 +381,18 @@ class CartController extends Controller
      */
     public function applyVoucher(Request $request)
     {
+        $user = $request->user();
+        
+        // [94] Check rate limit to prevent voucher brute force
+        $rateCheck = $this->rateLimiter->canApplyVoucher($user->user_id);
+        if (!$rateCheck['allowed']) {
+            return response()->json([
+                'success' => false,
+                'message' => $rateCheck['message'],
+                'retry_after' => $rateCheck['reset_in']
+            ], 429);
+        }
+        
         $validator = Validator::make($request->all(), [
             'voucher_code' => 'required|string',
         ]);
@@ -314,8 +403,10 @@ class CartController extends Controller
                 'message' => 'Please enter a voucher code'
             ], 422);
         }
-
-        $user = $request->user();
+        
+        // Record rate-limited action
+        $this->rateLimiter->recordAction($user->user_id, 'voucher_apply');
+        
         $voucherCode = strtoupper(trim($request->voucher_code));
 
         // Find the redeemed reward
@@ -376,6 +467,12 @@ class CartController extends Controller
 
         $serviceFee = 2.00;
         $total = $subtotal + $serviceFee - $discount;
+        
+        // [132] Cache voucher data securely
+        $this->dataProtection->cacheVoucherData($user->user_id, [
+            'voucher_code' => $voucherCode,
+            'discount' => $discount,
+        ]);
 
         return response()->json([
             'success' => true,

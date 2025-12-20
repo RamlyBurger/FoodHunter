@@ -9,11 +9,36 @@ use App\Models\User;
 use App\Models\Wishlist;
 use App\Models\VendorSetting;
 use App\Models\VendorOperatingHour;
+use App\Services\CartRateLimiterService;
+use App\Services\CartDataProtectionService;
+use App\Services\OutputEncodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class MenuController extends Controller
 {
+    private CartRateLimiterService $rateLimiter;
+    private CartDataProtectionService $dataProtection;
+    private OutputEncodingService $outputEncoder;
+
+    public function __construct(
+        CartRateLimiterService $rateLimiter,
+        CartDataProtectionService $dataProtection,
+        OutputEncodingService $outputEncoder
+    ) {
+        $this->rateLimiter = $rateLimiter;
+        $this->dataProtection = $dataProtection;
+        $this->outputEncoder = $outputEncoder;
+        
+        // Apply cache control headers for menu pages
+        $this->middleware(function ($request, $next) {
+            $response = $next($request);
+            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            $response->headers->set('Pragma', 'no-cache');
+            return $response;
+        });
+    }
+
     /**
      * Get all menu items with filtering and pagination
      * 
@@ -22,6 +47,25 @@ class MenuController extends Controller
      */
     public function index(Request $request)
     {
+        // [94] Rate limit menu browsing (uses IP for guests, user_id for authenticated)
+        $identifier = Auth::guard('sanctum')->check() 
+            ? Auth::guard('sanctum')->id() 
+            : $request->ip();
+        
+        $rateCheck = $this->rateLimiter->canBrowseMenu($identifier);
+        if (!$rateCheck['allowed']) {
+            return response()->json([
+                'success' => false,
+                'message' => $rateCheck['message'],
+                'retry_after' => $rateCheck['reset_in']
+            ], 429);
+        }
+        
+        // Record action
+        if (Auth::guard('sanctum')->check()) {
+            $this->rateLimiter->recordAction(Auth::guard('sanctum')->id(), 'menu_browse');
+        }
+        
         $search = $request->input('search');
         $categoryId = $request->input('category_id');
         $vendorId = $request->input('vendor_id');
@@ -35,6 +79,21 @@ class MenuController extends Controller
 
         // Apply search
         if ($search) {
+            // [94] Rate limit search queries
+            $rateCheck = $this->rateLimiter->canSearchMenu($identifier);
+            if (!$rateCheck['allowed']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $rateCheck['message'],
+                    'retry_after' => $rateCheck['reset_in']
+                ], 429);
+            }
+            
+            // Record search action
+            if (Auth::guard('sanctum')->check()) {
+                $this->rateLimiter->recordAction(Auth::guard('sanctum')->id(), 'menu_search');
+            }
+            
             $query->where(function($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
                   ->orWhere('description', 'LIKE', "%{$search}%");
