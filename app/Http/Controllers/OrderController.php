@@ -11,9 +11,31 @@ use App\Patterns\Observer\QueueSubject;
 use App\Patterns\Observer\NotificationObserver;
 use App\Patterns\Observer\DashboardObserver;
 use App\Patterns\Observer\AnalyticsObserver;
+use App\Services\OutputEncodingService;
 
 class OrderController extends Controller
 {
+    private OutputEncodingService $outputEncoder;
+
+    public function __construct(OutputEncodingService $outputEncoder)
+    {
+        // [19] Initialize output encoding service
+        $this->outputEncoder = $outputEncoder;
+        
+        // [140] Disable client-side caching on sensitive order pages
+        /** @phpstan-ignore-next-line */
+        $this->middleware(function ($request, $next) {
+            $response = $next($request);
+            
+            // Set cache control headers to prevent caching of sensitive data
+            $response->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            $response->header('Pragma', 'no-cache');
+            $response->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+            
+            return $response;
+        });
+    }
+    
     /**
      * Display user's orders
      */
@@ -46,7 +68,9 @@ class OrderController extends Controller
         
         // Search by order ID
         if ($request->has('search') && $request->search) {
-            $query->where('order_id', 'like', '%' . $request->search . '%');
+            // [19] Sanitize search input
+            $sanitizedSearch = $this->outputEncoder->encodeOrderId($request->search);
+            $query->where('order_id', 'like', '%' . $sanitizedSearch . '%');
         }
         
         // Get orders with pagination
@@ -67,12 +91,22 @@ class OrderController extends Controller
      */
     public function show($orderId)
     {
+        // [19] Sanitize order ID input
+        $sanitizedOrderId = $this->outputEncoder->encodeOrderId($orderId);
+        
         $order = Order::with(['orderItems.menuItem', 'payment', 'pickup', 'vendor'])
-            ->where('order_id', $orderId)
+            ->where('order_id', $sanitizedOrderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
         
-        return view('order-details', compact('order'));
+        // [19] Sanitize order data for display
+        $sanitizedOrder = [
+            'order' => $order,
+            'order_id_display' => $this->outputEncoder->encodeForHtml($order->order_id),
+            'total_display' => $this->outputEncoder->encodeMonetaryValue($order->total_amount),
+        ];
+        
+        return view('order-details', $sanitizedOrder);
     }
     
     /**
@@ -80,8 +114,11 @@ class OrderController extends Controller
      */
     public function reorder($orderId)
     {
+        // [19] Sanitize order ID input
+        $sanitizedOrderId = $this->outputEncoder->encodeOrderId($orderId);
+        
         $order = Order::with(['orderItems.menuItem'])
-            ->where('order_id', $orderId)
+            ->where('order_id', $sanitizedOrderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
         

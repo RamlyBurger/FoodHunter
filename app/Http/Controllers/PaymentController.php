@@ -21,18 +21,36 @@ use App\Patterns\Observer\QueueSubject;
 use App\Patterns\Observer\NotificationObserver;
 use App\Patterns\Observer\DashboardObserver;
 use App\Patterns\Observer\AnalyticsObserver;
+use App\Services\OutputEncodingService;
 
 class PaymentController extends Controller
 {
     private QueueSubject $queueSubject;
+    private OutputEncodingService $outputEncoder;
 
-    public function __construct()
+    public function __construct(OutputEncodingService $outputEncoder)
     {
         // Initialize Observer Pattern for queue management
         $this->queueSubject = new QueueSubject();
         $this->queueSubject->attach(new NotificationObserver());
         $this->queueSubject->attach(new DashboardObserver());
         $this->queueSubject->attach(new AnalyticsObserver());
+        
+        // [19] Initialize output encoding service
+        $this->outputEncoder = $outputEncoder;
+        
+        // [140] Disable client-side caching on sensitive payment pages
+        /** @phpstan-ignore-next-line */
+        $this->middleware(function ($request, $next) {
+            $response = $next($request);
+            
+            // Set cache control headers to prevent caching of sensitive data
+            $response->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            $response->header('Pragma', 'no-cache');
+            $response->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+            
+            return $response;
+        });
     }
     /**
      * Show checkout page
@@ -109,17 +127,20 @@ class PaymentController extends Controller
         $loyaltyPoints = $user->loyaltyPoints;
         $pointsToEarn = floor($total); // Earn 1 point per RM1 spent
         
-        return view('payment', compact(
-            'cartItems',
-            'vendorGroups',
-            'subtotal',
-            'serviceFee',
-            'discount',
-            'total',
-            'loyaltyPoints',
-            'pointsToEarn',
-            'appliedVoucher'
-        ));
+        // [19] Sanitize all data before passing to view
+        $sanitizedData = [
+            'cartItems' => $cartItems,
+            'vendorGroups' => $vendorGroups,
+            'subtotal' => $this->outputEncoder->encodeMonetaryValue($subtotal),
+            'serviceFee' => $this->outputEncoder->encodeMonetaryValue($serviceFee),
+            'discount' => $this->outputEncoder->encodeMonetaryValue($discount),
+            'total' => $this->outputEncoder->encodeMonetaryValue($total),
+            'loyaltyPoints' => $loyaltyPoints,
+            'pointsToEarn' => $pointsToEarn,
+            'appliedVoucher' => $appliedVoucher
+        ];
+        
+        return view('payment', $sanitizedData);
     }
     
     /**
@@ -364,12 +385,22 @@ class PaymentController extends Controller
      */
     public function showConfirmation($orderId)
     {
+        // [19] Sanitize order ID input
+        $sanitizedOrderId = $this->outputEncoder->encodeOrderId($orderId);
+        
         $order = Order::with(['orderItems.menuItem', 'payment', 'pickup', 'vendor'])
-            ->where('order_id', $orderId)
+            ->where('order_id', $sanitizedOrderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
         
-        return view('order-confirmation', compact('order'));
+        // [19] Sanitize order data before passing to view
+        $sanitizedOrder = [
+            'order' => $order,
+            'order_id_display' => $this->outputEncoder->encodeForHtml($order->order_id),
+            'total_display' => $this->outputEncoder->encodeMonetaryValue($order->total_amount),
+        ];
+        
+        return view('order-confirmation', $sanitizedOrder);
     }
     
     /**

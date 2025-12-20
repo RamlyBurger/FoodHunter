@@ -127,7 +127,13 @@
                             
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Card Number</label>
-                                <input type="text" name="card_number" class="form-control @error('card_number') is-invalid @enderror" placeholder="4111 1111 1111 1111" maxlength="19" value="{{ old('card_number') }}">
+                                <input type="text" 
+                                       name="card_number" 
+                                       class="form-control @error('card_number') is-invalid @enderror" 
+                                       placeholder="4111 1111 1111 1111" 
+                                       maxlength="19" 
+                                       autocomplete="off"
+                                       value="{{ old('card_number') }}">
                                 <small class="text-muted">Test: 4111111111111111, 4242424242424242</small>
                                 @error('card_number')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -137,14 +143,26 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Expiry Date</label>
-                                    <input type="text" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" placeholder="12/25" maxlength="5" value="{{ old('expiry_date') }}">
+                                    <input type="text" 
+                                           name="expiry_date" 
+                                           class="form-control @error('expiry_date') is-invalid @enderror" 
+                                           placeholder="12/25" 
+                                           maxlength="5" 
+                                           autocomplete="off"
+                                           value="{{ old('expiry_date') }}">
                                     @error('expiry_date')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">CVV</label>
-                                    <input type="text" name="cvv" class="form-control @error('cvv') is-invalid @enderror" placeholder="123" maxlength="3" value="{{ old('cvv') }}">
+                                    <input type="text" 
+                                           name="cvv" 
+                                           class="form-control @error('cvv') is-invalid @enderror" 
+                                           placeholder="123" 
+                                           maxlength="3" 
+                                           autocomplete="off"
+                                           value="{{ old('cvv') }}">
                                     @error('cvv')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -153,7 +171,12 @@
                             
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Cardholder Name</label>
-                                <input type="text" name="card_name" class="form-control @error('card_name') is-invalid @enderror" placeholder="John Doe" value="{{ old('card_name', auth()->user()->name) }}">
+                                <input type="text" 
+                                       name="card_name" 
+                                       class="form-control @error('card_name') is-invalid @enderror" 
+                                       placeholder="John Doe" 
+                                       autocomplete="off"
+                                       value="{{ old('card_name', auth()->user()->name) }}">
                                 @error('card_name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
