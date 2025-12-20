@@ -34,7 +34,8 @@ class FileValidationService
             ['bytes' => [0x47, 0x49, 0x46, 0x38, 0x39, 0x61], 'offset' => 0], // GIF89a
         ],
         'image/webp' => [
-            ['bytes' => [0x52, 0x49, 0x46, 0x46], 'offset' => 0, 'secondary' => [0x57, 0x45, 0x42, 0x50], 'secondary_offset' => 8], // RIFF....WEBP
+            ['bytes' => [0x52, 0x49, 0x46, 0x46], 'offset' => 0, 'secondary' => 
+            [0x57, 0x45, 0x42, 0x50], 'secondary_offset' => 8], // RIFF....WEBP
         ],
     ];
 

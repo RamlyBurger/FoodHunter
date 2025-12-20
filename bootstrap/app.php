@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -27,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
+        
+        // Add API response enhancement middleware
+        $middleware->api(append: [
+            \App\Http\Middleware\ApiResponseMiddleware::class,
+        ]);
 
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
@@ -45,7 +51,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Return JSON for authentication errors on API routes
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
+                $requestId = $request->attributes->get('request_id', Str::uuid()->toString());
+                
                 return response()->json([
+                    'timestamp' => now()->toIso8601String(),
+                    'request_id' => $requestId,
+                    'status' => 'client_error',
                     'success' => false,
                     'message' => 'Unauthenticated. Please login to access this resource.',
                     'error' => 'unauthenticated'
@@ -56,7 +67,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Return JSON for 404 errors on API routes
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
+                $requestId = $request->attributes->get('request_id', Str::uuid()->toString());
+                
                 return response()->json([
+                    'timestamp' => now()->toIso8601String(),
+                    'request_id' => $requestId,
+                    'status' => 'client_error',
                     'success' => false,
                     'message' => 'Resource not found.',
                     'error' => 'not_found'
