@@ -1,0 +1,387 @@
+@extends('layouts.app')
+
+@section('title', 'Shopping Cart - FoodHunter')
+
+@section('content')
+<!-- Page Header -->
+<section class="bg-light py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-12" data-aos="fade-up">
+                <h1 class="display-5 fw-bold mb-2">Shopping Cart</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url('/') }}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active">Cart</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Cart Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Cart Items -->
+            <div class="col-lg-8">
+                <!-- Cart Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4" data-aos="fade-right">
+                    <h4 class="fw-bold mb-0">Your Items (3)</h4>
+                    <button class="btn btn-outline-danger btn-sm rounded-pill">
+                        <i class="bi bi-trash me-2"></i> Clear Cart
+                    </button>
+                </div>
+                
+                <!-- Cart Item 1 -->
+                <div class="cart-item" data-aos="fade-up">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-2">
+                            <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=150&h=150&fit=crop" 
+                                 alt="Pizza" 
+                                 class="img-fluid rounded-3">
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold mb-1">Margherita Pizza</h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-shop me-1"></i> Italian Corner
+                            </p>
+                            <p class="text-muted small mb-0">
+                                Size: Medium | Extra: Mushrooms
+                            </p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="fw-bold mb-0">RM 14.00</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="quantity-selector">
+                                <button type="button" class="btn-decrease">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                                <input type="number" value="2" min="1" max="10">
+                                <button type="button" class="btn-increase">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button class="btn btn-sm btn-outline-danger rounded-circle">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <small class="text-muted">
+                                <i class="bi bi-chat-left-text me-1"></i>
+                                Special Request: Less cheese please
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cart Item 2 -->
+                <div class="cart-item" data-aos="fade-up" data-aos-delay="100">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-2">
+                            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150&h=150&fit=crop" 
+                                 alt="Salad" 
+                                 class="img-fluid rounded-3">
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold mb-1">Caesar Salad</h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-shop me-1"></i> Healthy Bites
+                            </p>
+                            <p class="text-muted small mb-0">
+                                Regular size
+                            </p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="fw-bold mb-0">RM 8.00</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="quantity-selector">
+                                <button type="button" class="btn-decrease">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                                <input type="number" value="1" min="1" max="10">
+                                <button type="button" class="btn-increase">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button class="btn btn-sm btn-outline-danger rounded-circle">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cart Item 3 -->
+                <div class="cart-item" data-aos="fade-up" data-aos-delay="200">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-2">
+                            <img src="https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=150&h=150&fit=crop" 
+                                 alt="Coffee" 
+                                 class="img-fluid rounded-3">
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold mb-1">Cappuccino</h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-shop me-1"></i> Cafe Corner
+                            </p>
+                            <p class="text-muted small mb-0">
+                                Hot | Regular
+                            </p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="fw-bold mb-0">RM 5.00</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="quantity-selector">
+                                <button type="button" class="btn-decrease">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                                <input type="number" value="2" min="1" max="10">
+                                <button type="button" class="btn-increase">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button class="btn btn-sm btn-outline-danger rounded-circle">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Continue Shopping -->
+                <div class="mt-4" data-aos="fade-up">
+                    <a href="{{ url('/menu') }}" class="btn btn-outline-primary rounded-pill">
+                        <i class="bi bi-arrow-left me-2"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="cart-summary" data-aos="fade-left">
+                    <h5 class="fw-bold mb-4">Order Summary</h5>
+                    
+                    <!-- Promo Code -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Have a promo code?</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Enter code">
+                            <button class="btn btn-primary" type="button">Apply</button>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Price Breakdown -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Subtotal (5 items)</span>
+                            <span class="fw-bold">RM 46.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Service Fee</span>
+                            <span class="fw-bold">RM 2.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-success">
+                                <i class="bi bi-gift me-1"></i> Discount
+                            </span>
+                            <span class="text-success fw-bold">- RM 0.00</span>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Total -->
+                    <div class="d-flex justify-content-between mb-4">
+                        <h5 class="fw-bold mb-0">Total</h5>
+                        <h5 class="fw-bold mb-0 text-primary">RM 48.00</h5>
+                    </div>
+                    
+                    <!-- Loyalty Points -->
+                    <div class="alert alert-info border-0 mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-star-fill text-warning fs-4 me-3"></i>
+                            <div>
+                                <small class="d-block mb-1">You'll earn</small>
+                                <strong>48 Loyalty Points</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Checkout Button -->
+                    <a href="{{ url('/checkout') }}" class="btn btn-primary btn-lg w-100 rounded-pill mb-3">
+                        <i class="bi bi-credit-card me-2"></i> Proceed to Checkout
+                    </a>
+                    
+                    <!-- Payment Methods -->
+                    <div class="text-center">
+                        <small class="text-muted d-block mb-2">We accept</small>
+                        <div class="d-flex justify-content-center gap-2">
+                            <i class="bi bi-credit-card fs-4 text-muted"></i>
+                            <i class="bi bi-wallet2 fs-4 text-muted"></i>
+                            <i class="bi bi-phone fs-4 text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Safe Shopping -->
+                <div class="card border-0 bg-light mt-4" data-aos="fade-left" data-aos-delay="100">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="bi bi-shield-check text-success me-2"></i>
+                            Safe & Secure Shopping
+                        </h6>
+                        <ul class="list-unstyled small text-muted mb-0">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Secure payment gateway
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                100% money back guarantee
+                            </li>
+                            <li class="mb-0">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Fresh food quality assured
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recommended Items -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h4 class="fw-bold mb-4" data-aos="fade-up">You Might Also Like</h4>
+        
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="card food-card">
+                    <div class="position-relative">
+                        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" 
+                             class="card-img-top" alt="Burger">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2">Beef Burger</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price-tag">RM15</span>
+                            <button class="btn btn-sm btn-primary rounded-pill">
+                                <i class="bi bi-plus-lg"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="card food-card">
+                    <div class="position-relative">
+                        <img src="https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop" 
+                             class="card-img-top" alt="Nasi Lemak">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2">Nasi Lemak</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price-tag">RM6</span>
+                            <button class="btn btn-sm btn-primary rounded-pill">
+                                <i class="bi bi-plus-lg"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="card food-card">
+                    <div class="position-relative">
+                        <img src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop" 
+                             class="card-img-top" alt="Pasta">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2">Carbonara Pasta</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price-tag">RM14</span>
+                            <button class="btn btn-sm btn-primary rounded-pill">
+                                <i class="bi bi-plus-lg"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="card food-card">
+                    <div class="position-relative">
+                        <img src="https://images.unsplash.com/photo-1625944525533-473f1a3d54e7?w=400&h=300&fit=crop" 
+                             class="card-img-top" alt="Smoothie">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2">Berry Smoothie</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price-tag">RM7</span>
+                            <button class="btn btn-sm btn-primary rounded-pill">
+                                <i class="bi bi-plus-lg"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@endsection
+
+@push('scripts')
+<script>
+    // Quantity controls for all cart items
+    document.querySelectorAll('.quantity-selector').forEach(selector => {
+        const decreaseBtn = selector.querySelector('.btn-decrease');
+        const increaseBtn = selector.querySelector('.btn-increase');
+        const input = selector.querySelector('input');
+        
+        decreaseBtn.addEventListener('click', function() {
+            if (input.value > 1) {
+                input.value = parseInt(input.value) - 1;
+                updateCartTotal();
+            }
+        });
+        
+        increaseBtn.addEventListener('click', function() {
+            if (input.value < 10) {
+                input.value = parseInt(input.value) + 1;
+                updateCartTotal();
+            }
+        });
+    });
+    
+    function updateCartTotal() {
+        // Calculate and update cart total (placeholder)
+        console.log('Cart total updated');
+    }
+    
+    // Remove item
+    document.querySelectorAll('.cart-item .btn-outline-danger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (confirm('Remove this item from cart?')) {
+                this.closest('.cart-item').remove();
+                updateCartTotal();
+            }
+        });
+    });
+</script>
+@endpush

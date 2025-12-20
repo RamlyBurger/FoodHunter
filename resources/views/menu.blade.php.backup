@@ -1,0 +1,533 @@
+@extends('layouts.app')
+
+@section('title', 'Menu - FoodHunter')
+
+@section('content')
+<!-- Page Header -->
+<section class="bg-light py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12" data-aos="fade-up">
+                <h1 class="display-4 fw-bold mb-2">Our Menu</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url('/') }}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active">Menu</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Menu Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Filters Sidebar -->
+            <div class="col-lg-3 mb-4">
+                <div class="card border-0 sticky-top" style="top: 100px;" data-aos="fade-right">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-4">
+                            <i class="bi bi-funnel me-2"></i> Filters
+                        </h5>
+                        
+                        <!-- Search -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Search</label>
+                            <div class="search-box">
+                                <input type="text" class="form-control" placeholder="Search for food...">
+                                <i class="bi bi-search search-icon"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Categories -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Categories</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="cat-all" checked>
+                                <label class="form-check-label" for="cat-all">
+                                    All Items <span class="badge bg-light text-dark ms-2">410</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="cat-breakfast">
+                                <label class="form-check-label" for="cat-breakfast">
+                                    Breakfast <span class="badge bg-light text-dark ms-2">120</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="cat-local">
+                                <label class="form-check-label" for="cat-local">
+                                    Local Cuisine <span class="badge bg-light text-dark ms-2">150</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="cat-western">
+                                <label class="form-check-label" for="cat-western">
+                                    Western <span class="badge bg-light text-dark ms-2">80</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="cat-beverages">
+                                <label class="form-check-label" for="cat-beverages">
+                                    Beverages <span class="badge bg-light text-dark ms-2">60</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Price Range -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Price Range</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="price" id="price-all" checked>
+                                <label class="form-check-label" for="price-all">All Prices</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="price" id="price-1">
+                                <label class="form-check-label" for="price-1">Under RM5</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="price" id="price-2">
+                                <label class="form-check-label" for="price-2">RM5 - RM10</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="price" id="price-3">
+                                <label class="form-check-label" for="price-3">RM10 - RM20</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="price" id="price-4">
+                                <label class="form-check-label" for="price-4">Above RM20</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Rating</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="rate-5">
+                                <label class="form-check-label" for="rate-5">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="rate-4">
+                                <label class="form-check-label" for="rate-4">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    & Up
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Vendors -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Vendors</label>
+                            <select class="form-select">
+                                <option selected>All Vendors</option>
+                                <option>Italian Corner</option>
+                                <option>Malay Delights</option>
+                                <option>Burger House</option>
+                                <option>Healthy Bites</option>
+                                <option>Beverages Hub</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Reset Filters -->
+                        <button class="btn btn-outline-danger w-100 rounded-pill">
+                            <i class="bi bi-x-circle me-2"></i> Reset Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Menu Items -->
+            <div class="col-lg-9">
+                <!-- Toolbar -->
+                <div class="d-flex justify-content-between align-items-center mb-4" data-aos="fade-left">
+                    <div>
+                        <p class="mb-0 text-muted">Showing <strong>1-12</strong> of <strong>410</strong> items</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <select class="form-select" style="width: auto;">
+                            <option selected>Sort by: Popular</option>
+                            <option>Price: Low to High</option>
+                            <option>Price: High to Low</option>
+                            <option>Newest First</option>
+                            <option>Rating</option>
+                        </select>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary active" title="Grid View">
+                                <i class="bi bi-grid-3x3-gap"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" title="List View">
+                                <i class="bi bi-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category Pills -->
+                <div class="mb-4 d-flex flex-wrap" data-aos="fade-left">
+                    <span class="category-pill active">
+                        <i class="bi bi-grid me-2"></i> All
+                    </span>
+                    <span class="category-pill">
+                        <i class="bi bi-egg-fried me-2"></i> Breakfast
+                    </span>
+                    <span class="category-pill">
+                        <i class="bi bi-cup-hot me-2"></i> Beverages
+                    </span>
+                    <span class="category-pill">
+                        <i class="bi bi-shop me-2"></i> Local
+                    </span>
+                    <span class="category-pill">
+                        <i class="bi bi-award me-2"></i> Western
+                    </span>
+                </div>
+                
+                <!-- Food Items Grid -->
+                <div class="row g-4" id="menu-items">
+                    <!-- Item 1 -->
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Pizza">
+                                <span class="badge badge-new badge-overlay">New</span>
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.8 (120)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Margherita Pizza</h5>
+                                    <span class="price-tag">RM12</span>
+                                </div>
+                                <p class="text-muted small mb-3">Fresh tomatoes, mozzarella, basil</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Italian Corner</small>
+                                    <a href="{{ url('/menu/1') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Item 2 -->
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Salad">
+                                <span class="badge badge-popular badge-overlay">Popular</span>
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.9 (200)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Caesar Salad</h5>
+                                    <span class="price-tag">RM8</span>
+                                </div>
+                                <p class="text-muted small mb-3">Fresh greens, parmesan, croutons</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Healthy Bites</small>
+                                    <a href="{{ url('/menu/2') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Item 3 -->
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Burger">
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.7 (89)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Beef Burger</h5>
+                                    <span class="price-tag">RM15</span>
+                                </div>
+                                <p class="text-muted small mb-3">Wagyu beef, cheese, special sauce</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Burger House</small>
+                                    <a href="{{ url('/menu/3') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Item 4 -->
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Nasi Lemak">
+                                <span class="badge badge-popular badge-overlay">Popular</span>
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.9 (310)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Nasi Lemak</h5>
+                                    <span class="price-tag">RM6</span>
+                                </div>
+                                <p class="text-muted small mb-3">Fragrant rice, sambal, chicken</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Malay Delights</small>
+                                    <a href="{{ url('/menu/4') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Item 5 -->
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Coffee">
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.8 (156)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Cappuccino</h5>
+                                    <span class="price-tag">RM5</span>
+                                </div>
+                                <p class="text-muted small mb-3">Rich espresso with steamed milk</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Cafe Corner</small>
+                                    <a href="{{ url('/menu/5') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Item 6 -->
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Ramen">
+                                <span class="badge badge-new badge-overlay">New</span>
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.6 (45)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Tonkotsu Ramen</h5>
+                                    <span class="price-tag">RM18</span>
+                                </div>
+                                <p class="text-muted small mb-3">Rich pork broth, noodles, egg</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Japanese Kitchen</small>
+                                    <a href="{{ url('/menu/6') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- More items can be added similarly -->
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Pasta">
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.7 (92)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Carbonara Pasta</h5>
+                                    <span class="price-tag">RM14</span>
+                                </div>
+                                <p class="text-muted small mb-3">Creamy sauce, bacon, parmesan</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Italian Corner</small>
+                                    <a href="{{ url('/menu/7') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Sandwich">
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.5 (67)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Club Sandwich</h5>
+                                    <span class="price-tag">RM10</span>
+                                </div>
+                                <p class="text-muted small mb-3">Chicken, bacon, lettuce, tomato</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Healthy Bites</small>
+                                    <a href="{{ url('/menu/8') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up">
+                        <div class="card food-card">
+                            <div class="position-relative">
+                                <img src="https://images.unsplash.com/photo-1625944525533-473f1a3d54e7?w=400&h=300&fit=crop" 
+                                     class="card-img-top" alt="Smoothie">
+                                <span class="badge badge-popular badge-overlay">Popular</span>
+                                <div class="quick-view">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-star-fill text-warning"></i> 4.9 (178)</span>
+                                        <button class="btn btn-sm btn-light rounded-circle">
+                                            <i class="bi bi-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">Berry Smoothie</h5>
+                                    <span class="price-tag">RM7</span>
+                                </div>
+                                <p class="text-muted small mb-3">Mixed berries, yogurt, honey</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-shop me-1"></i> Juice Bar</small>
+                                    <a href="{{ url('/menu/9') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <nav class="mt-5" data-aos="fade-up">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link rounded-pill me-2" href="#" tabindex="-1">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link rounded-circle mx-1" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link rounded-circle mx-1" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link rounded-circle mx-1" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link rounded-circle mx-1" href="#">4</a></li>
+                        <li class="page-item"><a class="page-link rounded-circle mx-1" href="#">5</a></li>
+                        <li class="page-item">
+                            <a class="page-link rounded-pill ms-2" href="#">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+@endsection
+
+@push('scripts')
+<script>
+    // Category pills toggle
+    document.querySelectorAll('.category-pill').forEach(pill => {
+        pill.addEventListener('click', function() {
+            document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+    
+    // Favorite button toggle
+    document.querySelectorAll('.quick-view .btn-light').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('bi-heart')) {
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+                this.classList.add('text-danger');
+            } else {
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+                this.classList.remove('text-danger');
+            }
+        });
+    });
+</script>
+@endpush

@@ -1,0 +1,542 @@
+@extends('layouts.app')
+
+@section('title', 'Margherita Pizza - FoodHunter')
+
+@section('content')
+<!-- Product Details -->
+<section class="py-5">
+    <div class="container">
+        <nav aria-label="breadcrumb" data-aos="fade-right">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url('/') }}" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url('/menu') }}" class="text-decoration-none">Menu</a></li>
+                <li class="breadcrumb-item active">Margherita Pizza</li>
+            </ol>
+        </nav>
+        
+        <div class="row g-5 mt-2">
+            <!-- Image Gallery -->
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="position-sticky" style="top: 100px;">
+                    <!-- Main Image -->
+                    <div class="gallery-main mb-3">
+                        <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=600&fit=crop" 
+                             alt="Margherita Pizza" 
+                             class="img-fluid w-100 rounded-4" 
+                             id="main-image">
+                        <span class="badge badge-new position-absolute" style="top: 1rem; right: 1rem;">New</span>
+                    </div>
+                    
+                    <!-- Thumbnail Gallery -->
+                    <div class="row g-2">
+                        <div class="col-3">
+                            <div class="gallery-thumb active">
+                                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop" 
+                                     class="img-fluid rounded-3" 
+                                     alt="Thumb 1"
+                                     onclick="changeImage(this.src)">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="gallery-thumb">
+                                <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=200&h=200&fit=crop" 
+                                     class="img-fluid rounded-3" 
+                                     alt="Thumb 2"
+                                     onclick="changeImage(this.src)">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="gallery-thumb">
+                                <img src="https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=200&h=200&fit=crop" 
+                                     class="img-fluid rounded-3" 
+                                     alt="Thumb 3"
+                                     onclick="changeImage(this.src)">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="gallery-thumb">
+                                <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200&h=200&fit=crop" 
+                                     class="img-fluid rounded-3" 
+                                     alt="Thumb 4"
+                                     onclick="changeImage(this.src)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product Info -->
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="mb-3">
+                    <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                        <i class="bi bi-shop me-1"></i> Italian Corner
+                    </span>
+                </div>
+                
+                <h1 class="display-5 fw-bold mb-3">Margherita Pizza</h1>
+                
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rating me-3">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-half"></i>
+                    </div>
+                    <span class="text-muted">4.8 (120 reviews)</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h2 class="display-6 fw-bold text-primary mb-2">RM 12.00</h2>
+                    <p class="text-success"><i class="bi bi-check-circle me-2"></i> In Stock</p>
+                </div>
+                
+                <p class="lead text-muted mb-4">
+                    A classic Italian pizza topped with fresh tomatoes, creamy mozzarella cheese, 
+                    and aromatic basil leaves. Baked to perfection with a crispy crust and 
+                    savory flavors that will transport you straight to Italy.
+                </p>
+                
+                <!-- Customization Options -->
+                <div class="card border-0 bg-light p-4 mb-4">
+                    <h5 class="fw-bold mb-3">Customize Your Order</h5>
+                    
+                    <!-- Size Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Size</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="size" id="size-s" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="size-s">
+                                Small<br><small class="text-muted">9"</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="size" id="size-m" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="size-m">
+                                Medium<br><small class="text-muted">12"</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="size" id="size-l" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="size-l">
+                                Large<br><small class="text-muted">15"</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Extra Toppings -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Extra Toppings (Optional)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="topping1">
+                                    <label class="form-check-label" for="topping1">
+                                        Extra Cheese (+RM2)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="topping2">
+                                    <label class="form-check-label" for="topping2">
+                                        Mushrooms (+RM2)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="topping3">
+                                    <label class="form-check-label" for="topping3">
+                                        Olives (+RM1.50)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="topping4">
+                                    <label class="form-check-label" for="topping4">
+                                        Pepperoni (+RM3)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Special Request -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Special Request</label>
+                        <textarea class="form-control" rows="2" placeholder="Any special instructions? (e.g., less spicy, no onions)"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Quantity & Add to Cart -->
+                <div class="d-flex gap-3 mb-4">
+                    <div class="quantity-selector">
+                        <button type="button" class="btn-decrease">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <input type="number" value="1" min="1" max="10" id="quantity">
+                        <button type="button" class="btn-increase">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-lg flex-grow-1 rounded-pill">
+                        <i class="bi bi-cart-plus me-2"></i> Add to Cart
+                    </button>
+                    
+                    <button class="btn btn-outline-danger btn-lg rounded-circle">
+                        <i class="bi bi-heart"></i>
+                    </button>
+                </div>
+                
+                <!-- Additional Info -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-clock text-primary fs-4 me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Preparation Time</small>
+                                <strong>15-20 mins</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-fire text-danger fs-4 me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Calories</small>
+                                <strong>280 kcal</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tags -->
+                <div class="mb-4">
+                    <span class="badge bg-light text-dark me-2 mb-2">
+                        <i class="bi bi-tag me-1"></i> Italian
+                    </span>
+                    <span class="badge bg-light text-dark me-2 mb-2">
+                        <i class="bi bi-tag me-1"></i> Pizza
+                    </span>
+                    <span class="badge bg-light text-dark me-2 mb-2">
+                        <i class="bi bi-tag me-1"></i> Vegetarian
+                    </span>
+                </div>
+                
+                <!-- Share -->
+                <div>
+                    <p class="mb-2 fw-bold">Share this item:</p>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-sm btn-outline-primary rounded-circle">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="#" class="btn btn-sm btn-outline-info rounded-circle">
+                            <i class="bi bi-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-sm btn-outline-success rounded-circle">
+                            <i class="bi bi-whatsapp"></i>
+                        </a>
+                        <a href="#" class="btn btn-sm btn-outline-secondary rounded-circle">
+                            <i class="bi bi-share"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Details Tabs -->
+        <div class="row mt-5">
+            <div class="col-12" data-aos="fade-up">
+                <ul class="nav nav-pills mb-4 justify-content-center" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill px-4" id="description-tab" data-bs-toggle="pill" data-bs-target="#description" type="button">
+                            Description
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill px-4" id="reviews-tab" data-bs-toggle="pill" data-bs-target="#reviews" type="button">
+                            Reviews (120)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill px-4" id="nutrition-tab" data-bs-toggle="pill" data-bs-target="#nutrition" type="button">
+                            Nutrition
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="productTabsContent">
+                    <!-- Description Tab -->
+                    <div class="tab-pane fade show active" id="description">
+                        <div class="card border-0">
+                            <div class="card-body p-5">
+                                <h4 class="fw-bold mb-4">About This Dish</h4>
+                                <p class="lead text-muted">
+                                    Our Margherita Pizza is a timeless classic that celebrates simplicity and quality. 
+                                    Made with hand-tossed dough, San Marzano tomato sauce, fresh mozzarella di bufala, 
+                                    and fragrant basil leaves, this pizza is a true taste of Naples.
+                                </p>
+                                <h5 class="fw-bold mt-4 mb-3">Ingredients</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Fresh Pizza Dough</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> San Marzano Tomato Sauce</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Fresh Mozzarella Cheese</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Fresh Basil Leaves</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Extra Virgin Olive Oil</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Sea Salt</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reviews Tab -->
+                    <div class="tab-pane fade" id="reviews">
+                        <div class="card border-0">
+                            <div class="card-body p-5">
+                                <div class="row mb-4">
+                                    <div class="col-lg-4 text-center mb-4 mb-lg-0">
+                                        <h2 class="display-4 fw-bold mb-2">4.8</h2>
+                                        <div class="rating mb-2">
+                                            <i class="bi bi-star-fill"></i>
+                                            <i class="bi bi-star-fill"></i>
+                                            <i class="bi bi-star-fill"></i>
+                                            <i class="bi bi-star-fill"></i>
+                                            <i class="bi bi-star-half"></i>
+                                        </div>
+                                        <p class="text-muted">Based on 120 reviews</p>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2">5 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <div class="progress flex-grow-1 me-2">
+                                                <div class="progress-bar bg-success" style="width: 75%"></div>
+                                            </div>
+                                            <span class="text-muted">75%</span>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2">4 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <div class="progress flex-grow-1 me-2">
+                                                <div class="progress-bar bg-info" style="width: 15%"></div>
+                                            </div>
+                                            <span class="text-muted">15%</span>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2">3 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <div class="progress flex-grow-1 me-2">
+                                                <div class="progress-bar bg-warning" style="width: 8%"></div>
+                                            </div>
+                                            <span class="text-muted">8%</span>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2">2 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <div class="progress flex-grow-1 me-2">
+                                                <div class="progress-bar bg-danger" style="width: 2%"></div>
+                                            </div>
+                                            <span class="text-muted">2%</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">1 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <div class="progress flex-grow-1 me-2">
+                                                <div class="progress-bar bg-danger" style="width: 0%"></div>
+                                            </div>
+                                            <span class="text-muted">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                <!-- Individual Reviews -->
+                                <div class="mb-4">
+                                    <div class="d-flex mb-3">
+                                        <img src="https://ui-avatars.com/api/?name=John+Doe&background=6366f1&color=fff" 
+                                             class="rounded-circle me-3" width="50" height="50" alt="John">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold">John Doe</h6>
+                                                    <small class="text-muted">2 days ago</small>
+                                                </div>
+                                                <div class="rating">
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star-fill"></i>
+                                                </div>
+                                            </div>
+                                            <p class="mb-0">Absolutely delicious! The crust was perfectly crispy and the cheese was so fresh. 
+                                            Will definitely order again!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <div class="d-flex mb-3">
+                                        <img src="https://ui-avatars.com/api/?name=Sarah+Lee&background=ec4899&color=fff" 
+                                             class="rounded-circle me-3" width="50" height="50" alt="Sarah">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold">Sarah Lee</h6>
+                                                    <small class="text-muted">1 week ago</small>
+                                                </div>
+                                                <div class="rating">
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star-fill"></i>
+                                                    <i class="bi bi-star"></i>
+                                                </div>
+                                            </div>
+                                            <p class="mb-0">Very good pizza! Simple but flavorful. Would be perfect with extra basil.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Nutrition Tab -->
+                    <div class="tab-pane fade" id="nutrition">
+                        <div class="card border-0">
+                            <div class="card-body p-5">
+                                <h4 class="fw-bold mb-4">Nutritional Information</h4>
+                                <p class="text-muted mb-4">Per serving (1 slice of medium pizza)</p>
+                                
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Calories</span>
+                                            <span>280 kcal</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Total Fat</span>
+                                            <span>12g</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Saturated Fat</span>
+                                            <span>5g</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Cholesterol</span>
+                                            <span>25mg</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Sodium</span>
+                                            <span>600mg</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Total Carbs</span>
+                                            <span>32g</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Dietary Fiber</span>
+                                            <span>2g</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span class="fw-bold">Protein</span>
+                                            <span>11g</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Items -->
+        <div class="row mt-5">
+            <div class="col-12" data-aos="fade-up">
+                <h3 class="fw-bold mb-4">You May Also Like</h3>
+                
+                <div class="row g-4">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card food-card">
+                            <img src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop" 
+                                 class="card-img-top" alt="Pasta">
+                            <div class="card-body">
+                                <h5 class="fw-bold mb-2">Carbonara Pasta</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">RM14</span>
+                                    <a href="#" class="btn btn-sm btn-primary rounded-pill">View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card food-card">
+                            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop" 
+                                 class="card-img-top" alt="Salad">
+                            <div class="card-body">
+                                <h5 class="fw-bold mb-2">Caesar Salad</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">RM8</span>
+                                    <a href="#" class="btn btn-sm btn-primary rounded-pill">View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card food-card">
+                            <img src="https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop" 
+                                 class="card-img-top" alt="Coffee">
+                            <div class="card-body">
+                                <h5 class="fw-bold mb-2">Cappuccino</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">RM5</span>
+                                    <a href="#" class="btn btn-sm btn-primary rounded-pill">View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card food-card">
+                            <img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop" 
+                                 class="card-img-top" alt="Sandwich">
+                            <div class="card-body">
+                                <h5 class="fw-bold mb-2">Club Sandwich</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">RM10</span>
+                                    <a href="#" class="btn btn-sm btn-primary rounded-pill">View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@endsection
+
+@push('scripts')
+<script>
+    // Image gallery
+    function changeImage(src) {
+        document.getElementById('main-image').src = src.replace('w=200&h=200', 'w=800&h=600');
+        document.querySelectorAll('.gallery-thumb').forEach(thumb => thumb.classList.remove('active'));
+        event.target.closest('.gallery-thumb').classList.add('active');
+    }
+    
+    // Quantity selector
+    document.querySelector('.btn-decrease').addEventListener('click', function() {
+        const input = document.getElementById('quantity');
+        if (input.value > 1) {
+            input.value = parseInt(input.value) - 1;
+        }
+    });
+    
+    document.querySelector('.btn-increase').addEventListener('click', function() {
+        const input = document.getElementById('quantity');
+        if (input.value < 10) {
+            input.value = parseInt(input.value) + 1;
+        }
+    });
+</script>
+@endpush
