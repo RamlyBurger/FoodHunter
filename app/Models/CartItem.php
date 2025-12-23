@@ -4,28 +4,31 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CartItem extends Model
 {
     use HasFactory;
 
-    protected $table = 'cart_items';
-    protected $primaryKey = 'cart_id';
-
     protected $fillable = [
         'user_id',
-        'item_id',
+        'menu_item_id',
         'quantity',
-        'special_request',
+        'special_instructions',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 
-    public function menuItem()
+    public function menuItem(): BelongsTo
     {
-        return $this->belongsTo(MenuItem::class, 'item_id');
+        return $this->belongsTo(MenuItem::class);
+    }
+
+    public function getSubtotal(): float
+    {
+        return $this->menuItem->price * $this->quantity;
     }
 }

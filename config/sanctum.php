@@ -47,7 +47,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // OWASP [64-65]: Set session inactivity timeout - tokens expire after 24 hours
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION', 1440),
 
     /*
     |--------------------------------------------------------------------------

@@ -3,113 +3,61 @@
 namespace App\Patterns\State;
 
 use App\Models\Order;
+use InvalidArgumentException;
 
 /**
- * Order State Manager - Context class for managing order states
+ * State Pattern - Order State Manager
+ * Student 3: Order & Pickup Module
+ * 
+ * Manages order state transitions using the State pattern.
  */
 class OrderStateManager
 {
-    private OrderState $state;
-    private Order $order;
+    private static array $states = [
+        'pending' => PendingState::class,
+        'confirmed' => ConfirmedState::class,
+        'preparing' => PreparingState::class,
+        'ready' => ReadyState::class,
+    ];
 
-    public function __construct(Order $order)
+    public static function getState(Order $order): OrderStateInterface
     {
-        $this->order = $order;
-        $this->state = $this->getStateFromOrder($order);
-    }
-
-    /**
-     * Get state object based on order status
-     *
-     * @param Order $order
-     * @return OrderState
-     */
-    private function getStateFromOrder(Order $order): OrderState
-    {
-        return match($order->status) {
-            'pending' => new PendingState(),
-            'accepted' => new AcceptedState(),
-            'preparing' => new PreparingState(),
-            'ready' => new ReadyState(),
-            'completed' => new CompletedState(),
-            'cancelled' => new CancelledState(),
-            default => new PendingState(),
-        };
-    }
-
-    /**
-     * Process current state
-     *
-     * @return void
-     */
-    public function process(): void
-    {
-        $this->state->handle($this->order);
-    }
-
-    /**
-     * Move to next state
-     *
-     * @return bool
-     */
-    public function moveToNext(): bool
-    {
-        $success = $this->state->next($this->order);
+        $stateClass = self::$states[$order->status] ?? null;
         
-        if ($success) {
-            // Refresh order and update state
-            $this->order->refresh();
-            $this->state = $this->getStateFromOrder($this->order);
+        if (!$stateClass) {
+            throw new InvalidArgumentException("Unknown order state: {$order->status}");
         }
 
-        return $success;
+        return new $stateClass();
     }
 
-    /**
-     * Cancel order if allowed
-     *
-     * @return bool
-     */
-    public function cancel(): bool
+    public static function confirm(Order $order): bool
     {
-        if (!$this->state->canCancel()) {
-            return false;
-        }
-
-        $this->order->update(['status' => 'cancelled']);
-        $this->state = new CancelledState();
-        $this->state->handle($this->order);
-
-        return true;
+        return self::getState($order)->confirm($order);
     }
 
-    /**
-     * Get current state name
-     *
-     * @return string
-     */
-    public function getCurrentStateName(): string
+    public static function startPreparing(Order $order): bool
     {
-        return $this->state->getStateName();
+        return self::getState($order)->startPreparing($order);
     }
 
-    /**
-     * Get state description
-     *
-     * @return string
-     */
-    public function getDescription(): string
+    public static function markReady(Order $order): bool
     {
-        return $this->state->getDescription();
+        return self::getState($order)->markReady($order);
     }
 
-    /**
-     * Can cancel in current state?
-     *
-     * @return bool
-     */
-    public function canCancel(): bool
+    public static function complete(Order $order): bool
     {
-        return $this->state->canCancel();
+        return self::getState($order)->complete($order);
+    }
+
+    public static function cancel(Order $order, ?string $reason = null): bool
+    {
+        return self::getState($order)->cancel($order, $reason);
+    }
+
+    public static function canTransitionTo(Order $order, string $newState): bool
+    {
+        return self::getState($order)->canTransitionTo($newState);
     }
 }

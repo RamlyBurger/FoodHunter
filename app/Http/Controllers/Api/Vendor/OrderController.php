@@ -4,348 +4,145 @@ namespace App\Http\Controllers\Api\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Pickup;
-use App\Models\StudentNotification;
+use App\Services\OrderService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
+/**
+ * Vendor Order Controller - Student 3
+ * 
+ * Uses OrderService for status updates with database locking
+ * to prevent race conditions.
+ */
 class OrderController extends Controller
 {
-    /**
-     * Get vendor's orders with filtering and pagination
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function index(Request $request)
+    use ApiResponse;
+
+    private OrderService $orderService;
+
+    public function __construct()
     {
-        $vendor = $request->user();
+        $this->orderService = new OrderService();
+    }
 
-        $statusFilter = $request->input('status', 'all');
-        $perPage = $request->input('per_page', 15);
+    public function index(Request $request): JsonResponse
+    {
+        $vendor = $request->user()->vendor;
+        $status = $request->get('status', 'all');
 
-        $query = Order::with(['user', 'orderItems.menuItem', 'payment', 'pickup'])
-            ->where('vendor_id', $vendor->user_id)
+        $query = Order::where('vendor_id', $vendor->id)
+            ->with(['user:id,name,phone', 'items', 'payment', 'pickup'])
             ->orderBy('created_at', 'desc');
 
-        if ($statusFilter !== 'all') {
-            $query->where('status', $statusFilter);
+        if ($status !== 'all') {
+            $query->where('status', $status);
         }
 
-        $orders = $query->paginate($perPage);
+        $orders = $query->paginate(15);
 
-        // Get statistics
-        $stats = $this->getOrderStatistics($vendor->user_id);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'orders' => $orders->getCollection()->map(function($order) {
-                    return $this->transformOrder($order);
-                }),
-                'statistics' => $stats,
-                'pagination' => [
-                    'current_page' => $orders->currentPage(),
-                    'last_page' => $orders->lastPage(),
-                    'per_page' => $orders->perPage(),
-                    'total' => $orders->total(),
-                ]
-            ]
+        return $this->successResponse([
+            'orders' => $orders->getCollection()->map(fn($order) => $this->formatOrder($order)),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'total' => $orders->total(),
+            ],
         ]);
     }
 
-    /**
-     * Get single order details
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function show(Request $request, $id)
+    public function show(Request $request, Order $order): JsonResponse
     {
-        $vendor = $request->user();
+        $vendor = $request->user()->vendor;
 
-        $order = Order::with(['user', 'orderItems.menuItem', 'payment', 'pickup'])
-            ->where('order_id', $id)
-            ->where('vendor_id', $vendor->user_id)
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order not found'
-            ], 404);
+        if ($order->vendor_id !== $vendor->id) {
+            return $this->notFoundResponse('Order not found');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $this->transformOrder($order, true)
-        ]);
+        $order->load(['user:id,name,phone,email', 'items', 'payment', 'pickup']);
+
+        return $this->successResponse($this->formatOrder($order, true));
     }
 
     /**
-     * Update order status
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * Update order status using OrderService with database locking
+     * Security: Race Condition Protection [OWASP 89]
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(Request $request, Order $order): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|in:pending,accepted,preparing,ready,completed,cancelled',
+        $vendor = $request->user()->vendor;
+
+        // Security: IDOR Protection - verify vendor ownership
+        if ($order->vendor_id !== $vendor->id) {
+            return $this->notFoundResponse('Order not found');
+        }
+
+        $request->validate([
+            'status' => ['required', 'in:confirmed,preparing,ready,completed,cancelled'],
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $vendor = $request->user();
-
-        $order = Order::where('order_id', $id)
-            ->where('vendor_id', $vendor->user_id)
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order not found'
-            ], 404);
-        }
-
-        $oldStatus = $order->status;
-        $order->status = $request->status;
-        $order->save();
-
-        // If status changed to ready, generate queue number
-        if ($request->status === 'ready' && $oldStatus !== 'ready') {
-            $this->generateQueueNumber($order);
-        }
-
-        // Create student notification
-        $this->createStudentNotification($order, $request->status, $oldStatus);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order status updated successfully',
-            'data' => [
-                'order_id' => $order->order_id,
-                'old_status' => $oldStatus,
-                'new_status' => $request->status,
-            ]
-        ]);
-    }
-
-    /**
-     * Accept an order
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function accept(Request $request, $id)
-    {
-        $vendor = $request->user();
-
-        $order = Order::where('order_id', $id)
-            ->where('vendor_id', $vendor->user_id)
-            ->where('status', 'pending')
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order not found or cannot be accepted'
-            ], 404);
-        }
-
-        $oldStatus = $order->status;
-        $order->status = 'accepted';
-        $order->save();
-
-        $this->createStudentNotification($order, 'accepted', $oldStatus);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order accepted successfully',
-            'data' => [
-                'order_id' => $order->order_id,
-                'status' => 'accepted',
-            ]
-        ]);
-    }
-
-    /**
-     * Reject an order
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function reject(Request $request, $id)
-    {
-        $vendor = $request->user();
-
-        $order = Order::where('order_id', $id)
-            ->where('vendor_id', $vendor->user_id)
-            ->where('status', 'pending')
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order not found or cannot be rejected'
-            ], 404);
-        }
-
-        $oldStatus = $order->status;
-        $order->status = 'cancelled';
-        $order->save();
-
-        $this->createStudentNotification($order, 'cancelled', $oldStatus);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order rejected',
-            'data' => [
-                'order_id' => $order->order_id,
-                'status' => 'cancelled',
-            ]
-        ]);
-    }
-
-    /**
-     * Get order statistics
-     */
-    private function getOrderStatistics($vendorId)
-    {
-        $today = now()->startOfDay();
-
-        return [
-            'pending' => Order::where('vendor_id', $vendorId)->where('status', 'pending')->count(),
-            'accepted' => Order::where('vendor_id', $vendorId)->where('status', 'accepted')->count(),
-            'preparing' => Order::where('vendor_id', $vendorId)->where('status', 'preparing')->count(),
-            'ready' => Order::where('vendor_id', $vendorId)->where('status', 'ready')->count(),
-            'completed' => Order::where('vendor_id', $vendorId)->where('status', 'completed')->count(),
-            'today_revenue' => (float) Order::where('vendor_id', $vendorId)
-                ->where('status', 'completed')
-                ->whereDate('created_at', $today)
-                ->sum('total_price'),
-        ];
-    }
-
-    /**
-     * Generate queue number for pickup
-     */
-    private function generateQueueNumber($order)
-    {
-        $today = now()->startOfDay();
-        $lastPickup = Pickup::whereDate('created_at', $today)
-            ->orderBy('queue_number', 'desc')
-            ->first();
-
-        $queueNumber = $lastPickup ? $lastPickup->queue_number + 1 : 100;
-
-        Pickup::updateOrCreate(
-            ['order_id' => $order->order_id],
-            [
-                'queue_number' => $queueNumber,
-                'status' => 'waiting',
-            ]
+        // Use OrderService with database locking to prevent race conditions
+        $result = $this->orderService->updateStatusWithLocking(
+            $order->id,
+            $request->status,
+            $request->reason ?? 'Cancelled by vendor'
         );
-    }
 
-    /**
-     * Create student notification for order status changes
-     */
-    private function createStudentNotification($order, $newStatus, $oldStatus)
-    {
-        $statusMessages = [
-            'accepted' => [
-                'title' => 'Order Accepted',
-                'message' => "Your order #{$order->order_id} has been accepted by the vendor and will be prepared soon.",
-                'type' => 'order_accepted'
-            ],
-            'preparing' => [
-                'title' => 'Order Being Prepared',
-                'message' => "Your order #{$order->order_id} is now being prepared. We'll notify you when it's ready!",
-                'type' => 'order_preparing'
-            ],
-            'ready' => [
-                'title' => 'Order Ready for Pickup!',
-                'message' => "Your order #{$order->order_id} is ready! Please collect your order.",
-                'type' => 'order_ready'
-            ],
-            'completed' => [
-                'title' => 'Order Completed',
-                'message' => "Thank you! Your order #{$order->order_id} has been completed. We hope you enjoyed your meal!",
-                'type' => 'order_completed'
-            ],
-            'cancelled' => [
-                'title' => 'Order Cancelled',
-                'message' => "We're sorry, but your order #{$order->order_id} has been cancelled. Please contact the vendor for more information.",
-                'type' => 'order_cancelled'
-            ],
-        ];
-
-        if (isset($statusMessages[$newStatus]) && $newStatus !== $oldStatus) {
-            StudentNotification::create([
-                'user_id' => $order->user_id,
-                'order_id' => $order->order_id,
-                'type' => $statusMessages[$newStatus]['type'],
-                'title' => $statusMessages[$newStatus]['title'],
-                'message' => $statusMessages[$newStatus]['message'],
-            ]);
+        if (!$result['success']) {
+            return $this->errorResponse($result['message'], 400, 'STATUS_UPDATE_FAILED');
         }
+
+        return $this->successResponse(['status' => $result['new_status']], 'Order status updated');
     }
 
-    /**
-     * Transform order data
-     */
-    private function transformOrder($order, $detailed = false)
+    public function pending(Request $request): JsonResponse
+    {
+        $vendor = $request->user()->vendor;
+
+        $orders = Order::where('vendor_id', $vendor->id)
+            ->whereIn('status', ['pending', 'confirmed', 'preparing'])
+            ->with(['user:id,name', 'items', 'pickup'])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return $this->successResponse($orders->map(fn($order) => $this->formatOrder($order)));
+    }
+
+    private function formatOrder(Order $order, bool $detailed = false): array
     {
         $data = [
-            'order_id' => $order->order_id,
+            'id' => $order->id,
+            'order_number' => $order->order_number,
             'customer' => [
-                'user_id' => $order->user->user_id,
                 'name' => $order->user->name,
-                'email' => $order->user->email,
+                'phone' => $order->user->phone,
             ],
-            'total_price' => (float) $order->total_price,
+            'total' => (float) $order->total,
             'status' => $order->status,
-            'items_count' => $order->orderItems->sum('quantity'),
+            'items_count' => $order->items->sum('quantity'),
             'created_at' => $order->created_at,
+            'pickup' => $order->pickup ? [
+                'queue_number' => $order->pickup->queue_number,
+                'status' => $order->pickup->status,
+            ] : null,
         ];
 
         if ($detailed) {
-            $data['items'] = $order->orderItems->map(function($item) {
-                return [
-                    'order_item_id' => $item->order_item_id,
-                    'item_id' => $item->item_id,
-                    'name' => $item->menuItem ? $item->menuItem->name : 'Unknown',
-                    'quantity' => $item->quantity,
-                    'price' => (float) $item->price,
-                    'special_request' => $item->special_request,
-                    'subtotal' => (float) ($item->price * $item->quantity),
-                ];
-            });
-
+            $data['customer']['email'] = $order->user->email;
+            $data['subtotal'] = (float) $order->subtotal;
+            $data['service_fee'] = (float) $order->service_fee;
+            $data['discount'] = (float) $order->discount;
+            $data['notes'] = $order->notes;
+            $data['items'] = $order->items->map(fn($item) => [
+                'name' => $item->item_name,
+                'unit_price' => (float) $item->unit_price,
+                'quantity' => $item->quantity,
+                'subtotal' => (float) $item->subtotal,
+                'special_instructions' => $item->special_instructions,
+            ]);
             $data['payment'] = $order->payment ? [
-                'payment_id' => $order->payment->payment_id,
-                'amount' => (float) $order->payment->amount,
                 'method' => $order->payment->method,
                 'status' => $order->payment->status,
-                'paid_at' => $order->payment->paid_at,
-            ] : null;
-
-            $data['pickup'] = $order->pickup ? [
-                'pickup_id' => $order->pickup->pickup_id,
-                'queue_number' => $order->pickup->queue_number,
-                'status' => $order->pickup->status,
             ] : null;
         }
 

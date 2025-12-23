@@ -2,67 +2,34 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-/**
- * @property int $user_id
- * @property string $name
- * @property string $email
- * @property string $role
- * @property string|null $phone
- * 
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\MenuItem[] $menuItems
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Order[] $orders
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Order[] $vendorOrders
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\CartItem[] $cartItems
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Wishlist[] $wishlists
- * @property-read \App\Models\LoyaltyPoint|null $loyaltyPoints
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\UserRedeemedReward[] $redeemedRewards
- */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
-    /**
-     * The primary key for the model.
-     *
-     * @var string
-     */
-    protected $primaryKey = 'user_id';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
+        'pending_email',
         'password',
         'role',
         'phone',
+        'avatar',
+        'google_id',
+        'email_verified_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -71,44 +38,51 @@ class User extends Authenticatable
         ];
     }
 
-    // Relationships
-    public function menuItems()
+    public function isVendor(): bool
     {
-        return $this->hasMany(MenuItem::class, 'vendor_id');
+        return $this->role === 'vendor';
     }
 
-    public function orders()
+
+    public function isCustomer(): bool
     {
-        return $this->hasMany(Order::class, 'user_id');
+        return $this->role === 'customer';
     }
 
-    public function vendorOrders()
+    public function vendor(): HasOne
     {
-        return $this->hasMany(Order::class, 'vendor_id');
+        return $this->hasOne(Vendor::class);
     }
 
-    public function cartItems()
+    public function orders(): HasMany
     {
-        return $this->hasMany(CartItem::class, 'user_id');
+        return $this->hasMany(Order::class);
     }
 
-    /**
-     * Get the user's wishlist items
-     * 
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function wishlists()
+    public function cartItems(): HasMany
     {
-        return $this->hasMany(Wishlist::class, 'user_id');
+        return $this->hasMany(CartItem::class);
     }
 
-    public function loyaltyPoints()
+    public function wishlists(): HasMany
     {
-        return $this->hasOne(LoyaltyPoint::class, 'user_id');
+        return $this->hasMany(Wishlist::class);
     }
 
-    public function redeemedRewards()
+    public function notifications(): HasMany
     {
-        return $this->hasMany(UserRedeemedReward::class, 'user_id');
+        return $this->hasMany(Notification::class);
+    }
+
+    public function vouchers()
+    {
+        return $this->belongsToMany(Voucher::class, 'user_vouchers')
+            ->withPivot(['usage_count', 'redeemed_at', 'used_at'])
+            ->withTimestamps();
+    }
+
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->unread()->count();
     }
 }

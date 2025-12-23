@@ -4,30 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
     use HasFactory;
-
-    protected $table = 'payments';
-    protected $primaryKey = 'payment_id';
 
     protected $fillable = [
         'order_id',
         'amount',
         'method',
         'status',
-        'transaction_ref',
+        'transaction_id',
         'paid_at',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-        'paid_at' => 'datetime',
-    ];
-
-    public function order()
+    protected function casts(): array
     {
-        return $this->belongsTo(Order::class, 'order_id');
+        return [
+            'amount' => 'decimal:2',
+            'paid_at' => 'datetime',
+        ];
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === 'paid';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
     }
 }

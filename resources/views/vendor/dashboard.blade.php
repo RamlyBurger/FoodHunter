@@ -3,103 +3,84 @@
 @section('title', 'Vendor Dashboard - FoodHunter')
 
 @section('content')
-<!-- Dashboard Header -->
-<section class="bg-light py-4">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h1 class="display-6 fw-bold mb-2">Vendor Dashboard</h1>
-                <p class="text-muted mb-0">Welcome back, {{ auth()->user()->name }}!</p>
-            </div>
-            <div class="col-md-4 text-md-end">
-                <a href="{{ route('vendor.menu') }}" class="btn btn-primary rounded-pill">
-                    <i class="bi bi-plus-circle me-2"></i> Add Menu Item
-                </a>
-            </div>
+<div class="container" style="padding-top: 100px; padding-bottom: 50px;">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold mb-2">
+                <i class="bi bi-speedometer2 text-warning me-2"></i>
+                Vendor Dashboard
+            </h2>
+            <p class="text-muted">Welcome back, {{ auth()->user()->name }}!</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ route('vendor.menu') }}" class="btn btn-primary rounded-pill">
+                <i class="bi bi-plus-circle me-2"></i> Add Menu Item
+            </a>
         </div>
     </div>
-</section>
 
-<!-- Dashboard Content -->
-<section class="py-5">
-    <div class="container">
         <!-- Statistics Cards -->
-        <div class="row g-4 mb-5">
-            <div class="col-lg-3 col-md-6" data-aos="fade-up">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <p class="text-muted mb-1">Today's Orders</p>
-                            <h3 class="fw-bold mb-0">{{ $todayOrders }}</h3>
-                            @if($orderGrowth >= 0)
-                                <small class="text-success">
-                                    <i class="bi bi-arrow-up"></i> {{ number_format(abs($orderGrowth), 1) }}% vs yesterday
-                                </small>
-                            @else
-                                <small class="text-danger">
-                                    <i class="bi bi-arrow-down"></i> {{ number_format(abs($orderGrowth), 1) }}% vs yesterday
-                                </small>
-                            @endif
-                        </div>
-                        <div class="stat-icon primary">
-                            <i class="bi bi-receipt"></i>
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Today's Orders</p>
+                                <h3 class="fw-bold mb-0">{{ $todayOrders }}</h3>
+                            </div>
+                            <div class="rounded p-3" style="background: #ffc107;">
+                                <i class="bi bi-receipt fs-4 text-white"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <p class="text-muted mb-1">Today's Revenue</p>
-                            <h3 class="fw-bold mb-0">RM {{ number_format($todayRevenue, 2) }}</h3>
-                            @if($revenueGrowth >= 0)
-                                <small class="text-success">
-                                    <i class="bi bi-arrow-up"></i> {{ number_format(abs($revenueGrowth), 1) }}% vs yesterday
-                                </small>
-                            @else
-                                <small class="text-danger">
-                                    <i class="bi bi-arrow-down"></i> {{ number_format(abs($revenueGrowth), 1) }}% vs yesterday
-                                </small>
-                            @endif
-                        </div>
-                        <div class="stat-icon success">
-                            <i class="bi bi-cash-stack"></i>
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Today's Revenue</p>
+                                <h3 class="fw-bold mb-0 text-success">RM {{ number_format($todayRevenue, 2) }}</h3>
+                            </div>
+                            <div class="rounded p-3" style="background: #28a745;">
+                                <i class="bi bi-cash-stack fs-4 text-white"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <p class="text-muted mb-1">Accepted Orders</p>
-                            <h3 class="fw-bold mb-0">{{ $pendingOrders }}</h3>
-                            <small class="{{ $pendingOrders > 0 ? 'text-success' : 'text-muted' }}">
-                                {{ $pendingOrders > 0 ? 'Ready to prepare' : 'All clear' }}
-                            </small>
-                        </div>
-                        <div class="stat-icon success">
-                            <i class="bi bi-check-circle"></i>
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Pending Orders</p>
+                                <h3 class="fw-bold mb-0 text-warning">{{ $pendingOrders->count() }}</h3>
+                            </div>
+                            <div class="rounded p-3" style="background: #fd7e14;">
+                                <i class="bi bi-hourglass-split fs-4 text-white"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <p class="text-muted mb-1">Menu Items</p>
-                            <h3 class="fw-bold mb-0">{{ $totalMenuItems }}</h3>
-                            <small class="text-muted">
-                                {{ $availableMenuItems }} available
-                            </small>
-                        </div>
-                        <div class="stat-icon danger">
-                            <i class="bi bi-grid-3x3-gap"></i>
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Completed Today</p>
+                                <h3 class="fw-bold mb-0">{{ $readyOrders->count() }}</h3>
+                            </div>
+                            <div class="rounded p-3" style="background: #17a2b8;">
+                                <i class="bi bi-check-circle fs-4 text-white"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -108,8 +89,8 @@
         
         <div class="row g-4">
             <!-- Recent Orders -->
-            <div class="col-lg-8">
-                <div class="card border-0" data-aos="fade-up">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="fw-bold mb-0">Recent Orders</h5>
@@ -117,58 +98,79 @@
                         </div>
                         
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+                            <table class="table table-hover mb-0">
+                                <thead class="bg-light">
                                     <tr>
-                                        <th>Order ID</th>
+                                        <th class="px-3">Order</th>
                                         <th>Customer</th>
                                         <th>Items</th>
                                         <th>Amount</th>
                                         <th>Status</th>
-                                        <th>Action</th>
+                                        <th class="text-end px-3">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($recentOrders as $order)
-                                    <tr>
-                                        <td class="fw-bold">#{{ $order->order_id }}</td>
-                                        <td>{{ $order->user->name }}</td>
+                                    <tr class="order-row">
+                                        <td class="px-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2" style="width: 36px; height: 36px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="bi bi-receipt text-white" style="font-size: 0.85rem;"></i>
+                                                </div>
+                                                <span class="fw-bold" style="font-size: 0.85rem;">{{ $order->order_number }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="https://ui-avatars.com/api/?name={{ urlencode($order->user->name ?? 'U') }}&background=f3f4f6&color=6b7280&size=32" class="rounded-circle me-2" width="32" height="32">
+                                                <span class="fw-medium" style="font-size: 0.85rem;">{{ Str::limit($order->user->name, 15) }}</span>
+                                            </div>
+                                        </td>
                                         <td>
                                             @php
-                                                $firstItem = $order->orderItems->first();
-                                                $remainingCount = $order->orderItems->count() - 1;
+                                                $firstItem = $order->items->first();
+                                                $remainingCount = $order->items->count() - 1;
                                             @endphp
                                             @if($firstItem)
-                                                {{ $firstItem->menuItem->name }} x{{ $firstItem->quantity }}
+                                                <span style="font-size: 0.85rem;">{{ $firstItem->quantity }}x {{ Str::limit($firstItem->item_name, 15) }}</span>
                                                 @if($remainingCount > 0)
-                                                    <small class="text-muted">, +{{ $remainingCount }} more</small>
+                                                    <br><small class="text-muted">+{{ $remainingCount }} more</small>
                                                 @endif
                                             @endif
                                         </td>
-                                        <td class="fw-bold">RM {{ number_format($order->total_price, 2) }}</td>
                                         <td>
-                                            @if($order->status === 'pending')
-                                                <span class="badge bg-warning text-dark">Pending</span>
-                                            @elseif($order->status === 'accepted')
-                                                <span class="badge bg-success">Accepted</span>
-                                            @elseif($order->status === 'preparing')
-                                                <span class="badge bg-primary">Preparing</span>
-                                            @elseif($order->status === 'ready')
-                                                <span class="badge bg-info">Ready</span>
-                                            @elseif($order->status === 'completed')
-                                                <span class="badge bg-dark">Completed</span>
-                                            @else
-                                                <span class="badge bg-danger">{{ ucfirst($order->status) }}</span>
-                                            @endif
+                                            <span class="fw-bold" style="color: #FF9500; font-size: 0.85rem;">RM {{ number_format($order->total, 2) }}</span>
                                         </td>
                                         <td>
-                                            <a href="{{ route('vendor.orders') }}" class="btn btn-sm btn-outline-primary rounded-pill">View</a>
+                                            @php
+                                                $statusConfig = [
+                                                    'pending' => ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'hourglass-split'],
+                                                    'confirmed' => ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'check-circle'],
+                                                    'preparing' => ['bg' => '#dbeafe', 'color' => '#2563eb', 'icon' => 'fire'],
+                                                    'ready' => ['bg' => '#ede9fe', 'color' => '#7c3aed', 'icon' => 'bell'],
+                                                    'completed' => ['bg' => '#f3f4f6', 'color' => '#374151', 'icon' => 'check-circle-fill'],
+                                                    'cancelled' => ['bg' => '#fee2e2', 'color' => '#dc2626', 'icon' => 'x-circle'],
+                                                ];
+                                                $config = $statusConfig[$order->status] ?? $statusConfig['pending'];
+                                            @endphp
+                                            <span class="status-badge" style="background: {{ $config['bg'] }}; color: {{ $config['color'] }}; padding: 0.3rem 0.6rem; border-radius: 50px; font-size: 0.7rem; font-weight: 600;">
+                                                <i class="bi bi-{{ $config['icon'] }} me-1"></i>{{ ucfirst($order->status) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end px-3">
+                                            <button type="button" class="btn btn-sm" style="background: #6366f1; color: white; border-radius: 8px; padding: 0.4rem 0.75rem; font-size: 0.75rem;" 
+                                                    onclick="viewOrder({{ $order->id }})" title="View Details">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </button>
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">
-                                            No orders yet
+                                        <td colspan="6" class="text-center py-4">
+                                            <div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem;">
+                                                <i class="bi bi-inbox fs-3 text-muted"></i>
+                                            </div>
+                                            <p class="text-muted mb-0" style="font-size: 0.85rem;">No orders yet</p>
                                         </td>
                                     </tr>
                                     @endforelse
@@ -177,76 +179,23 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Menu Management -->
-                <div class="card border-0 mt-4" data-aos="fade-up">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="fw-bold mb-0">Menu Items</h5>
-                            <div>
-                                <select class="form-select form-select-sm">
-                                    <option selected>All Items</option>
-                                    <option>Available</option>
-                                    <option>Out of Stock</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="row g-3">
-                            @forelse($recentMenuItems as $item)
-                            <div class="col-md-6">
-                                <div class="card border">
-                                    <div class="row g-0">
-                                        <div class="col-4">
-                                            @if($item->image_path && file_exists(public_path($item->image_path)))
-                                                <img src="{{ asset($item->image_path) }}" 
-                                                     class="img-fluid h-100 rounded-start object-fit-cover" alt="{{ $item->name }}">
-                                            @else
-                                                <div class="bg-light h-100 d-flex align-items-center justify-content-center rounded-start">
-                                                    <i class="bi bi-image fs-2 text-muted"></i>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="col-8">
-                                            <div class="card-body p-3">
-                                                <h6 class="fw-bold mb-1">{{ Str::limit($item->name, 20) }}</h6>
-                                                <p class="text-muted small mb-2">RM {{ number_format($item->price, 2) }}</p>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" disabled {{ $item->is_available ? 'checked' : '' }}>
-                                                    <label class="form-check-label small {{ $item->is_available ? 'text-success' : 'text-danger' }}">
-                                                        {{ $item->is_available ? 'Available' : 'Out of Stock' }}
-                                                    </label>
-                                                </div>
-                                                <div class="mt-2">
-                                                    <a href="{{ route('vendor.menu') }}" class="btn btn-sm btn-outline-primary">Manage</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @empty
-                            <div class="col-12">
-                                <p class="text-center text-muted">No menu items yet. <a href="{{ route('vendor.menu') }}">Add your first item</a></p>
-                            </div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
             </div>
             
             <!-- Right Sidebar -->
-            <div class="col-lg-4">
+            <div class="col-md-4">
                 <!-- Quick Actions -->
-                <div class="card border-0 mb-4" data-aos="fade-left">
+                <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-3">Quick Actions</h6>
                         <div class="d-grid gap-2">
                             <a href="{{ route('vendor.menu') }}" class="btn btn-primary rounded-pill">
                                 <i class="bi bi-plus-circle me-2"></i> Add Menu Item
                             </a>
-                            <a href="{{ route('vendor.menu') }}" class="btn btn-outline-primary rounded-pill">
-                                <i class="bi bi-pencil me-2"></i> Edit Menu
+                            <a href="{{ route('vendor.orders') }}" class="btn btn-outline-primary rounded-pill">
+                                <i class="bi bi-receipt me-2"></i> View Orders
+                            </a>
+                            <a href="{{ route('vendor.vouchers') }}" class="btn btn-outline-primary rounded-pill">
+                                <i class="bi bi-ticket-perforated me-2"></i> Manage Vouchers
                             </a>
                             <a href="{{ route('vendor.reports') }}" class="btn btn-outline-primary rounded-pill">
                                 <i class="bi bi-graph-up me-2"></i> View Analytics
@@ -255,75 +204,323 @@
                     </div>
                 </div>
                 
-                <!-- Sales Chart -->
-                <div class="card border-0 mb-4" data-aos="fade-left" data-aos-delay="100">
+                <!-- Store Status -->
+                <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-4">
-                        <h6 class="fw-bold mb-3">This Week's Sales</h6>
-                        <div class="text-center py-4">
-                            <h2 class="display-6 fw-bold text-primary mb-2">RM {{ number_format($weekRevenue, 2) }}</h2>
-                            @if($weekGrowth >= 0)
-                                <p class="text-success mb-0">
-                                    <i class="bi bi-arrow-up"></i> {{ number_format(abs($weekGrowth), 1) }}% from last week
-                                </p>
-                            @else
-                                <p class="text-danger mb-0">
-                                    <i class="bi bi-arrow-down"></i> {{ number_format(abs($weekGrowth), 1) }}% from last week
-                                </p>
-                            @endif
-                        </div>
-                        <div class="row text-center mt-3">
-                            <div class="col-6">
-                                <p class="text-muted small mb-1">Orders</p>
-                                <h6 class="fw-bold">{{ $weekOrders }}</h6>
+                        <h6 class="fw-bold mb-3">Store Status</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">{{ $vendor->store_name }}</p>
+                                <span class="badge bg-{{ $vendor->is_open ? 'success' : 'secondary' }}">
+                                    {{ $vendor->is_open ? 'Open' : 'Closed' }}
+                                </span>
                             </div>
-                            <div class="col-6">
-                                <p class="text-muted small mb-1">Avg. Order</p>
-                                <h6 class="fw-bold">RM {{ number_format($avgOrderValue, 2) }}</h6>
-                            </div>
+                            <form action="{{ route('vendor.toggle') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-{{ $vendor->is_open ? 'danger' : 'success' }}">
+                                    {{ $vendor->is_open ? 'Close Store' : 'Open Store' }}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Top Selling Items -->
-                <div class="card border-0" data-aos="fade-left" data-aos-delay="200">
+                <!-- Ready for Pickup -->
+                <div class="card border-0 shadow-sm">
                     <div class="card-body p-4">
-                        <h6 class="fw-bold mb-3">Top Selling Items</h6>
-                        @forelse($topSellingItems as $item)
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    @if($item->image_path && file_exists(public_path($item->image_path)))
-                                        <img src="{{ asset($item->image_path) }}" 
-                                             class="rounded me-2 object-fit-cover" width="40" height="40" alt="{{ $item->name }}">
-                                    @else
-                                        <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                            <i class="bi bi-image text-muted"></i>
-                                        </div>
-                                    @endif
-                                    <span class="small">{{ Str::limit($item->name, 20) }}</span>
-                                </div>
-                                <span class="badge bg-primary">{{ $item->total_sold }}</span>
+                        <h6 class="fw-bold mb-3">Ready for Pickup</h6>
+                        @forelse($readyOrders->take(5) as $order)
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 {{ !$loop->last ? 'border-bottom' : '' }}">
+                            <div>
+                                <strong class="text-primary">#{{ $order->pickup->queue_number ?? 'N/A' }}</strong>
+                                <p class="mb-0 small text-muted">{{ $order->user->name }}</p>
                             </div>
-                            <div class="progress" style="height: 5px;">
-                                <div class="progress-bar" data-percentage="{{ $item->percentage }}" style="width: 0%"></div>
-                            </div>
+                            <form action="{{ url('/vendor/orders/' . $order->id . '/status') }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="status" value="completed">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-lg"></i> Done
+                                </button>
+                            </form>
                         </div>
                         @empty
-                        <p class="text-center text-muted small">No sales data available for this week</p>
+                        <p class="text-center text-muted mb-0">No orders ready for pickup</p>
                         @endforelse
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</section>
-@endsection
+</div>
+
+<!-- Order View Modal -->
+<div id="orderViewModal" class="custom-modal">
+    <div class="modal-backdrop-custom" onclick="closeOrderModal()"></div>
+    <div class="modal-content-custom">
+        <button class="modal-close-btn" onclick="closeOrderModal()"><i class="bi bi-x"></i></button>
+        <div id="orderModalContent">
+            <div style="padding: 3rem; text-align: center;">
+                <div class="spinner-border text-primary"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('styles')
+<style>
+/* Order Row Hover */
+.order-row {
+    transition: background-color 0.15s ease;
+}
+.order-row:hover {
+    background-color: rgba(255, 149, 0, 0.03);
+}
+
+/* Custom Modal Styling */
+.custom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    visibility: hidden;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.custom-modal.show {
+    visibility: visible;
+    opacity: 1;
+}
+.modal-backdrop-custom {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+.modal-content-custom {
+    position: relative;
+    background: white;
+    border-radius: 20px;
+    max-width: 550px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: modalZoomIn 0.3s ease;
+}
+@keyframes modalZoomIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+.modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.9);
+    color: #64748b;
+    font-size: 1.25rem;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.modal-close-btn:hover {
+    background: white;
+    color: #1f2937;
+    transform: scale(1.1);
+}
+
+/* Order Modal Styles */
+.order-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 20px 20px 0 0;
+    color: white;
+    text-align: center;
+}
+.order-modal-header .order-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.order-modal-header .order-status {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.order-modal-body {
+    padding: 1.5rem;
+}
+.order-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.order-info-row:last-child {
+    border-bottom: none;
+}
+.order-info-label {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+.order-info-value {
+    font-weight: 600;
+    color: #1e293b;
+}
+.order-items-list {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+.order-item-row:not(:last-child) {
+    border-bottom: 1px dashed #e2e8f0;
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>
-// Set progress bar widths from data attributes
-document.querySelectorAll('.progress-bar[data-percentage]').forEach(function(bar) {
-    bar.style.width = bar.dataset.percentage + '%';
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let lastOrderCount = {{ $todayOrders }};
+    let lastPendingCount = {{ $pendingOrders->count() }};
+
+    // Poll for dashboard updates every 15 seconds
+    function checkForUpdates() {
+        fetch('/vendor/dashboard', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Check if there are new orders
+                if (data.todayOrders > lastOrderCount || data.pendingOrders > lastPendingCount) {
+                    // Show notification
+                    if (typeof showToast === 'function') {
+                        showToast('New order received!', 'info');
+                    }
+                    
+                    // Reload page to show new orders
+                    setTimeout(() => location.reload(), 1500);
+                }
+                lastOrderCount = data.todayOrders;
+                lastPendingCount = data.pendingOrders;
+            }
+        })
+        .catch(() => {});
+    }
+
+    // Start polling every 15 seconds
+    setInterval(checkForUpdates, 15000);
+
+    // View Order Modal
+    window.viewOrder = async function(orderId) {
+        document.getElementById('orderViewModal').classList.add('show');
+        document.getElementById('orderModalContent').innerHTML = '<div style="padding: 3rem; text-align: center;"><div class="spinner-border text-primary"></div></div>';
+
+        try {
+            const res = await fetch(`/vendor/orders/${orderId}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                const order = data.order;
+                const statusColors = {
+                    'pending': 'background: #fbbf24; color: #1f2937;',
+                    'confirmed': 'background: #22c55e; color: white;',
+                    'preparing': 'background: #3b82f6; color: white;',
+                    'ready': 'background: #8b5cf6; color: white;',
+                    'completed': 'background: #1f2937; color: white;',
+                    'cancelled': 'background: #ef4444; color: white;'
+                };
+                
+                let itemsHtml = order.items.map(item => `
+                    <div class="order-item-row">
+                        <div>
+                            <span class="fw-semibold">${item.quantity}x</span> ${item.item_name}
+                        </div>
+                        <div class="text-muted">RM ${parseFloat(item.price).toFixed(2)}</div>
+                    </div>
+                `).join('');
+
+                document.getElementById('orderModalContent').innerHTML = `
+                    <div class="order-modal-header">
+                        <div class="order-number">${order.order_number}</div>
+                        <span class="order-status" style="${statusColors[order.status] || ''}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
+                        ${order.queue_number ? `<div class="mt-2"><small>Queue: <strong>#${order.queue_number}</strong></small></div>` : ''}
+                    </div>
+                    <div class="order-modal-body">
+                        <div class="order-info-row">
+                            <span class="order-info-label"><i class="bi bi-person"></i>Customer</span>
+                            <span class="order-info-value">${order.customer_name}</span>
+                        </div>
+                        <div class="order-info-row">
+                            <span class="order-info-label"><i class="bi bi-clock me-2"></i>Order Time</span>
+                            <span class="order-info-value">${order.created_at}</span>
+                        </div>
+                        <div class="order-info-row">
+                            <span class="order-info-label"><i class="bi bi-credit-card me-2"></i>Payment</span>
+                            <span class="order-info-value">${order.payment_method || 'N/A'}</span>
+                        </div>
+                        
+                        <h6 class="fw-bold mt-4 mb-2"><i class="bi bi-bag me-2"></i>Order Items</h6>
+                        <div class="order-items-list">
+                            ${itemsHtml}
+                        </div>
+                        
+                        <div class="order-info-row" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 1rem -1.5rem -1.5rem; padding: 1rem 1.5rem; border-radius: 0 0 20px 20px;">
+                            <span style="color: rgba(255,255,255,0.8); font-weight: 600;">Total Amount</span>
+                            <span style="color: white; font-size: 1.25rem; font-weight: 700;">RM ${parseFloat(order.total).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('orderModalContent').innerHTML = '<div style="padding: 2rem; text-align: center; color: #ef4444;">Failed to load order</div>';
+            }
+        } catch (e) {
+            document.getElementById('orderModalContent').innerHTML = '<div style="padding: 2rem; text-align: center; color: #ef4444;">An error occurred</div>';
+        }
+    };
+
+    window.closeOrderModal = function() {
+        document.getElementById('orderViewModal').classList.remove('show');
+    };
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeOrderModal();
+    });
 });
 </script>
 @endpush
+@endsection

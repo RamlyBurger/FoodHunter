@@ -4,46 +4,85 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MenuItem extends Model
 {
     use HasFactory;
 
-    protected $table = 'menu_items';
-    protected $primaryKey = 'item_id';
-
     protected $fillable = [
-        'category_id',
         'vendor_id',
+        'category_id',
         'name',
+        'slug',
         'description',
         'price',
-        'image_path',
+        'original_price',
+        'image',
         'is_available',
+        'is_featured',
+        'prep_time',
+        'calories',
+        'total_sold',
     ];
 
-    protected $casts = [
-        'price' => 'decimal:2',
-        'is_available' => 'boolean',
-    ];
-
-    public function category()
+    protected function casts(): array
     {
-        return $this->belongsTo(Category::class, 'category_id');
+        return [
+            'price' => 'decimal:2',
+            'original_price' => 'decimal:2',
+            'is_available' => 'boolean',
+            'is_featured' => 'boolean',
+        ];
     }
 
-    public function vendor()
+    public function vendor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'vendor_id');
+        return $this->belongsTo(Vendor::class);
     }
 
-    public function orderItems()
+    public function category(): BelongsTo
     {
-        return $this->hasMany(OrderItem::class, 'item_id');
+        return $this->belongsTo(Category::class);
     }
 
-    public function cartItems()
+    public function orderItems(): HasMany
     {
-        return $this->hasMany(CartItem::class, 'item_id');
+        return $this->hasMany(OrderItem::class);
     }
+
+    public function cartItems(): HasMany
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('is_available', true);
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
+    }
+
+    public function hasDiscount(): bool
+    {
+        return $this->original_price && $this->original_price > $this->price;
+    }
+
+    public function getDiscountPercentage(): ?int
+    {
+        if (!$this->hasDiscount()) {
+            return null;
+        }
+        return (int) round((($this->original_price - $this->price) / $this->original_price) * 100);
+    }
+
 }

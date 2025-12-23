@@ -2,34 +2,48 @@
 
 @section('title', 'Reports & Analytics - Vendor Dashboard')
 
+@push('styles')
+<style>
+@media print {
+    .btn, .form-select, nav, footer, .navbar {
+        display: none !important;
+    }
+    .card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    body {
+        zoom: 0.8;
+    }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="container py-5">
+<div class="container" style="padding-top: 100px; padding-bottom: 50px;">
     <div class="row mb-4">
-        <div class="col-lg-8">
+        <div class="col-md-8">
             <h2 class="fw-bold mb-2">
                 <i class="bi bi-graph-up text-primary me-2"></i>
                 Reports & Analytics
             </h2>
             <p class="text-muted">Track your sales performance and insights</p>
         </div>
-        <div class="col-lg-4 text-lg-end">
-            <form method="GET" action="{{ route('vendor.reports') }}" id="periodForm">
-                <div class="d-flex gap-2 justify-content-lg-end">
-                    <select class="form-select" name="period" id="periodSelect" style="max-width: 180px;" onchange="handlePeriodChange()">
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex gap-2 justify-content-end align-items-center">
+                <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Print
+                </button>
+                <form method="GET" action="{{ route('vendor.reports') }}" id="periodForm">
+                    <select class="form-select form-select-sm" name="period" onchange="this.form.submit()" style="min-width: 150px;">
                         <option value="7days" {{ $period === '7days' ? 'selected' : '' }}>Last 7 Days</option>
                         <option value="30days" {{ $period === '30days' ? 'selected' : '' }}>Last 30 Days</option>
                         <option value="this_month" {{ $period === 'this_month' ? 'selected' : '' }}>This Month</option>
                         <option value="last_month" {{ $period === 'last_month' ? 'selected' : '' }}>Last Month</option>
                         <option value="this_year" {{ $period === 'this_year' ? 'selected' : '' }}>This Year</option>
-                        <option value="custom" {{ $period === 'custom' ? 'selected' : '' }}>Custom Range</option>
                     </select>
-                    <div id="customRangeInputs" class="d-none">
-                        <input type="date" name="start_date" class="form-control" style="max-width: 150px;" value="{{ request('start_date') }}">
-                        <input type="date" name="end_date" class="form-control" style="max-width: 150px;" value="{{ request('end_date') }}">
-                        <button type="submit" class="btn btn-primary">Apply</button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -38,66 +52,76 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-currency-dollar fs-4 text-primary"></i>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Revenue</p>
+                            <h3 class="mb-0 fw-bold text-success">RM {{ number_format($revenueStats['total'], 2) }}</h3>
+                            @if($revenueStats['growth'] != 0)
+                            <small class="{{ $revenueStats['growth'] > 0 ? 'text-success' : 'text-danger' }}">
+                                <i class="bi bi-{{ $revenueStats['growth'] > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                {{ abs($revenueStats['growth']) }}% vs previous period
+                            </small>
+                            @endif
                         </div>
-                        @if($revenueStats['growth'] >= 0)
-                            <span class="badge bg-success">+{{ number_format($revenueStats['growth'], 1) }}%</span>
-                        @else
-                            <span class="badge bg-danger">{{ number_format($revenueStats['growth'], 1) }}%</span>
-                        @endif
+                        <div class="rounded p-3" style="background: #28a745;">
+                            <i class="bi bi-currency-dollar fs-4 text-white"></i>
+                        </div>
                     </div>
-                    <p class="text-muted mb-1 small">Total Revenue</p>
-                    <h3 class="mb-0 fw-bold">RM {{ number_format($revenueStats['total'], 2) }}</h3>
-                    <small class="text-muted">Completed orders only</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="bg-success bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-cart-check fs-4 text-success"></i>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Orders</p>
+                            <h3 class="mb-0 fw-bold">{{ $orderStats['total'] }}</h3>
+                            @if($orderStats['growth'] != 0)
+                            <small class="{{ $orderStats['growth'] > 0 ? 'text-success' : 'text-danger' }}">
+                                <i class="bi bi-{{ $orderStats['growth'] > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                {{ abs($orderStats['growth']) }}% vs previous period
+                            </small>
+                            @endif
                         </div>
-                        @if($orderStats['growth'] >= 0)
-                            <span class="badge bg-success">+{{ number_format($orderStats['growth'], 1) }}%</span>
-                        @else
-                            <span class="badge bg-danger">{{ number_format($orderStats['growth'], 1) }}%</span>
-                        @endif
+                        <div class="rounded p-3" style="background: #ffc107;">
+                            <i class="bi bi-cart-check fs-4 text-white"></i>
+                        </div>
                     </div>
-                    <p class="text-muted mb-1 small">Total Orders</p>
-                    <h3 class="mb-0 fw-bold">{{ $orderStats['total'] }}</h3>
-                    <small class="text-muted">{{ $orderStats['completed'] }} completed</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="bg-info bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-cash-coin fs-4 text-info"></i>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Avg Order Value</p>
+                            <h3 class="mb-0 fw-bold">RM {{ number_format($orderStats['avg_value'], 2) }}</h3>
+                        </div>
+                        <div class="rounded p-3" style="background: #17a2b8;">
+                            <i class="bi bi-cash-coin fs-4 text-white"></i>
                         </div>
                     </div>
-                    <p class="text-muted mb-1 small">Avg Order Value</p>
-                    <h3 class="mb-0 fw-bold">RM {{ number_format($orderStats['avg_value'], 2) }}</h3>
-                    <small class="text-muted">Per completed order</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="bg-warning bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-star-fill fs-4 text-warning"></i>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Completion Rate</p>
+                            @php
+                                $completionRate = $orderStats['total'] > 0 ? round(($orderStats['completed'] / $orderStats['total']) * 100, 1) : 0;
+                            @endphp
+                            <h3 class="mb-0 fw-bold text-info">{{ $completionRate }}%</h3>
+                            <small class="text-muted">{{ $orderStats['completed'] }}/{{ $orderStats['total'] }} orders</small>
+                        </div>
+                        <div class="rounded p-3" style="background: #17a2b8;">
+                            <i class="bi bi-check-circle fs-4 text-white"></i>
                         </div>
                     </div>
-                    <p class="text-muted mb-1 small">Total Items</p>
-                    <h3 class="mb-0 fw-bold">{{ count($topSellingItems) }}</h3>
-                    <small class="text-muted">Top sellers</small>
                 </div>
             </div>
         </div>
@@ -105,298 +129,220 @@
 
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
-        <div class="col-lg-8">
+        <div class="col-md-8">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Sales Overview</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary active" onclick="updateChart('revenue')">Revenue</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="updateChart('orders')">Orders</button>
+                    </div>
                 </div>
                 <div class="card-body" style="height: 350px;">
                     <canvas id="salesChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3">
                     <h5 class="mb-0">Order Status</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="orderStatusChart" height="150"></canvas>
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="bi bi-circle-fill text-success me-2"></i>Completed</span>
-                            <strong>{{ $orderStatusDistribution['completed']['percentage'] }}%</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="bi bi-circle-fill text-info me-2"></i>Accepted</span>
-                            <strong>{{ $orderStatusDistribution['accepted']['percentage'] }}%</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="bi bi-circle-fill text-primary me-2"></i>Preparing</span>
-                            <strong>{{ $orderStatusDistribution['preparing']['percentage'] }}%</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span><i class="bi bi-circle-fill text-warning me-2"></i>Ready</span>
-                            <strong>{{ $orderStatusDistribution['ready']['percentage'] }}%</strong>
-                        </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-medium">Completed</span>
+                        <span class="small text-success fw-bold">{{ $orderStatusDistribution['completed']['count'] }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                        <div class="progress-bar bg-success" style="width: {{ $orderStatusDistribution['completed']['percentage'] }}%; border-radius: 4px;"></div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Top Selling Items -->
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">Top Selling Items</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        @forelse($topSellingItems as $index => $item)
-                        <div class="list-group-item border-0 px-0">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                        <span class="fw-bold text-primary">{{ $index + 1 }}</span>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">{{ $item->name }}</div>
-                                        <small class="text-muted">{{ $item->total_quantity }} sold</small>
-                                    </div>
-                                </div>
-                                <span class="badge bg-success">RM {{ number_format($item->total_sales, 2) }}</span>
-                            </div>
-                        </div>
-                        @empty
-                        <div class="list-group-item border-0 px-0">
-                            <p class="text-muted mb-0">No sales data available</p>
-                        </div>
-                        @endforelse
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-medium">Confirmed</span>
+                        <span class="small text-primary fw-bold">{{ $orderStatusDistribution['confirmed']['count'] }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                        <div class="progress-bar bg-primary" style="width: {{ $orderStatusDistribution['confirmed']['percentage'] }}%; border-radius: 4px;"></div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">Recent Reviews</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between mb-2">
-                            <div class="d-flex align-items-center">
-                                <img src="https://ui-avatars.com/api/?name=Ahmad" class="rounded-circle me-2" width="32" height="32">
-                                <strong>Ahmad Abdullah</strong>
-                            </div>
-                            <div>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                            </div>
-                        </div>
-                        <p class="mb-1 small">"Excellent food! The Nasi Lemak is amazing and authentic."</p>
-                        <small class="text-muted">2 hours ago</small>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-medium">Preparing</span>
+                        <span class="small text-info fw-bold">{{ $orderStatusDistribution['preparing']['count'] }}</span>
                     </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between mb-2">
-                            <div class="d-flex align-items-center">
-                                <img src="https://ui-avatars.com/api/?name=Siti" class="rounded-circle me-2" width="32" height="32">
-                                <strong>Siti Nurhaliza</strong>
-                            </div>
-                            <div>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star text-muted"></i>
-                            </div>
-                        </div>
-                        <p class="mb-1 small">"Good taste, but portion could be bigger."</p>
-                        <small class="text-muted">5 hours ago</small>
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                        <div class="progress-bar bg-info" style="width: {{ $orderStatusDistribution['preparing']['percentage'] }}%; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-medium">Ready</span>
+                        <span class="small text-warning fw-bold">{{ $orderStatusDistribution['ready']['count'] }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                        <div class="progress-bar bg-warning" style="width: {{ $orderStatusDistribution['ready']['percentage'] }}%; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-medium">Cancelled</span>
+                        <span class="small text-danger fw-bold">{{ $orderStatusDistribution['cancelled']['count'] }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                        <div class="progress-bar bg-danger" style="width: {{ $orderStatusDistribution['cancelled']['percentage'] }}%; border-radius: 4px;"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-@endsection
+
+    <!-- Top Selling Items -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Top Selling Items</h5>
+                </div>
+                <div class="card-body p-0">
+                @if($topSellingItems->isEmpty())
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mt-3 mb-0">No sales data available for this period</p>
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">#</th>
+                                    <th>Item Name</th>
+                                    <th>Price</th>
+                                    <th class="text-center">Qty Sold</th>
+                                    <th class="text-center">Orders</th>
+                                    <th class="text-end">Total Sales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($topSellingItems as $index => $item)
+                                    <tr>
+                                        <td class="text-center">
+                                            @if($index < 3)
+                                                <span class="badge rounded-pill {{ $index === 0 ? 'bg-warning text-dark' : ($index === 1 ? 'bg-secondary' : 'bg-danger') }}" style="width: 28px; height: 28px; line-height: 20px;">
+                                                    {{ $index + 1 }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">{{ $index + 1 }}</span>
+                                            @endif
+                                        </td>
+                                        <td><strong class="text-dark">{{ $item->name }}</strong></td>
+                                        <td>RM {{ number_format($item->price, 2) }}</td>
+                                        <td class="text-center"><span class="badge bg-light text-dark">{{ $item->total_quantity }}</span></td>
+                                        <td class="text-center">{{ $item->order_count }}</td>
+                                        <td class="text-end"><strong style="color: #FF6B35;">RM {{ number_format($item->total_sales, 2) }}</strong></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script id="sales-data" type="application/json">@json($salesChartData)</script>
-<script id="status-data" type="application/json">@json($orderStatusDistribution)</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Sales Chart Data from Backend
-    const salesData = JSON.parse(document.getElementById('sales-data').textContent);
-    
-    // Sales Overview Chart
-    const salesCtx = document.getElementById('salesChart').getContext('2d');
-    new Chart(salesCtx, {
-        type: 'line',
+const salesData = @json($salesChartData);
+let currentChart = null;
+let currentView = 'revenue';
+
+function initChart() {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    currentChart = new Chart(ctx, {
+        type: 'bar',
         data: {
             labels: salesData.map(d => d.date),
             datasets: [{
                 label: 'Revenue (RM)',
                 data: salesData.map(d => d.revenue),
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                tension: 0.4,
-                fill: true,
-                yAxisID: 'y'
-            }, {
-                label: 'Orders',
-                data: salesData.map(d => d.orders),
-                borderColor: 'rgb(255, 99, 132)',
-                backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                tension: 0.4,
-                fill: true,
-                yAxisID: 'y1'
+                backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1,
+                borderRadius: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                if (context.datasetIndex === 0) {
-                                    label += 'RM ' + context.parsed.y.toFixed(2);
-                                } else {
-                                    label += context.parsed.y;
-                                }
-                            }
-                            return label;
-                        }
-                    }
-                }
-            },
             scales: {
                 y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Revenue (RM)'
-                    },
+                    beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return 'RM ' + value.toFixed(0);
+                            return currentView === 'revenue' ? 'RM ' + value : value;
                         }
                     }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Orders'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    },
                 }
-            }
-        }
-    });
-    
-    // Order Status Distribution Chart
-    const statusData = JSON.parse(document.getElementById('status-data').textContent);
-    const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
-    new Chart(statusCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Completed', 'Accepted', 'Preparing', 'Ready'],
-            datasets: [{
-                data: [
-                    statusData.completed.count,
-                    statusData.accepted.count,
-                    statusData.preparing.count,
-                    statusData.ready.count
-                ],
-                backgroundColor: [
-                    'rgba(40, 167, 69, 0.8)',
-                    'rgba(23, 162, 184, 0.8)',
-                    'rgba(13, 110, 253, 0.8)',
-                    'rgba(255, 193, 7, 0.8)'
-                ],
-                borderColor: [
-                    'rgb(40, 167, 69)',
-                    'rgb(23, 162, 184)',
-                    'rgb(13, 110, 253)',
-                    'rgb(255, 193, 7)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            },
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top'
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed || 0;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return label + ': ' + value + ' (' + percentage + '%)';
+                            if (currentView === 'revenue') {
+                                return 'Revenue: RM ' + context.raw.toFixed(2);
+                            } else {
+                                return 'Orders: ' + context.raw;
+                            }
                         }
                     }
                 }
             }
         }
     });
-});
-
-// Handle period change
-function handlePeriodChange() {
-    const period = document.getElementById('periodSelect').value;
-    const customInputs = document.getElementById('customRangeInputs');
-    
-    if (period === 'custom') {
-        customInputs.classList.remove('d-none');
-        customInputs.classList.add('d-flex');
-        customInputs.classList.add('gap-2');
-    } else {
-        customInputs.classList.add('d-none');
-        customInputs.classList.remove('d-flex');
-        document.getElementById('periodForm').submit();
-    }
 }
 
-// Show custom inputs if period is custom on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const period = document.getElementById('periodSelect').value;
-    if (period === 'custom') {
-        const customInputs = document.getElementById('customRangeInputs');
-        customInputs.classList.remove('d-none');
-        customInputs.classList.add('d-flex');
-        customInputs.classList.add('gap-2');
+function updateChart(view) {
+    currentView = view;
+    
+    // Update button states
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update chart data
+    if (view === 'revenue') {
+        currentChart.data.datasets[0].label = 'Revenue (RM)';
+        currentChart.data.datasets[0].data = salesData.map(d => d.revenue);
+        currentChart.data.datasets[0].backgroundColor = 'rgba(13, 110, 253, 0.7)';
+        currentChart.data.datasets[0].borderColor = 'rgba(13, 110, 253, 1)';
+    } else {
+        currentChart.data.datasets[0].label = 'Number of Orders';
+        currentChart.data.datasets[0].data = salesData.map(d => d.orders);
+        currentChart.data.datasets[0].backgroundColor = 'rgba(255, 193, 7, 0.7)';
+        currentChart.data.datasets[0].borderColor = 'rgba(255, 193, 7, 1)';
     }
+    
+    currentChart.options.scales.y.ticks.callback = function(value) {
+        return view === 'revenue' ? 'RM ' + value : value;
+    };
+    
+    currentChart.update();
+}
+
+// Initialize chart on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initChart();
 });
 </script>
 @endpush
+@endsection

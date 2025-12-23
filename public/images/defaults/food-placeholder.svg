@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f8f9fa"/>
+  <g transform="translate(200,150)">
+    <circle r="60" fill="#dee2e6"/>
+    <path d="M-25,-20 L-25,25 L-15,25 L-15,-10 L-5,-10 L-5,25 L5,25 L5,-10 L15,-10 L15,25 L25,25 L25,-20 C25,-35 -25,-35 -25,-20 Z" fill="#adb5bd"/>
+    <ellipse cx="0" cy="35" rx="35" ry="8" fill="#adb5bd"/>
+  </g>
+  <text x="200" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6c757d">No Image Available</text>
+</svg>

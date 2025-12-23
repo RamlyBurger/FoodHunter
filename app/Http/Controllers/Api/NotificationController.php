@@ -3,276 +3,141 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\StudentNotification;
-use App\Models\VendorNotification;
+use App\Services\NotificationService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Notification Controller - Student 5
+ * 
+ * Design Pattern: Observer Pattern (notifications triggered by events)
+ * Security: Cryptographically Secure Codes, Audit Logging
+ * 
+ * Web Service: Exposes notification sending API for other modules
+ */
 class NotificationController extends Controller
 {
-    /**
-     * Get notifications for authenticated user
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function index(Request $request)
+    use ApiResponse;
+
+    private NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
     {
-        $user = $request->user();
-        $perPage = $request->input('per_page', 20);
+        $this->notificationService = $notificationService;
+    }
 
-        if ($user->role === 'vendor') {
-            $notifications = VendorNotification::where('vendor_id', $user->user_id)
-                ->with('order')
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage);
-        } else {
-            $notifications = StudentNotification::where('user_id', $user->user_id)
-                ->with('order')
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage);
-        }
+    public function index(Request $request): JsonResponse
+    {
+        $notifications = $this->notificationService->getUserNotifications(
+            $request->user()->id,
+            $request->get('limit', 20)
+        );
 
-        $unreadCount = $this->getUnreadNotificationCount($user);
+        return $this->successResponse($notifications->map(fn($n) => $this->formatNotification($n)));
+    }
+
+    public function unreadCount(Request $request): JsonResponse
+    {
+        $count = $this->notificationService->getUnreadCount($request->user()->id);
+
+        return $this->successResponse(['unread_count' => $count]);
+    }
+
+    /**
+     * Get notifications for dropdown display
+     */
+    public function dropdown(Request $request): JsonResponse
+    {
+        $notifications = $this->notificationService->getUserNotifications(
+            $request->user()->id,
+            5
+        );
+
+        $unreadCount = $this->notificationService->getUnreadCount($request->user()->id);
 
         return response()->json([
-            'success' => true,
-            'data' => [
-                'notifications' => $notifications->getCollection()->map(function($notification) {
-                    return $this->transformNotification($notification);
-                }),
-                'unread_count' => $unreadCount,
-                'pagination' => [
-                    'current_page' => $notifications->currentPage(),
-                    'last_page' => $notifications->lastPage(),
-                    'per_page' => $notifications->perPage(),
-                    'total' => $notifications->total(),
-                ]
-            ]
+            'notifications' => $notifications->map(fn($n) => [
+                'id' => $n->id,
+                'type' => $n->type,
+                'title' => $n->title,
+                'message' => $n->message,
+                'url' => $n->data['url'] ?? null,
+                'read_at' => $n->read_at,
+                'time_ago' => $n->created_at->diffForHumans(),
+            ]),
+            'unread_count' => $unreadCount,
         ]);
     }
 
-    /**
-     * Get recent notifications (limited)
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function recent(Request $request)
+    public function markAsRead(Request $request, int $id): JsonResponse
     {
-        $user = $request->user();
-        $limit = $request->input('limit', 10);
+        $result = $this->notificationService->markAsRead($id, $request->user()->id);
 
-        if ($user->role === 'vendor') {
-            $notifications = VendorNotification::where('vendor_id', $user->user_id)
-                ->with('order')
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get();
-        } else {
-            $notifications = StudentNotification::where('user_id', $user->user_id)
-                ->with('order')
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get();
+        if (!$result) {
+            return $this->notFoundResponse('Notification not found');
         }
 
-        $unreadCount = $this->getUnreadNotificationCount($user);
+        return $this->successResponse(null, 'Notification marked as read');
+    }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'notifications' => $notifications->map(function($notification) {
-                    return $this->transformNotification($notification);
-                }),
-                'unread_count' => $unreadCount,
-            ]
+    public function markAllAsRead(Request $request): JsonResponse
+    {
+        $count = $this->notificationService->markAllAsRead($request->user()->id);
+
+        return $this->successResponse(['count' => $count], "{$count} notifications marked as read");
+    }
+
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $result = $this->notificationService->delete($id, $request->user()->id);
+
+        if (!$result) {
+            return $this->notFoundResponse('Notification not found');
+        }
+
+        return $this->successResponse(null, 'Notification deleted');
+    }
+
+    /**
+     * Web Service: Expose - Send Notification API
+     * Other modules (Order, Auth) consume this to send notifications
+     */
+    public function send(Request $request): JsonResponse
+    {
+        $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'type' => 'required|string|max:50',
+            'title' => 'required|string|max:100',
+            'message' => 'required|string|max:500',
+            'data' => 'nullable|array',
         ]);
+
+        $notification = $this->notificationService->send(
+            $request->user_id,
+            $request->type,
+            $request->title,
+            $request->message,
+            $request->data ?? []
+        );
+
+        return $this->createdResponse([
+            'notification_id' => $notification->id,
+            'sent_at' => $notification->created_at->toIso8601String(),
+        ], 'Notification sent successfully');
     }
 
-    /**
-     * Get unread notification count
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function unreadCount(Request $request)
-    {
-        $user = $request->user();
-        $count = $this->getUnreadNotificationCount($user);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'count' => $count
-            ]
-        ]);
-    }
-
-    /**
-     * Mark notification as read
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function markAsRead(Request $request, $id)
-    {
-        $user = $request->user();
-
-        if ($user->role === 'vendor') {
-            $notification = VendorNotification::where('notification_id', $id)
-                ->where('vendor_id', $user->user_id)
-                ->first();
-        } else {
-            $notification = StudentNotification::where('notification_id', $id)
-                ->where('user_id', $user->user_id)
-                ->first();
-        }
-
-        if (!$notification) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Notification not found'
-            ], 404);
-        }
-
-        $notification->markAsRead();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Notification marked as read'
-        ]);
-    }
-
-    /**
-     * Mark all notifications as read
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function markAllAsRead(Request $request)
-    {
-        $user = $request->user();
-
-        if ($user->role === 'vendor') {
-            VendorNotification::where('vendor_id', $user->user_id)
-                ->where('is_read', false)
-                ->update([
-                    'is_read' => true,
-                    'read_at' => now()
-                ]);
-        } else {
-            StudentNotification::where('user_id', $user->user_id)
-                ->where('is_read', false)
-                ->update([
-                    'is_read' => true,
-                    'read_at' => now()
-                ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'All notifications marked as read'
-        ]);
-    }
-
-    /**
-     * Delete a notification
-     * 
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function destroy(Request $request, $id)
-    {
-        $user = $request->user();
-
-        if ($user->role === 'vendor') {
-            $notification = VendorNotification::where('notification_id', $id)
-                ->where('vendor_id', $user->user_id)
-                ->first();
-        } else {
-            $notification = StudentNotification::where('notification_id', $id)
-                ->where('user_id', $user->user_id)
-                ->first();
-        }
-
-        if (!$notification) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Notification not found'
-            ], 404);
-        }
-
-        $notification->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Notification deleted successfully'
-        ]);
-    }
-
-    /**
-     * Clear all notifications
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function clear(Request $request)
-    {
-        $user = $request->user();
-
-        if ($user->role === 'vendor') {
-            VendorNotification::where('vendor_id', $user->user_id)->delete();
-        } else {
-            StudentNotification::where('user_id', $user->user_id)->delete();
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'All notifications cleared'
-        ]);
-    }
-
-    /**
-     * Get unread notification count for user
-     * 
-     * @param \App\Models\User $user
-     * @return int
-     */
-    private function getUnreadNotificationCount($user)
-    {
-        if ($user->role === 'vendor') {
-            return VendorNotification::where('vendor_id', $user->user_id)
-                ->where('is_read', false)
-                ->count();
-        } else {
-            return StudentNotification::where('user_id', $user->user_id)
-                ->where('is_read', false)
-                ->count();
-        }
-    }
-
-    /**
-     * Transform notification data
-     * 
-     * @param mixed $notification
-     * @return array
-     */
-    private function transformNotification($notification)
+    private function formatNotification($notification): array
     {
         return [
-            'notification_id' => $notification->notification_id,
+            'id' => $notification->id,
             'type' => $notification->type,
             'title' => $notification->title,
             'message' => $notification->message,
-            'is_read' => (bool) $notification->is_read,
+            'data' => $notification->data,
+            'is_read' => $notification->is_read,
             'read_at' => $notification->read_at,
             'created_at' => $notification->created_at,
-            'order' => $notification->order ? [
-                'order_id' => $notification->order->order_id,
-                'status' => $notification->order->status,
-            ] : null,
         ];
     }
 }

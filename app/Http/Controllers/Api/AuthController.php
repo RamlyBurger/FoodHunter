@@ -3,197 +3,128 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
-use App\Models\LoyaltyPoint;
+use App\Services\AuthService;
+use App\Services\NotificationService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
+/**
+ * Auth Controller - Student 1
+ * 
+ * Design Pattern: Strategy Pattern (for authentication methods)
+ * Security: Rate Limiting, Session Regeneration
+ */
 class AuthController extends Controller
 {
-    /**
-     * Register a new user
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function register(Request $request)
+    use ApiResponse;
+
+    private AuthService $authService;
+    private NotificationService $notificationService;
+
+    public function __construct(AuthService $authService, NotificationService $notificationService)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'role' => ['nullable', 'in:student,vendor'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'student',
-        ]);
-
-        // Create loyalty points record for students
-        if ($user->role === 'student') {
-            LoyaltyPoint::create([
-                'user_id' => $user->user_id,
-                'points' => 0,
-            ]);
-        }
-
-        // Create token
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration successful',
-            'data' => [
-                'user' => [
-                    'user_id' => $user->user_id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ], 201);
+        $this->authService = $authService;
+        $this->notificationService = $notificationService;
     }
 
-    /**
-     * Login user
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function login(Request $request)
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $user = $this->authService->register($request->validated());
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        $token = $user->createToken('auth-token')->plainTextToken;
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
-        }
+        // Web Service: Consume Notification Service (Student 5)
+        $this->notificationService->send(
+            $user->id,
+            'welcome',
+            'Welcome to FoodHunter!',
+            'Thank you for joining FoodHunter. Start exploring delicious food now!',
+            ['registration_date' => now()->toDateString()]
+        );
 
-        $user = User::where('email', $request->email)->firstOrFail();
-        
-        // Revoke old tokens
-        $user->tokens()->delete();
-        
-        // Create new token
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => [
-                'user' => [
-                    'user_id' => $user->user_id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'phone' => $user->phone,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ]);
+        return $this->createdResponse([
+            'user' => $this->formatUser($user),
+            'token' => $token,
+        ], 'Registration successful');
     }
 
-    /**
-     * Logout user
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function logout(Request $request)
+    public function login(LoginRequest $request): JsonResponse
     {
-        // Revoke current token
+        // Uses Strategy Pattern via AuthService
+        $result = $this->authService->attemptLogin(
+            $request->email,
+            $request->password,
+            $request->ip()
+        );
+
+        if (!$result['success']) {
+            if (isset($result['locked_out']) && $result['locked_out']) {
+                return $this->tooManyRequestsResponse($result['message']);
+            }
+            return $this->unauthorizedResponse($result['message']);
+        }
+
+        // Security: Session regeneration handled by Sanctum token refresh
+
+        return $this->successResponse([
+            'user' => $this->formatUser($result['user']),
+            'token' => $result['token'],
+        ], 'Login successful');
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully'
-        ]);
+        return $this->successResponse(null, 'Logged out successfully');
+    }
+
+    public function user(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return $this->successResponse($this->formatUser($user));
     }
 
     /**
-     * Get authenticated user
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Web Service: Expose - Validate Token API
+     * Other modules consume this to validate user tokens
      */
-    public function user(Request $request)
+    public function validateToken(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $token = $request->bearerToken();
         
-        $data = [
-            'user_id' => $user->user_id,
-            'name' => $user->name,
+        if (!$token) {
+            return $this->unauthorizedResponse('No token provided');
+        }
+
+        $user = $this->authService->validateToken($token);
+
+        if (!$user) {
+            return $this->unauthorizedResponse('Invalid or expired token');
+        }
+
+        return $this->successResponse([
+            'valid' => true,
+            'user_id' => $user->id,
             'email' => $user->email,
             'role' => $user->role,
-            'phone' => $user->phone,
-            'created_at' => $user->created_at,
-        ];
-
-        // Add loyalty points for students
-        if ($user->role === 'student') {
-            $loyaltyPoints = LoyaltyPoint::where('user_id', $user->user_id)->first();
-            $data['loyalty_points'] = $loyaltyPoints ? $loyaltyPoints->points : 0;
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $data
         ]);
     }
 
-    /**
-     * Refresh token
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function refresh(Request $request)
+    private function formatUser(User $user): array
     {
-        $user = $request->user();
-        
-        // Revoke current token
-        $request->user()->currentAccessToken()->delete();
-        
-        // Create new token
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Token refreshed',
-            'data' => [
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ]);
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'role' => $user->role,
+            'created_at' => $user->created_at,
+        ];
     }
 }

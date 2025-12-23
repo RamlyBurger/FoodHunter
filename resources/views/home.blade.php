@@ -1,319 +1,360 @@
 @extends('layouts.app')
 
-@section('title', 'Home - FoodHunter')
+@section('title', 'Home')
+
+@push('styles')
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        position: relative;
+        overflow: hidden;
+        padding-top: 80px !important;
+    }
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='rgba(255,255,255,0.1)'/%3E%3C/svg%3E") repeat;
+        background-size: 100px 100px;
+        animation: float 20s linear infinite;
+    }
+    @keyframes float {
+        0% { transform: translateY(0) translateX(0); }
+        50% { transform: translateY(-20px) translateX(10px); }
+        100% { transform: translateY(0) translateX(0); }
+    }
+    .bubble {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        animation: rise 10s infinite ease-in;
+    }
+    .bubble:nth-child(1) { width: 80px; height: 80px; left: 10%; animation-duration: 8s; animation-delay: 0s; }
+    .bubble:nth-child(2) { width: 60px; height: 60px; left: 20%; animation-duration: 12s; animation-delay: 1s; }
+    .bubble:nth-child(3) { width: 100px; height: 100px; left: 35%; animation-duration: 10s; animation-delay: 2s; }
+    .bubble:nth-child(4) { width: 40px; height: 40px; left: 50%; animation-duration: 9s; animation-delay: 0.5s; }
+    .bubble:nth-child(5) { width: 70px; height: 70px; left: 65%; animation-duration: 11s; animation-delay: 1.5s; }
+    .bubble:nth-child(6) { width: 90px; height: 90px; left: 80%; animation-duration: 13s; animation-delay: 3s; }
+    .bubble:nth-child(7) { width: 50px; height: 50px; left: 90%; animation-duration: 7s; animation-delay: 2.5s; }
+    .bubble:nth-child(8) { width: 120px; height: 120px; left: 5%; animation-duration: 15s; animation-delay: 4s; }
+    @keyframes rise {
+        0% { bottom: -150px; opacity: 0; transform: translateX(0) scale(0.5); }
+        10% { opacity: 0.4; }
+        50% { opacity: 0.2; transform: translateX(30px) scale(1); }
+        100% { bottom: 110%; opacity: 0; transform: translateX(-20px) scale(0.8); }
+    }
+    .hero-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    .hero-stat {
+        text-align: center;
+    }
+    .hero-stat h3 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin-bottom: 0;
+    }
+    .hero-stat small {
+        opacity: 0.75;
+        font-size: 0.75rem;
+    }
+    .how-it-works-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+    }
+    .testimonial-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.25rem;
+        height: 100%;
+    }
+    .testimonial-card .rating {
+        color: var(--warning-color);
+        margin-bottom: 0.75rem;
+    }
+    .feature-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+</style>
+@endpush
 
 @section('content')
-<div data-guest="{{ auth()->guest() ? 'true' : 'false' }}" id="page-data"></div>
 <!-- Hero Section -->
-<section class="hero-section text-white position-relative">
-    <div class="container position-relative" style="z-index: 10;">
+<div class="hero-section py-5 mb-4">
+    <!-- Bubbles -->
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    
+    <div class="container position-relative" style="z-index: 2;">
         <div class="row align-items-center">
-            <div class="col-lg-6" data-aos="fade-right">
-                <h1 class="display-3 fw-bold mb-4 display-font">
-                    Delicious Food,<br>
-                    <span class="text-warning">Delivered Fast!</span>
+            <div class="col-lg-6">
+                <h1 class="text-white mb-3" style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; line-height: 1.1;">
+                    Hungry?<br>
+                    <span class="text-warning">Order Now.</span>
                 </h1>
-                <p class="lead mb-4">Order your favorite meals from university canteen vendors and skip the queue. Fresh, tasty, and ready when you are!</p>
-                <div class="d-flex gap-3 mb-4">
-                    <a href="{{ route('menu') }}" class="btn btn-warning btn-lg rounded-pill px-5">
+                <p class="text-white mb-4" style="font-size: 1rem; line-height: 1.6; opacity: 0.9;">Order delicious food from TARUMT canteen vendors and skip the queue!</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{{ url('/menu') }}" class="btn btn-warning btn-lg px-4 text-dark fw-bold">
                         <i class="bi bi-grid-3x3-gap me-2"></i> Browse Menu
                     </a>
-                    <a href="#how-it-works" class="btn btn-outline-light btn-lg rounded-pill px-4">
+                    <a href="#how-it-works" class="btn btn-outline-light btn-lg px-4">
                         <i class="bi bi-play-circle me-2"></i> How It Works
                     </a>
                 </div>
-                <div class="d-flex gap-4 mt-4">
-                    <div class="text-center">
-                        <h3 class="fw-bold mb-0">{{ $totalMenuItems }}+</h3>
-                        <small class="text-white-75">Menu Items</small>
+                <!-- Hero Stats -->
+                @php
+                    $totalMenuItems = \App\Models\MenuItem::where('is_available', true)->count();
+                    $totalVendors = \App\Models\Vendor::count();
+                    $totalOrders = \App\Models\Order::where('status', 'completed')->count();
+                @endphp
+                <div class="hero-stats text-white">
+                    <div class="hero-stat">
+                        <h3>{{ $totalMenuItems }}+</h3>
+                        <small>Menu Items</small>
                     </div>
-                    <div class="text-center">
-                        <h3 class="fw-bold mb-0">{{ $totalVendors }}+</h3>
-                        <small class="text-white-75">Vendors</small>
+                    <div class="hero-stat">
+                        <h3>{{ $totalVendors }}+</h3>
+                        <small>Vendors</small>
                     </div>
-                    <div class="text-center">
-                        <h3 class="fw-bold mb-0">{{ number_format($totalOrders) }}+</h3>
-                        <small class="text-white-75">Happy Students</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6 d-none d-lg-block" data-aos="fade-left">
-                <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=600&fit=crop" 
-                     alt="Delicious Food" 
-                     class="img-fluid rounded-4 shadow-lg"
-                     style="border-radius: 30px !important;">
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Categories Section -->
-<section class="py-5 bg-white">
-    <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <h2 class="display-5 fw-bold mb-3">Popular Categories</h2>
-            <p class="text-muted">Explore diverse cuisines from our campus vendors</p>
-        </div>
-        
-        <div class="row g-4">
-            @php
-            $categoryIcons = [
-                'Main Dishes' => 'bi-egg-fried',
-                'Beverages' => 'bi-cup-hot-fill',
-                'Desserts' => 'bi-cake2',
-                'Snacks' => 'bi-basket',
-                'Rice Dishes' => 'bi-bowl-hot-fill',
-                'Noodles' => 'bi-cup-straw',
-                'Western' => 'bi-shop',
-                'Local Cuisine' => 'bi-cup-hot'
-            ];
-            $iconColors = ['text-primary', 'text-warning', 'text-success', 'text-danger', 'text-info', 'text-secondary', 'text-dark'];
-            @endphp
-            
-            @foreach($categories as $index => $category)
-            <div class="col-lg-3 col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="{{ ($index + 1) * 100 }}">
-                <div class="card text-center border-0 category-card h-100">
-                    <div class="card-body p-4">
-                        <div class="category-icon mb-3">
-                            <i class="bi {{ $categoryIcons[$category->category_name] ?? 'bi-shop' }} fs-1 {{ $iconColors[$index % count($iconColors)] }}"></i>
-                        </div>
-                        <h5 class="fw-bold mb-2">{{ $category->category_name }}</h5>
-                        <p class="text-muted small mb-3">{{ $category->menu_items_count }}+ items</p>
-                        <a href="{{ route('menu', ['category' => $category->category_id]) }}" class="btn btn-sm btn-outline-primary rounded-pill">Explore</a>
+                    <div class="hero-stat">
+                        <h3>{{ number_format($totalOrders) }}+</h3>
+                        <small>Happy Students</small>
                     </div>
                 </div>
             </div>
-            @endforeach
+            <div class="col-lg-6 text-center d-none d-lg-block">
+                <div class="position-relative">
+                    <img src="https://scontent.fkul3-5.fna.fbcdn.net/v/t39.30808-6/515318255_24142182252080761_5900394254721126609_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=cf85f3&_nc_ohc=dRej-Ul_PbQQ7kNvwGaqgj2&_nc_oc=AdlNN0BoKjFjYeeleaLnr9rqlegwFJzFQKfmUH-ZwM_z3ZeXxewtEZ0A6rznbEumDY2T6PfmvPpN1KrDuGprGE7J&_nc_zt=23&_nc_ht=scontent.fkul3-5.fna&_nc_gid=byyixzzFsMZVL5118ty14g&oh=00_AflamUvLMaLzhKaeruSE4Fh2Vs83PVC2X30zSOKV6vq-jQ&oe=694DA0C0" 
+                         alt="Delicious Food" 
+                         class="img-fluid rounded-4 shadow-lg"
+                         style="max-width: 350px; border-radius: 30px !important;">
+                </div>
+            </div>
         </div>
     </div>
-</section>
+</div>
 
-<!-- Featured Items Section -->
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-5" data-aos="fade-up">
-            <div>
-                <h2 class="display-5 fw-bold mb-2">Today's Specials</h2>
-                <p class="text-muted">Handpicked favorites just for you</p>
-            </div>
-            <a href="{{ route('menu') }}" class="btn btn-primary rounded-pill">
-                View All <i class="bi bi-arrow-right ms-2"></i>
-            </a>
+<div class="container py-3">
+    <!-- Categories -->
+    <section class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-grid-3x3-gap me-2" style="color: var(--primary-color);"></i>Categories</h3>
+            <a href="{{ url('/menu') }}" class="btn btn-sm btn-outline-secondary">View All</a>
         </div>
-        
-        <div class="row g-4">
-            @foreach($featuredItems->take(4) as $index => $item)
-            <!-- Food Card -->
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="{{ ($index + 1) * 100 }}">
-                <div class="card food-card">
-                    <div class="position-relative">
-                        @if($item->image_path && file_exists(public_path($item->image_path)))
-                            <img src="{{ asset($item->image_path) }}" class="card-img-top" alt="{{ $item->name }}">
-                        @else
-                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <i class="bi bi-image fs-1 text-muted"></i>
-                            </div>
-                        @endif
-                        
-                        @if($item->created_at->diffInDays(now()) < 7)
-                        <span class="badge badge-new badge-overlay">New</span>
-                        @elseif($item->order_items_count > 10)
-                        <span class="badge badge-popular badge-overlay">Popular</span>
-                        @endif
-                        
-                        <div class="quick-view">
-                            <a href="{{ route('food.details', $item->item_id) }}" class="btn btn-light btn-sm rounded-circle">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <button class="btn btn-light btn-sm rounded-circle favorite-btn {{ in_array($item->item_id, $wishlistItemIds) ? 'text-danger' : '' }}" data-item-id="{{ $item->item_id }}">
-                                <i class="bi bi-heart{{ in_array($item->item_id, $wishlistItemIds) ? '-fill' : '' }}"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0 fw-bold">{{ Str::limit($item->name, 20) }}</h5>
-                            <span class="price-tag">RM{{ number_format($item->price, 0) }}</span>
-                        </div>
-                        <p class="text-muted small mb-3">{{ Str::limit($item->description, 40) }}</p>
-                        <div class="d-flex justify-content-between align-items-center gap-2">
-                            <small class="text-muted"><i class="bi bi-shop me-1"></i> {{ Str::limit($item->vendor->name, 15) }}</small>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('food.details', $item->item_id) }}" class="btn btn-sm btn-outline-primary rounded-pill">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                @auth
-                                <button class="btn btn-sm btn-primary rounded-pill add-to-cart-btn" data-item-id="{{ $item->item_id }}" data-item-name="{{ $item->name }}">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                                @endauth
+        <div class="row g-3">
+            @forelse($categories as $category)
+            <div class="col-6 col-md-2">
+                <a href="{{ url('/menu?category=' . $category->id) }}" class="text-decoration-none">
+                    <div class="card category-card h-100 text-center p-0 overflow-hidden" style="border: 1px solid var(--gray-200);">
+                        <div class="position-relative">
+                            <img src="{{ $category->image ?? '' }}" 
+                                 alt="{{ $category->name }}" 
+                                 class="w-100"
+                                 style="height: 80px; object-fit: cover;"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($category->name) }}&background=f3f4f6&color=9ca3af&size=200&font-size=0.33&bold=true';">
+                            <div class="position-absolute bottom-0 start-0 end-0 p-2" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                                <h6 class="mb-0 text-white" style="font-weight: 600; font-size: 0.85rem;">{{ $category->name }}</h6>
                             </div>
                         </div>
                     </div>
+                </a>
+            </div>
+            @empty
+            <div class="col-12">
+                <p class="text-muted">No categories available</p>
+            </div>
+            @endforelse
+        </div>
+    </section>
+
+    <!-- Featured Items -->
+    <section class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-star-fill me-2" style="color: var(--warning-color);"></i>Featured Items</h3>
+            <a href="{{ url('/menu?featured=1') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+        </div>
+        <div class="row g-4">
+            @forelse($featured as $item)
+                <x-menu-item-card :item="$item" :wishlistIds="$wishlistIds ?? []" />
+            @empty
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <i class="bi bi-star text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No featured items available</p>
                 </div>
             </div>
-            @endforeach
+            @endforelse
         </div>
-    </div>
-</section>
+    </section>
+
+    <!-- Vendors -->
+    <section class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-shop me-2" style="color: var(--primary-color);"></i>Our Vendors</h3>
+            <a href="{{ url('/vendors') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+        </div>
+        <div class="row g-4">
+            @forelse($vendors as $vendor)
+            <div class="col-md-4">
+                <a href="{{ url('/vendors/' . $vendor->id) }}" class="text-decoration-none">
+                    <div class="card h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                @if($vendor->logo)
+                                <img src="{{ $vendor->logo }}" alt="{{ $vendor->store_name }}" class="rounded-circle me-3" style="width: 56px; height: 56px; object-fit: cover;">
+                                @else
+                                <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px; background: var(--gray-100);">
+                                    <i class="bi bi-shop-window fs-4" style="color: var(--primary-color);"></i>
+                                </div>
+                                @endif
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 text-dark" style="font-weight: 600;">{{ $vendor->store_name }}</h6>
+                                    <small class="text-muted" style="font-size: 0.85rem;">{{ Str::limit($vendor->description, 40) ?? 'Delicious food awaits!' }}</small>
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex gap-2">
+                                <span class="badge {{ $vendor->is_open ? 'bg-success' : 'bg-secondary' }}" style="font-size: 0.7rem;">
+                                    {{ $vendor->is_open ? 'Open' : 'Closed' }}
+                                </span>
+                                @if($vendor->avg_prep_time)
+                                <span class="badge" style="background: var(--gray-200); color: var(--text-primary); font-size: 0.7rem;">
+                                    <i class="bi bi-clock"></i> ~{{ $vendor->avg_prep_time }}min
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @empty
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <i class="bi bi-shop text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No vendors available</p>
+                </div>
+            </div>
+            @endforelse
+        </div>
+    </section>
+</div>
 
 <!-- How It Works Section -->
-<section id="how-it-works" class="py-5 bg-white">
+<section id="how-it-works" class="py-4" style="background: var(--gray-100);">
     <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <h2 class="display-5 fw-bold mb-3">How It Works</h2>
+        <div class="text-center mb-4">
+            <h2 style="font-weight: 700; letter-spacing: -0.5px;">How It Works</h2>
             <p class="text-muted">Simple steps to satisfy your hunger</p>
         </div>
         
         <div class="row g-4">
-            <div class="col-lg-3 col-md-6 text-center" data-aos="fade-up" data-aos-delay="100">
-                <div class="stat-icon primary mx-auto mb-3">
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="how-it-works-icon" style="background: rgba(0, 122, 255, 0.15); color: var(--primary-color);">
                     <i class="bi bi-search"></i>
                 </div>
-                <h5 class="fw-bold mb-3">1. Browse Menu</h5>
-                <p class="text-muted">Explore hundreds of delicious options from multiple vendors</p>
+                <h5 style="font-weight: 600;">1. Browse Menu</h5>
+                <p class="text-muted small">Explore hundreds of delicious options from multiple vendors</p>
             </div>
             
-            <div class="col-lg-3 col-md-6 text-center" data-aos="fade-up" data-aos-delay="200">
-                <div class="stat-icon success mx-auto mb-3">
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="how-it-works-icon" style="background: rgba(52, 199, 89, 0.15); color: var(--success-color);">
                     <i class="bi bi-cart-check"></i>
                 </div>
-                <h5 class="fw-bold mb-3">2. Place Order</h5>
-                <p class="text-muted">Add items to cart and customize your order</p>
+                <h5 style="font-weight: 600;">2. Place Order</h5>
+                <p class="text-muted small">Add items to cart and customize your order</p>
             </div>
             
-            <div class="col-lg-3 col-md-6 text-center" data-aos="fade-up" data-aos-delay="300">
-                <div class="stat-icon warning mx-auto mb-3">
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="how-it-works-icon" style="background: rgba(255, 149, 0, 0.15); color: var(--warning-color);">
                     <i class="bi bi-credit-card"></i>
                 </div>
-                <h5 class="fw-bold mb-3">3. Make Payment</h5>
-                <p class="text-muted">Pay securely using multiple payment options</p>
+                <h5 style="font-weight: 600;">3. Make Payment</h5>
+                <p class="text-muted small">Pay securely using multiple payment options</p>
             </div>
             
-            <div class="col-lg-3 col-md-6 text-center" data-aos="fade-up" data-aos-delay="400">
-                <div class="stat-icon danger mx-auto mb-3">
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="how-it-works-icon" style="background: rgba(255, 59, 48, 0.15); color: var(--danger-color);">
                     <i class="bi bi-bag-check"></i>
                 </div>
-                <h5 class="fw-bold mb-3">4. Pick Up</h5>
-                <p class="text-muted">Collect your order using QR code - no waiting!</p>
+                <h5 style="font-weight: 600;">4. Pick Up</h5>
+                <p class="text-muted small">Collect your order using queue number - no waiting!</p>
             </div>
         </div>
     </div>
 </section>
-
-<!-- Popular Items Section -->
-@if($popularItems->count() > 0)
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <h2 class="display-5 fw-bold mb-3">Most Popular</h2>
-            <p class="text-muted">Top choices among students</p>
-        </div>
-        
-        <div class="row g-4">
-            @foreach($popularItems as $index => $item)
-            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="{{ ($index + 1) * 100 }}">
-                <div class="card food-card">
-                    <div class="position-relative">
-                        @if($item->image_path && file_exists(public_path($item->image_path)))
-                            <img src="{{ asset($item->image_path) }}" class="card-img-top" alt="{{ $item->name }}">
-                        @else
-                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <i class="bi bi-image fs-1 text-muted"></i>
-                            </div>
-                        @endif
-                        
-                        <span class="badge badge-popular badge-overlay">
-                            <i class="bi bi-fire"></i> {{ $item->order_items_count }} orders
-                        </span>
-                        
-                        <div class="quick-view">
-                            <a href="{{ route('food.details', $item->item_id) }}" class="btn btn-light btn-sm rounded-circle">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <button class="btn btn-light btn-sm rounded-circle favorite-btn {{ in_array($item->item_id, $wishlistItemIds) ? 'text-danger' : '' }}" data-item-id="{{ $item->item_id }}">
-                                <i class="bi bi-heart{{ in_array($item->item_id, $wishlistItemIds) ? '-fill' : '' }}"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0 fw-bold">{{ Str::limit($item->name, 20) }}</h5>
-                            <span class="price-tag">RM{{ number_format($item->price, 0) }}</span>
-                        </div>
-                        <p class="text-muted small mb-3">{{ Str::limit($item->description, 40) }}</p>
-                        <div class="d-flex justify-content-between align-items-center gap-2">
-                            <small class="text-muted"><i class="bi bi-shop me-1"></i> {{ Str::limit($item->vendor->name, 15) }}</small>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('food.details', $item->item_id) }}" class="btn btn-sm btn-outline-primary rounded-pill">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                @auth
-                                <button class="btn btn-sm btn-primary rounded-pill add-to-cart-btn" data-item-id="{{ $item->item_id }}" data-item-name="{{ $item->name }}">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                                @endauth
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-@endif
 
 <!-- Why Choose Us Section -->
-<section class="py-5 bg-white">
+<section class="py-4 bg-white">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
-                <h2 class="display-5 fw-bold mb-4">Why Choose FoodHunter?</h2>
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h2 style="font-weight: 700; letter-spacing: -0.5px; margin-bottom: 2rem;">Why Choose FoodHunter?</h2>
                 
                 <div class="d-flex mb-4">
-                    <div class="stat-icon success me-3">
+                    <div class="feature-icon me-3" style="background: rgba(52, 199, 89, 0.15); color: var(--success-color);">
                         <i class="bi bi-lightning-charge"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-2">Fast & Convenient</h5>
-                        <p class="text-muted">Skip the queue and get your food ready when you arrive</p>
+                        <h5 style="font-weight: 600; margin-bottom: 0.5rem;">Fast & Convenient</h5>
+                        <p class="text-muted mb-0">Skip the queue and get your food ready when you arrive</p>
                     </div>
                 </div>
                 
                 <div class="d-flex mb-4">
-                    <div class="stat-icon primary me-3">
+                    <div class="feature-icon me-3" style="background: rgba(0, 122, 255, 0.15); color: var(--primary-color);">
                         <i class="bi bi-shield-check"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-2">Safe & Secure</h5>
-                        <p class="text-muted">Your payments and data are protected with encryption</p>
+                        <h5 style="font-weight: 600; margin-bottom: 0.5rem;">Safe & Secure</h5>
+                        <p class="text-muted mb-0">Your payments and data are protected with encryption</p>
                     </div>
                 </div>
                 
                 <div class="d-flex mb-4">
-                    <div class="stat-icon warning me-3">
+                    <div class="feature-icon me-3" style="background: rgba(255, 149, 0, 0.15); color: var(--warning-color);">
                         <i class="bi bi-gift"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-2">Loyalty Rewards</h5>
-                        <p class="text-muted">Earn points with every order and redeem exciting rewards</p>
+                        <h5 style="font-weight: 600; margin-bottom: 0.5rem;">Exclusive Vouchers</h5>
+                        <p class="text-muted mb-0">Redeem vouchers and enjoy discounts on your favorite meals</p>
                     </div>
                 </div>
                 
                 <div class="d-flex">
-                    <div class="stat-icon danger me-3">
+                    <div class="feature-icon me-3" style="background: rgba(255, 59, 48, 0.15); color: var(--danger-color);">
                         <i class="bi bi-star"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-2">Quality Food</h5>
-                        <p class="text-muted">Trusted vendors serving fresh and delicious meals daily</p>
+                        <h5 style="font-weight: 600; margin-bottom: 0.5rem;">Quality Food</h5>
+                        <p class="text-muted mb-0">Trusted vendors serving fresh and delicious meals daily</p>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-6" data-aos="fade-left">
-                <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&h=800&fit=crop" 
+            <div class="col-lg-6">
+                <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&h=500&fit=crop" 
                      alt="Happy Students" 
                      class="img-fluid rounded-4 shadow-lg">
             </div>
@@ -322,78 +363,72 @@
 </section>
 
 <!-- Testimonials Section -->
-<section class="py-5 bg-light">
+<section class="py-4" style="background: var(--gray-100);">
     <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <h2 class="display-5 fw-bold mb-3">What Students Say</h2>
+        <div class="text-center mb-4">
+            <h2 style="font-weight: 700; letter-spacing: -0.5px;">What Students Say</h2>
             <p class="text-muted">Real reviews from our happy customers</p>
         </div>
         
         <div class="row g-4">
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                <div class="card border-0 h-100">
-                    <div class="card-body p-4">
-                        <div class="rating mb-3">
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                        </div>
-                        <p class="mb-4">"FoodHunter saved me so much time! No more waiting in long queues. I can order between classes and pick up immediately."</p>
-                        <div class="d-flex align-items-center">
-                            <img src="https://ui-avatars.com/api/?name=Sarah+Lee&background=6366f1&color=fff" 
-                                 class="rounded-circle me-3" width="50" height="50" alt="Sarah">
-                            <div>
-                                <h6 class="mb-0 fw-bold">Sarah Lee</h6>
-                                <small class="text-muted">Engineering Student</small>
-                            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="testimonial-card">
+                    <div class="rating">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="mb-4">"FoodHunter saved me so much time! No more waiting in long queues. I can order between classes and pick up immediately."</p>
+                    <div class="d-flex align-items-center">
+                        <img src="https://ui-avatars.com/api/?name=Sarah+Lee&background=6366f1&color=fff" 
+                             class="rounded-circle me-3" width="50" height="50" alt="Sarah">
+                        <div>
+                            <h6 class="mb-0" style="font-weight: 600;">Sarah Lee</h6>
+                            <small class="text-muted">Engineering Student</small>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                <div class="card border-0 h-100">
-                    <div class="card-body p-4">
-                        <div class="rating mb-3">
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                        </div>
-                        <p class="mb-4">"Love the loyalty points system! I've already redeemed two free meals. The app is super easy to use too."</p>
-                        <div class="d-flex align-items-center">
-                            <img src="https://ui-avatars.com/api/?name=Ahmad+Rahman&background=ec4899&color=fff" 
-                                 class="rounded-circle me-3" width="50" height="50" alt="Ahmad">
-                            <div>
-                                <h6 class="mb-0 fw-bold">Ahmad Rahman</h6>
-                                <small class="text-muted">Business Student</small>
-                            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="testimonial-card">
+                    <div class="rating">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="mb-4">"Love the loyalty points system! I've already redeemed two free meals. The app is super easy to use too."</p>
+                    <div class="d-flex align-items-center">
+                        <img src="https://ui-avatars.com/api/?name=Ahmad+Rahman&background=ec4899&color=fff" 
+                             class="rounded-circle me-3" width="50" height="50" alt="Ahmad">
+                        <div>
+                            <h6 class="mb-0" style="font-weight: 600;">Ahmad Rahman</h6>
+                            <small class="text-muted">Business Student</small>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
-                <div class="card border-0 h-100">
-                    <div class="card-body p-4">
-                        <div class="rating mb-3">
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                        </div>
-                        <p class="mb-4">"Great variety of food choices! From local to western cuisine, everything is available. Payment is smooth too!"</p>
-                        <div class="d-flex align-items-center">
-                            <img src="https://ui-avatars.com/api/?name=Michelle+Tan&background=10b981&color=fff" 
-                                 class="rounded-circle me-3" width="50" height="50" alt="Michelle">
-                            <div>
-                                <h6 class="mb-0 fw-bold">Michelle Tan</h6>
-                                <small class="text-muted">Medical Student</small>
-                            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="testimonial-card">
+                    <div class="rating">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="mb-4">"Great variety of food choices! From local to western cuisine, everything is available. Payment is smooth too!"</p>
+                    <div class="d-flex align-items-center">
+                        <img src="https://ui-avatars.com/api/?name=Michelle+Tan&background=10b981&color=fff" 
+                             class="rounded-circle me-3" width="50" height="50" alt="Michelle">
+                        <div>
+                            <h6 class="mb-0" style="font-weight: 600;">Michelle Tan</h6>
+                            <small class="text-muted">Computer Science Student</small>
                         </div>
                     </div>
                 </div>
@@ -403,20 +438,20 @@
 </section>
 
 <!-- CTA Section -->
-<section class="py-5" style="background: var(--gradient-1);">
+<section class="py-4" style="background: linear-gradient(135deg, var(--primary-color) 0%, #5856D6 100%);">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-8" data-aos="fade-right">
-                <h2 class="display-5 fw-bold text-white mb-3">Ready to Order?</h2>
-                <p class="lead text-white mb-0">Join thousands of students enjoying hassle-free food ordering today!</p>
+            <div class="col-lg-8">
+                <h2 class="text-white mb-3" style="font-weight: 700;">Ready to Order?</h2>
+                <p class="lead text-white mb-0" style="opacity: 0.9;">Join thousands of students enjoying hassle-free food ordering today!</p>
             </div>
-            <div class="col-lg-4 text-lg-end" data-aos="fade-left">
+            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
                 @guest
-                <a href="{{ route('register') }}" class="btn btn-warning btn-lg rounded-pill px-5">
+                <a href="{{ url('/register') }}" class="btn btn-warning btn-lg px-5" style="font-weight: 600;">
                     Get Started <i class="bi bi-arrow-right ms-2"></i>
                 </a>
                 @else
-                <a href="{{ route('menu') }}" class="btn btn-warning btn-lg rounded-pill px-5">
+                <a href="{{ url('/menu') }}" class="btn btn-warning btn-lg px-5" style="font-weight: 600;">
                     Order Now <i class="bi bi-arrow-right ms-2"></i>
                 </a>
                 @endguest
@@ -426,154 +461,3 @@
 </section>
 @endsection
 
-@push('scripts')
-<script>
-    // CSRF Token
-    const csrfToken = '{{ csrf_token() }}';
-    const isGuest = document.getElementById('page-data').getAttribute('data-guest') === 'true';
-    
-    // Favorite button toggle (wishlist)
-    document.querySelectorAll('.favorite-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            if (isGuest) {
-                // Redirect to login if not authenticated
-                const loginUrl = '/login?redirect=' + encodeURIComponent(window.location.pathname);
-                window.location.href = loginUrl;
-                return;
-            }
-            
-            const itemId = this.getAttribute('data-item-id');
-            const icon = this.querySelector('i');
-            const wasInWishlist = icon.classList.contains('bi-heart-fill');
-            
-            fetch('/wishlist/toggle', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    item_id: itemId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.in_wishlist) {
-                        icon.classList.remove('bi-heart');
-                        icon.classList.add('bi-heart-fill');
-                        this.classList.add('text-danger');
-                    } else {
-                        icon.classList.remove('bi-heart-fill');
-                        icon.classList.add('bi-heart');
-                        this.classList.remove('text-danger');
-                    }
-                    showNotification('success', data.message);
-                    
-                    // Update wishlist count in navbar if exists
-                    const wishlistBadge = document.querySelector('.wishlist-count');
-                    if (wishlistBadge && data.wishlist_count > 0) {
-                        wishlistBadge.textContent = data.wishlist_count;
-                    } else if (wishlistBadge && data.wishlist_count === 0) {
-                        wishlistBadge.remove();
-                    }
-                } else {
-                    showNotification('error', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('error', 'Failed to update wishlist');
-            });
-        });
-    });
-    
-    // Add to cart functionality
-    document.querySelectorAll('.add-to-cart-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const itemId = this.getAttribute('data-item-id');
-            const itemName = this.getAttribute('data-item-name');
-            const originalHTML = this.innerHTML;
-            
-            // Disable button and show loading
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-            
-            fetch('/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    item_id: itemId,
-                    quantity: 1,
-                    special_request: null
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                this.disabled = false;
-                
-                if (data.success) {
-                    // Show success animation
-                    this.innerHTML = '<i class="bi bi-check-lg"></i> Added';
-                    this.classList.add('btn-success');
-                    this.classList.remove('btn-primary');
-                    
-                    showNotification('success', data.message);
-                    
-                    // Update cart count in navbar if exists
-                    const cartBadge = document.querySelector('.cart-count');
-                    if (cartBadge) {
-                        cartBadge.textContent = data.cart_count;
-                    }
-                    
-                    // Reset button after 2 seconds
-                    setTimeout(() => {
-                        this.innerHTML = originalHTML;
-                        this.classList.remove('btn-success');
-                        this.classList.add('btn-primary');
-                    }, 2000);
-                } else {
-                    this.innerHTML = originalHTML;
-                    showNotification('error', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                this.disabled = false;
-                this.innerHTML = originalHTML;
-                showNotification('error', 'Failed to add item to cart');
-            });
-        });
-    });
-    
-    // Show notification helper
-    function showNotification(type, message) {
-        const alertClass = type === 'success' ? 'alert-success' : 
-                          type === 'error' ? 'alert-danger' : 'alert-info';
-        
-        const notification = document.createElement('div');
-        notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
-        notification.style.zIndex = '9999';
-        notification.style.minWidth = '300px';
-        notification.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
-</script>
-@endpush

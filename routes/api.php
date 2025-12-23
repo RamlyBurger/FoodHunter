@@ -1,62 +1,44 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\RewardController;
-use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Vendor\DashboardController as VendorDashboardController;
 use App\Http\Controllers\Api\Vendor\MenuController as VendorMenuController;
 use App\Http\Controllers\Api\Vendor\OrderController as VendorOrderController;
-use App\Http\Controllers\Api\Vendor\SettingsController as VendorSettingsController;
-use App\Http\Controllers\Api\Vendor\ReportController as VendorReportController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| API Routes - FoodHunter
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group.
+| Web Service Integration:
+| - Each module exposes REST endpoints
+| - Each module consumes at least one other module's service
 |
 */
 
 // ============================================================================
-// PUBLIC ROUTES (No Authentication Required)
+// PUBLIC ROUTES
 // ============================================================================
 
-// Home - Public Access
-Route::prefix('home')->group(function () {
-    Route::get('/', [HomeController::class, 'index']);
-    Route::get('/statistics', [HomeController::class, 'statistics']);
-});
+// Authentication (Student 1)
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login']);
 
-// Authentication
-Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-});
+// Menu - Public (Student 2)
+Route::get('/categories', [MenuController::class, 'categories']);
+Route::get('/vendors', [MenuController::class, 'vendors']);
+Route::get('/vendors/{vendor}', [MenuController::class, 'vendorMenu']);
+Route::get('/menu/featured', [MenuController::class, 'featured']);
+Route::get('/menu/search', [MenuController::class, 'search']);
+Route::get('/menu/{menuItem}', [MenuController::class, 'show']);
 
-// Menu - Public Access
-Route::prefix('menu')->group(function () {
-    Route::get('/', [MenuController::class, 'index']);
-    Route::get('/search', [MenuController::class, 'search']);
-    Route::get('/categories', [MenuController::class, 'categories']);
-    Route::get('/vendors', [MenuController::class, 'vendors']);
-    Route::get('/featured', [MenuController::class, 'featured']);
-    Route::get('/popular', [MenuController::class, 'popular']);
-    Route::get('/vendors/{vendorId}', [MenuController::class, 'vendorStore']);
-    Route::get('/{id}', [MenuController::class, 'show']);
-    Route::get('/{id}/related', [MenuController::class, 'related']);
-});
+// Web Service: Menu Item Availability (Student 2 exposes, Student 3 consumes)
+Route::get('/menu/{menuItem}/availability', [MenuController::class, 'checkAvailability']);
 
 // ============================================================================
 // PROTECTED ROUTES (Authentication Required)
@@ -64,135 +46,63 @@ Route::prefix('menu')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     
-    // Auth - Protected
-    Route::prefix('auth')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::post('/refresh', [AuthController::class, 'refresh']);
-        Route::get('/user', [AuthController::class, 'user']);
-    });
+    // Auth (Student 1)
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/user', [AuthController::class, 'user']);
+    // Web Service: Token Validation (Student 1 exposes, others consume)
+    Route::post('/auth/validate-token', [AuthController::class, 'validateToken']);
 
-    // Profile
-    Route::prefix('profile')->group(function () {
-        Route::get('/', [ProfileController::class, 'index']);
-        Route::put('/', [ProfileController::class, 'update']);
-        Route::put('/password', [ProfileController::class, 'updatePassword']);
-        Route::get('/orders', [ProfileController::class, 'recentOrders']);
-        Route::get('/favorites', [ProfileController::class, 'favorites']);
-        Route::get('/points', [ProfileController::class, 'loyaltyPoints']);
-        Route::delete('/', [ProfileController::class, 'deleteAccount']);
-    });
+    // Cart (Student 3)
+    Route::get('/cart', [CartController::class, 'index']);
+    Route::post('/cart', [CartController::class, 'add']);
+    Route::put('/cart/{cartItem}', [CartController::class, 'update']);
+    Route::delete('/cart/{cartItem}', [CartController::class, 'remove']);
+    Route::delete('/cart', [CartController::class, 'clear']);
 
-    // Cart
-    Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'index']);
-        Route::post('/', [CartController::class, 'store']);
-        Route::put('/{cartId}', [CartController::class, 'update']);
-        Route::delete('/{cartId}', [CartController::class, 'destroy']);
-        Route::delete('/', [CartController::class, 'clear']);
-        Route::get('/count', [CartController::class, 'count']);
-        Route::post('/voucher', [CartController::class, 'applyVoucher']);
-        Route::delete('/voucher', [CartController::class, 'removeVoucher']);
-        Route::get('/recommended', [CartController::class, 'recommended']);
-    });
+    // Orders (Student 4)
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/active', [OrderController::class, 'active']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+    // Web Service: Order Status (Student 4 exposes, Student 5 consumes)
+    Route::get('/orders/{order}/status', [OrderController::class, 'status']);
 
-    // Checkout & Payment
-    Route::prefix('checkout')->group(function () {
-        Route::get('/', [PaymentController::class, 'checkout']);
-        Route::post('/process', [PaymentController::class, 'processPayment']);
-        Route::get('/confirmation/{orderId}', [PaymentController::class, 'confirmation']);
-    });
+    // Notifications (Student 5)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/dropdown', [NotificationController::class, 'dropdown']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    // Web Service: Send Notification (Student 5 exposes, Students 1,4 consume)
+    Route::post('/notifications/send', [NotificationController::class, 'send']);
 
-    // Orders
-    Route::prefix('orders')->group(function () {
-        Route::get('/', [OrderController::class, 'index']);
-        Route::post('/', [OrderController::class, 'store']);
-        Route::get('/active', [OrderController::class, 'active']);
-        Route::get('/{orderId}', [OrderController::class, 'show']);
-        Route::post('/{orderId}/reorder', [OrderController::class, 'reorder']);
-        Route::post('/{orderId}/cancel', [OrderController::class, 'cancel']);
-    });
-
-    // Wishlist
-    Route::prefix('wishlist')->group(function () {
-        Route::get('/', [WishlistController::class, 'index']);
-        Route::post('/', [WishlistController::class, 'store']);
-        Route::delete('/{id}', [WishlistController::class, 'destroy']);
-        Route::post('/toggle', [WishlistController::class, 'toggle']);
-        Route::get('/count', [WishlistController::class, 'count']);
-        Route::get('/check/{itemId}', [WishlistController::class, 'check']);
-        Route::delete('/', [WishlistController::class, 'clear']);
-    });
-
-    // Notifications
-    Route::prefix('notifications')->group(function () {
-        Route::get('/', [NotificationController::class, 'index']);
-        Route::get('/recent', [NotificationController::class, 'recent']);
-        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
-        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
-        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
-        Route::delete('/{id}', [NotificationController::class, 'destroy']);
-        Route::delete('/', [NotificationController::class, 'clear']);
-    });
-
-    // Rewards
-    Route::prefix('rewards')->group(function () {
-        Route::get('/', [RewardController::class, 'index']);
-        Route::get('/points', [RewardController::class, 'points']);
-        Route::get('/redeemed', [RewardController::class, 'redeemed']);
-        Route::get('/{id}', [RewardController::class, 'show']);
-        Route::post('/{id}/redeem', [RewardController::class, 'redeem']);
-    });
+    // Web Service: Cart Summary (Student 3 exposes, Student 2 consumes)
+    Route::get('/cart/summary', [CartController::class, 'summary']);
 
     // ============================================================================
-    // VENDOR ROUTES (Vendor Authentication Required)
+    // VENDOR ROUTES
     // ============================================================================
 
-    Route::prefix('vendor')->group(function () {
+    Route::prefix('vendor')->middleware('vendor')->group(function () {
         
         // Dashboard
         Route::get('/dashboard', [VendorDashboardController::class, 'index']);
-        Route::get('/dashboard/recent-orders', [VendorDashboardController::class, 'recentOrders']);
-        Route::get('/dashboard/top-items', [VendorDashboardController::class, 'topSellingItems']);
+        Route::post('/toggle-open', [VendorDashboardController::class, 'toggleOpen']);
         
         // Menu Management
-        Route::prefix('menu')->group(function () {
-            Route::get('/', [VendorMenuController::class, 'index']);
-            Route::post('/', [VendorMenuController::class, 'store']);
-            Route::get('/categories', [VendorMenuController::class, 'categories']);
-            Route::get('/{id}', [VendorMenuController::class, 'show']);
-            Route::put('/{id}', [VendorMenuController::class, 'update']);
-            Route::delete('/{id}', [VendorMenuController::class, 'destroy']);
-            Route::post('/{id}/toggle-availability', [VendorMenuController::class, 'toggleAvailability']);
-        });
+        Route::get('/menu', [VendorMenuController::class, 'index']);
+        Route::post('/menu', [VendorMenuController::class, 'store']);
+        Route::put('/menu/{menuItem}', [VendorMenuController::class, 'update']);
+        Route::delete('/menu/{menuItem}', [VendorMenuController::class, 'destroy']);
+        Route::post('/menu/{menuItem}/toggle', [VendorMenuController::class, 'toggleAvailability']);
+        Route::get('/categories', [VendorMenuController::class, 'categories']);
         
         // Order Management
-        Route::prefix('orders')->group(function () {
-            Route::get('/', [VendorOrderController::class, 'index']);
-            Route::get('/{id}', [VendorOrderController::class, 'show']);
-            Route::post('/{id}/status', [VendorOrderController::class, 'updateStatus']);
-            Route::post('/{id}/accept', [VendorOrderController::class, 'accept']);
-            Route::post('/{id}/reject', [VendorOrderController::class, 'reject']);
-        });
-        
-        // Reports & Analytics
-        Route::prefix('reports')->group(function () {
-            Route::get('/', [VendorReportController::class, 'index']);
-            Route::get('/revenue', [VendorReportController::class, 'revenue']);
-            Route::get('/orders', [VendorReportController::class, 'orders']);
-            Route::get('/top-items', [VendorReportController::class, 'topItems']);
-            Route::get('/sales-chart', [VendorReportController::class, 'salesChart']);
-        });
-        
-        // Settings
-        Route::prefix('settings')->group(function () {
-            Route::get('/', [VendorSettingsController::class, 'index']);
-            Route::put('/store-info', [VendorSettingsController::class, 'updateStoreInfo']);
-            Route::put('/operating-hours', [VendorSettingsController::class, 'updateOperatingHours']);
-            Route::put('/notifications', [VendorSettingsController::class, 'updateNotifications']);
-            Route::put('/payment-methods', [VendorSettingsController::class, 'updatePaymentMethods']);
-            Route::post('/toggle-status', [VendorSettingsController::class, 'toggleStoreStatus']);
-            Route::put('/password', [VendorSettingsController::class, 'updatePassword']);
-            Route::put('/profile', [VendorSettingsController::class, 'updateProfile']);
-        });
+        Route::get('/orders', [VendorOrderController::class, 'index']);
+        Route::get('/orders/pending', [VendorOrderController::class, 'pending']);
+        Route::get('/orders/{order}', [VendorOrderController::class, 'show']);
+        Route::put('/orders/{order}/status', [VendorOrderController::class, 'updateStatus']);
     });
 });

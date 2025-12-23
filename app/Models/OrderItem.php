@@ -4,44 +4,37 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $table = 'order_items';
-    protected $primaryKey = 'order_item_id';
-
     protected $fillable = [
         'order_id',
-        'item_id',
+        'menu_item_id',
+        'item_name',
+        'unit_price',
         'quantity',
-        'price',
-        'special_request',
+        'subtotal',
+        'special_instructions',
     ];
 
-    protected $casts = [
-        'price' => 'decimal:2',
-    ];
-    
-    protected $appends = ['subtotal'];
-
-    public function order()
+    protected function casts(): array
     {
-        return $this->belongsTo(Order::class, 'order_id');
+        return [
+            'unit_price' => 'decimal:2',
+            'subtotal' => 'decimal:2',
+        ];
     }
 
-    public function menuItem()
+    public function order(): BelongsTo
     {
-        return $this->belongsTo(MenuItem::class, 'item_id');
+        return $this->belongsTo(Order::class);
     }
-    
-    /**
-     * Get the subtotal for this order item
-     */
-    public function getSubtotalAttribute()
+
+    public function menuItem(): BelongsTo
     {
-        return $this->price * $this->quantity;
+        return $this->belongsTo(MenuItem::class);
     }
 }

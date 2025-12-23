@@ -4,20 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
     use HasFactory;
 
-    protected $table = 'categories';
-    protected $primaryKey = 'category_id';
-
     protected $fillable = [
-        'category_name',
+        'name',
+        'slug',
+        'description',
+        'image',
+        'is_active',
+        'sort_order',
     ];
 
-    public function menuItems()
+    protected function casts(): array
     {
-        return $this->hasMany(MenuItem::class, 'category_id');
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function menuItems(): HasMany
+    {
+        return $this->hasMany(MenuItem::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

@@ -3,477 +3,273 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Order\CreateOrderRequest;
+use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Pickup;
-use App\Models\CartItem;
-use App\Models\MenuItem;
-use App\Models\LoyaltyPoint;
-use App\Models\UserRedeemedReward;
-use App\Models\VendorNotification;
-use App\Models\VendorSetting;
+use App\Models\Voucher;
+use App\Models\UserVoucher;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {
-    /**
-     * Get user's orders
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function index(Request $request)
+    use ApiResponse;
+
+    public function index(Request $request): JsonResponse
+    {
+        $orders = Order::where('user_id', $request->user()->id)
+            ->with(['vendor:id,store_name', 'items', 'payment', 'pickup'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return $this->successResponse([
+            'orders' => $orders->getCollection()->map(fn($order) => $this->formatOrder($order)),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'total' => $orders->total(),
+            ],
+        ]);
+    }
+
+    public function show(Request $request, Order $order): JsonResponse
+    {
+        if ($order->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Unauthorized');
+        }
+
+        $order->load(['vendor:id,store_name,phone', 'items.menuItem', 'payment', 'pickup']);
+
+        return $this->successResponse($this->formatOrder($order, true));
+    }
+
+    public function store(CreateOrderRequest $request): JsonResponse
     {
         $user = $request->user();
         
-        $query = Order::with(['orderItems.menuItem', 'payment', 'pickup', 'vendor'])
-            ->where('user_id', $user->user_id);
+        $cartItems = CartItem::where('user_id', $user->id)
+            ->with('menuItem.vendor')
+            ->get();
 
-        // Filter by status
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+        if ($cartItems->isEmpty()) {
+            return $this->errorResponse('Cart is empty', 400, 'EMPTY_CART');
         }
 
-        // Filter by date range
-        if ($request->has('date_range')) {
-            switch ($request->date_range) {
-                case '7days':
-                    $query->where('created_at', '>=', now()->subDays(7));
-                    break;
-                case '3months':
-                    $query->where('created_at', '>=', now()->subMonths(3));
-                    break;
-                case '1year':
-                    $query->where('created_at', '>=', now()->subYear());
-                    break;
-                default:
-                    $query->where('created_at', '>=', now()->subDays(30));
-            }
-        }
-
-        $perPage = $request->input('per_page', 10);
-        $orders = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'orders' => $orders->getCollection()->map(function($order) {
-                    return $this->transformOrder($order);
-                }),
-                'pagination' => [
-                    'current_page' => $orders->currentPage(),
-                    'last_page' => $orders->lastPage(),
-                    'per_page' => $orders->perPage(),
-                    'total' => $orders->total(),
-                ]
-            ]
-        ]);
-    }
-
-    /**
-     * Get single order details
-     * 
-     * @param Request $request
-     * @param int $orderId
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function show(Request $request, $orderId)
-    {
-        $user = $request->user();
-
-        $order = Order::with(['orderItems.menuItem', 'payment', 'pickup', 'vendor'])
-            ->where('order_id', $orderId)
-            ->where('user_id', $user->user_id)
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order not found'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $this->transformOrder($order, true)
-        ]);
-    }
-
-    /**
-     * Get active order
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function active(Request $request)
-    {
-        $user = $request->user();
-
-        $activeOrder = Order::with(['orderItems.menuItem', 'payment', 'pickup', 'vendor'])
-            ->where('user_id', $user->user_id)
-            ->whereIn('status', ['pending', 'accepted', 'preparing', 'ready'])
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if (!$activeOrder) {
-            return response()->json([
-                'success' => true,
-                'data' => null,
-                'message' => 'No active orders'
-            ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $this->transformOrder($activeOrder, true)
-        ]);
-    }
-
-    /**
-     * Create a new order (checkout)
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'payment_method' => 'required|in:online,ewallet,cash',
-            'pickup_instructions' => 'nullable|string|max:500',
-            'voucher_code' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $user = $request->user();
-        $paymentMethod = $request->payment_method;
+        // Group by vendor
+        $vendorGroups = $cartItems->groupBy(fn($item) => $item->menuItem->vendor_id);
 
         try {
             DB::beginTransaction();
 
-            // Get cart items
-            $cartItems = CartItem::with('menuItem')
-                ->where('user_id', $user->user_id)
-                ->get();
-
-            if ($cartItems->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Your cart is empty'
-                ], 400);
-            }
-
-            // Group items by vendor
-            $vendorGroups = $cartItems->groupBy(function($item) {
-                return $item->menuItem->vendor_id;
-            });
-
-            // Calculate cart totals
-            $cartSubtotal = 0;
-            foreach ($cartItems as $item) {
-                $cartSubtotal += $item->menuItem->price * $item->quantity;
-            }
-
+            $orders = [];
+            $subtotal = $cartItems->sum(fn($item) => $item->menuItem->price * $item->quantity);
             $serviceFee = 2.00;
             $discount = 0.00;
-            $redeemedReward = null;
 
-            // Check if voucher is applied
+            // Apply voucher if provided
             if ($request->voucher_code) {
-                $voucherCode = strtoupper(trim($request->voucher_code));
-                $redeemedReward = UserRedeemedReward::where('voucher_code', $voucherCode)
-                    ->where('user_id', $user->user_id)
-                    ->where('is_used', 0)
-                    ->with('reward')
+                $voucher = Voucher::where('code', strtoupper($request->voucher_code))
+                    ->where('is_active', true)
+                    ->where(function ($q) {
+                        $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                    })
                     ->first();
 
-                if ($redeemedReward && $redeemedReward->reward) {
-                    $reward = $redeemedReward->reward;
-                    
-                    if ($reward->reward_type === 'voucher') {
-                        if (!$reward->min_spend || $cartSubtotal >= $reward->min_spend) {
-                            $discount = $reward->reward_value;
-                        }
-                    } elseif ($reward->reward_type === 'percentage') {
-                        $calculatedDiscount = ($cartSubtotal * $reward->reward_value) / 100;
-                        if ($reward->max_discount) {
-                            $discount = min($calculatedDiscount, $reward->max_discount);
+                if ($voucher && $subtotal >= ($voucher->min_order ?? 0)) {
+                    // Check if user has redeemed this voucher
+                    $userVoucher = UserVoucher::where('user_id', $user->id)
+                        ->where('voucher_id', $voucher->id)
+                        ->first();
+
+                    if ($userVoucher && ($voucher->max_uses_per_user === null || $userVoucher->usage_count < $voucher->max_uses_per_user)) {
+                        if ($voucher->type === 'percentage') {
+                            $discount = $subtotal * ($voucher->value / 100);
                         } else {
-                            $discount = $calculatedDiscount;
+                            $discount = $voucher->value;
                         }
+                        if ($voucher->max_discount) {
+                            $discount = min($discount, $voucher->max_discount);
+                        }
+                        $discount = min($discount, $subtotal);
+                        
+                        // Mark voucher as used
+                        $userVoucher->increment('usage_count');
+                        $userVoucher->update(['used_at' => now()]);
+                        $voucher->increment('usage_count');
                     }
                 }
             }
 
-            $cartTotal = $cartSubtotal + $serviceFee - $discount;
-            $allOrders = [];
+            $total = $subtotal + $serviceFee - $discount;
 
             foreach ($vendorGroups as $vendorId => $items) {
-                // Calculate order subtotal for this vendor
-                $vendorSubtotal = 0;
-                foreach ($items as $item) {
-                    $vendorSubtotal += $item->menuItem->price * $item->quantity;
-                }
+                $vendorSubtotal = $items->sum(fn($item) => $item->menuItem->price * $item->quantity);
+                $proportion = $subtotal > 0 ? $vendorSubtotal / $subtotal : 0;
+                $vendorTotal = $vendorSubtotal + ($serviceFee * $proportion) - ($discount * $proportion);
 
-                // Calculate proportional fees and discount
-                $proportion = $vendorSubtotal / $cartSubtotal;
-                $vendorServiceFee = $serviceFee * $proportion;
-                $vendorDiscount = $discount * $proportion;
-                $vendorTotal = $vendorSubtotal + $vendorServiceFee - $vendorDiscount;
-
-                // Create order
                 $order = Order::create([
-                    'user_id' => $user->user_id,
+                    'user_id' => $user->id,
                     'vendor_id' => $vendorId,
-                    'total_price' => $vendorTotal,
+                    'order_number' => Order::generateOrderNumber(),
+                    'subtotal' => $vendorSubtotal,
+                    'service_fee' => $serviceFee * $proportion,
+                    'discount' => $discount * $proportion,
+                    'total' => $vendorTotal,
                     'status' => 'pending',
+                    'notes' => $request->notes,
                 ]);
 
                 // Create order items
                 foreach ($items as $cartItem) {
                     OrderItem::create([
-                        'order_id' => $order->order_id,
-                        'item_id' => $cartItem->item_id,
+                        'order_id' => $order->id,
+                        'menu_item_id' => $cartItem->menu_item_id,
+                        'item_name' => $cartItem->menuItem->name,
+                        'unit_price' => $cartItem->menuItem->price,
                         'quantity' => $cartItem->quantity,
-                        'price_at_time' => $cartItem->menuItem->price,
-                        'special_request' => $cartItem->special_request,
+                        'subtotal' => $cartItem->menuItem->price * $cartItem->quantity,
+                        'special_instructions' => $cartItem->special_instructions,
                     ]);
+
+                    // Update sold count
+                    $cartItem->menuItem->increment('total_sold', $cartItem->quantity);
                 }
 
-                // Create payment record
-                $paymentStatus = ($paymentMethod === 'cash') ? 'pending' : 'completed';
+                // Create payment
+                $paymentStatus = $request->payment_method === 'cash' ? 'pending' : 'paid';
                 Payment::create([
-                    'order_id' => $order->order_id,
+                    'order_id' => $order->id,
                     'amount' => $vendorTotal,
-                    'payment_method' => $paymentMethod,
+                    'method' => $request->payment_method,
                     'status' => $paymentStatus,
+                    'transaction_id' => $paymentStatus === 'paid' ? 'TXN-' . strtoupper(uniqid()) : null,
+                    'paid_at' => $paymentStatus === 'paid' ? now() : null,
                 ]);
 
-                // Create pickup record
-                $queueNumber = Pickup::where('vendor_id', $vendorId)
-                    ->whereDate('created_at', today())
-                    ->count() + 1;
-
+                // Create pickup
+                $queueNumber = Pickup::whereDate('created_at', today())->count() + 100;
                 Pickup::create([
-                    'order_id' => $order->order_id,
-                    'vendor_id' => $vendorId,
+                    'order_id' => $order->id,
                     'queue_number' => $queueNumber,
+                    'qr_code' => Pickup::generateQrCode($order->id),
                     'status' => 'waiting',
-                    'pickup_instructions' => $request->pickup_instructions,
                 ]);
 
-                // Create vendor notification
-                VendorNotification::create([
-                    'vendor_id' => $vendorId,
-                    'order_id' => $order->order_id,
-                    'type' => 'new_order',
-                    'title' => 'New Order Received',
-                    'message' => 'You have received a new order #' . $order->order_id,
-                ]);
-
-                $allOrders[] = $order;
-            }
-
-            // Mark voucher as used
-            if ($redeemedReward && $discount > 0) {
-                $redeemedReward->is_used = 1;
-                $redeemedReward->used_at = now();
-                $redeemedReward->save();
-            }
-
-            // Award loyalty points (1 point per RM spent)
-            $pointsToAward = floor($cartTotal);
-            if ($pointsToAward > 0) {
-                $loyaltyPoints = LoyaltyPoint::firstOrCreate(
-                    ['user_id' => $user->user_id],
-                    ['points' => 0]
-                );
-                $loyaltyPoints->increment('points', $pointsToAward);
+                $orders[] = $order->load(['items', 'payment', 'pickup', 'vendor:id,store_name']);
             }
 
             // Clear cart
-            CartItem::where('user_id', $user->user_id)->delete();
+            CartItem::where('user_id', $user->id)->delete();
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Order placed successfully',
-                'data' => [
-                    'orders' => collect($allOrders)->map(function($order) {
-                        return $this->transformOrder($order->load(['orderItems.menuItem', 'payment', 'pickup', 'vendor']), true);
-                    }),
-                    'points_earned' => $pointsToAward,
-                    'total_paid' => (float) $cartTotal,
-                ]
-            ], 201);
+            return $this->createdResponse([
+                'orders' => collect($orders)->map(fn($order) => $this->formatOrder($order)),
+                'total_paid' => $total,
+            ], 'Order placed successfully');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create order. Please try again.',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
+            return $this->serverErrorResponse('Failed to create order');
         }
     }
 
-    /**
-     * Reorder items from previous order
-     * 
-     * @param Request $request
-     * @param int $orderId
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function reorder(Request $request, $orderId)
+    public function cancel(Request $request, Order $order): JsonResponse
     {
-        $user = $request->user();
-
-        $order = Order::with(['orderItems.menuItem'])
-            ->where('order_id', $orderId)
-            ->where('user_id', $user->user_id)
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order not found'
-            ], 404);
+        if ($order->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Unauthorized');
         }
 
-        // Clear current cart
-        CartItem::where('user_id', $user->user_id)->delete();
-
-        $addedItems = [];
-        $unavailableItems = [];
-
-        // Add items from previous order to cart
-        foreach ($order->orderItems as $item) {
-            if ($item->menuItem && $item->menuItem->is_available) {
-                CartItem::create([
-                    'user_id' => $user->user_id,
-                    'item_id' => $item->item_id,
-                    'quantity' => $item->quantity,
-                ]);
-                $addedItems[] = $item->menuItem->name;
-            } else {
-                $unavailableItems[] = $item->menuItem ? $item->menuItem->name : 'Unknown item';
-            }
+        if (!$order->canBeCancelled()) {
+            return $this->errorResponse('Order cannot be cancelled', 400, 'CANNOT_CANCEL');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Items added to cart',
-            'data' => [
-                'added_items' => $addedItems,
-                'unavailable_items' => $unavailableItems,
-                'cart_count' => CartItem::where('user_id', $user->user_id)->sum('quantity'),
-            ]
+        $order->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now(),
+            'cancel_reason' => $request->reason,
+        ]);
+
+        return $this->successResponse(null, 'Order cancelled');
+    }
+
+    public function active(Request $request): JsonResponse
+    {
+        $orders = Order::where('user_id', $request->user()->id)
+            ->whereIn('status', ['pending', 'confirmed', 'preparing', 'ready'])
+            ->with(['vendor:id,store_name', 'pickup'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $this->successResponse($orders->map(fn($order) => $this->formatOrder($order)));
+    }
+
+    /**
+     * Web Service: Expose - Get Order Status
+     * Student 5 (Notifications) consumes this to get order details
+     */
+    public function status(Request $request, Order $order): JsonResponse
+    {
+        // Security: IDOR Protection - verify ownership
+        if ($order->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Unauthorized');
+        }
+
+        return $this->successResponse([
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'status' => $order->status,
+            'total' => (float) $order->total,
+            'pickup' => $order->pickup ? [
+                'queue_number' => $order->pickup->queue_number,
+                'status' => $order->pickup->status,
+            ] : null,
+            'updated_at' => $order->updated_at,
         ]);
     }
 
-    /**
-     * Cancel an order
-     * 
-     * @param Request $request
-     * @param int $orderId
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function cancel(Request $request, $orderId)
-    {
-        $user = $request->user();
-
-        $order = Order::where('order_id', $orderId)
-            ->where('user_id', $user->user_id)
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order not found'
-            ], 404);
-        }
-
-        // Can only cancel pending orders
-        if ($order->status !== 'pending') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only pending orders can be cancelled'
-            ], 400);
-        }
-
-        $order->status = 'cancelled';
-        $order->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order cancelled successfully'
-        ]);
-    }
-
-    /**
-     * Transform order data
-     * 
-     * @param Order $order
-     * @param bool $detailed
-     * @return array
-     */
-    private function transformOrder($order, $detailed = false)
+    private function formatOrder(Order $order, bool $detailed = false): array
     {
         $data = [
-            'order_id' => $order->order_id,
-            'total_price' => (float) $order->total_price,
+            'id' => $order->id,
+            'order_number' => $order->order_number,
+            'total' => (float) $order->total,
             'status' => $order->status,
             'created_at' => $order->created_at,
             'vendor' => $order->vendor ? [
-                'vendor_id' => $order->vendor->user_id,
-                'name' => $order->vendor->name,
+                'id' => $order->vendor->id,
+                'store_name' => $order->vendor->store_name,
             ] : null,
-            'items_count' => $order->orderItems->sum('quantity'),
+            'pickup' => $order->pickup ? [
+                'queue_number' => $order->pickup->queue_number,
+                'status' => $order->pickup->status,
+            ] : null,
         ];
 
         if ($detailed) {
-            $data['items'] = $order->orderItems->map(function($item) {
-                return [
-                    'order_item_id' => $item->order_item_id,
-                    'quantity' => $item->quantity,
-                    'price_at_time' => (float) $item->price_at_time,
-                    'special_request' => $item->special_request,
-                    'subtotal' => (float) ($item->price_at_time * $item->quantity),
-                    'menu_item' => $item->menuItem ? [
-                        'item_id' => $item->menuItem->item_id,
-                        'name' => $item->menuItem->name,
-                        'image_url' => $item->menuItem->image_path 
-                            ? asset($item->menuItem->image_path) 
-                            : null,
-                    ] : null,
-                ];
-            });
-
+            $data['subtotal'] = (float) $order->subtotal;
+            $data['service_fee'] = (float) $order->service_fee;
+            $data['discount'] = (float) $order->discount;
+            $data['notes'] = $order->notes;
+            $data['items'] = $order->items->map(fn($item) => [
+                'id' => $item->id,
+                'name' => $item->item_name,
+                'unit_price' => (float) $item->unit_price,
+                'quantity' => $item->quantity,
+                'subtotal' => (float) $item->subtotal,
+                'special_instructions' => $item->special_instructions,
+            ]);
             $data['payment'] = $order->payment ? [
-                'payment_id' => $order->payment->payment_id,
-                'amount' => (float) $order->payment->amount,
-                'payment_method' => $order->payment->payment_method,
+                'method' => $order->payment->method,
                 'status' => $order->payment->status,
                 'paid_at' => $order->payment->paid_at,
             ] : null;
-
-            $data['pickup'] = $order->pickup ? [
-                'pickup_id' => $order->pickup->pickup_id,
-                'queue_number' => $order->pickup->queue_number,
-                'status' => $order->pickup->status,
-                'pickup_instructions' => $order->pickup->pickup_instructions,
-                'picked_up_at' => $order->pickup->picked_up_at,
-            ] : null;
+            $data['pickup']['qr_code'] = $order->pickup?->qr_code;
         }
 
         return $data;

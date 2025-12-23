@@ -3,60 +3,57 @@
 namespace App\Patterns\State;
 
 use App\Models\Order;
-use App\Models\StudentNotification;
+use App\Patterns\Observer\OrderSubject;
+use App\Patterns\Observer\NotificationObserver;
 
 /**
- * Ready State - Order ready for pickup
+ * State Pattern - Ready State
+ * Student 3: Order & Pickup Module
  */
-class ReadyState implements OrderState
+class ReadyState extends AbstractOrderState
 {
-    public function handle(Order $order): void
-    {
-        // Set ready time
-        if (!$order->ready_at) {
-            $order->update(['ready_at' => now()]);
-        }
-    }
-
-    public function next(Order $order): bool
-    {
-        $order->update([
-            'status' => 'completed',
-            'completed_at' => now(),
-        ]);
-
-        // Update pickup status
-        if ($order->pickup) {
-            $order->pickup->update([
-                'status' => 'collected',
-                'collected_at' => now(),
-            ]);
-        }
-
-        // Notify student
-        StudentNotification::create([
-            'user_id' => $order->user_id,
-            'title' => 'Order Completed',
-            'message' => "Thank you! Your order #{$order->order_id} has been completed.",
-            'type' => 'order',
-            'data' => json_encode(['order_id' => $order->order_id]),
-        ]);
-
-        return true;
-    }
-
-    public function canCancel(): bool
-    {
-        return false;
-    }
+    protected array $allowedTransitions = ['completed'];
 
     public function getStateName(): string
     {
         return 'ready';
     }
 
-    public function getDescription(): string
+    public function complete(Order $order): bool
     {
-        return 'Order is ready for pickup';
+        $result = $this->updateOrderStatus($order, 'completed', [
+            'completed_at' => now(),
+        ]);
+
+        if ($result) {
+            // Update pickup status
+            if ($order->pickup) {
+                $order->pickup->update([
+                    'status' => 'collected',
+                    'collected_at' => now(),
+                ]);
+            }
+
+            // Mark payment as paid if cash
+            if ($order->payment && $order->payment->status === 'pending') {
+                $order->payment->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ]);
+            }
+
+            // Increment vendor's total orders
+            if ($order->vendor) {
+                $order->vendor->increment('total_orders');
+            }
+
+            // Trigger Observer Pattern - Send notification
+            $order->refresh();
+            $subject = new OrderSubject($order);
+            $subject->attach(new NotificationObserver());
+            $subject->orderCompleted();
+        }
+
+        return $result;
     }
 }
