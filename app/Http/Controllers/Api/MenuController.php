@@ -154,6 +154,27 @@ class MenuController extends Controller
         ]);
     }
 
+    /**
+     * Get related/similar menu items
+     * URL: /api/menu/{menuItem}/related
+     */
+    public function related(MenuItem $menuItem): JsonResponse
+    {
+        $relatedItems = MenuItem::where('id', '!=', $menuItem->id)
+            ->where('is_available', true)
+            ->where(function($query) use ($menuItem) {
+                $query->where('category_id', $menuItem->category_id)
+                      ->orWhere('vendor_id', $menuItem->vendor_id);
+            })
+            ->with(['category:id,name', 'vendor:id,store_name'])
+            ->limit(6)
+            ->get();
+
+        return $this->successResponse(
+            $relatedItems->map(fn($item) => $this->formatMenuItem($item))
+        );
+    }
+
     private function formatMenuItem(MenuItem $item, bool $detailed = false): array
     {
         $data = [

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\CreateOrderRequest;
 use App\Models\CartItem;
+use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -273,5 +274,41 @@ class OrderController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * Reorder - Add order items back to cart
+     * URL: /api/orders/{order}/reorder
+     */
+    public function reorder(Request $request, Order $order): JsonResponse
+    {
+        if ($order->user_id !== $request->user()->id) {
+            return $this->forbiddenResponse('Unauthorized access');
+        }
+
+        // Clear existing cart
+        CartItem::where('user_id', $request->user()->id)->delete();
+
+        // Add order items to cart
+        $addedCount = 0;
+        foreach ($order->items as $orderItem) {
+            $menuItem = MenuItem::find($orderItem->menu_item_id);
+            
+            if ($menuItem && $menuItem->is_available) {
+                CartItem::create([
+                    'user_id' => $request->user()->id,
+                    'menu_item_id' => $orderItem->menu_item_id,
+                    'quantity' => $orderItem->quantity,
+                    'special_instructions' => $orderItem->special_instructions,
+                ]);
+                $addedCount++;
+            }
+        }
+
+        return $this->successResponse([
+            'message' => "Added {$addedCount} items to cart",
+            'items_added' => $addedCount,
+            'items_unavailable' => $order->items->count() - $addedCount,
+        ]);
     }
 }
