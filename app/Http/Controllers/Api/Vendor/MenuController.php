@@ -137,4 +137,40 @@ class MenuController extends Controller
 
         return $this->successResponse($categories);
     }
+
+    /**
+     * Get single menu item by ID
+     * URL: /api/vendor/menu/{id}
+     */
+    public function show(Request $request, MenuItem $menuItem): JsonResponse
+    {
+        $vendor = $request->user()->vendor;
+
+        if ($menuItem->vendor_id !== $vendor->id) {
+            return $this->notFoundResponse('Item not found');
+        }
+
+        $menuItem->load('category:id,name');
+
+        return $this->successResponse([
+            'id' => $menuItem->id,
+            'name' => $menuItem->name,
+            'slug' => $menuItem->slug,
+            'description' => $menuItem->description,
+            'price' => (float) $menuItem->price,
+            'original_price' => $menuItem->original_price ? (float) $menuItem->original_price : null,
+            'image' => $menuItem->image,
+            'is_available' => $menuItem->is_available,
+            'is_featured' => $menuItem->is_featured,
+            'total_sold' => $menuItem->total_sold,
+            'prep_time' => $menuItem->prep_time,
+            'calories' => $menuItem->calories,
+            'category' => [
+                'id' => $menuItem->category->id,
+                'name' => $menuItem->category->name,
+            ],
+            'created_at' => $menuItem->created_at,
+            'updated_at' => $menuItem->updated_at,
+        ]);
+    }
 }

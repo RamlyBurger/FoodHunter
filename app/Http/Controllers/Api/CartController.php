@@ -108,6 +108,20 @@ class CartController extends Controller
         return $this->successResponse($summary);
     }
 
+    /**
+     * Get cart item count
+     * URL: /api/cart/count
+     */
+    public function count(Request $request): JsonResponse
+    {
+        $count = CartItem::where('user_id', $request->user()->id)
+            ->sum('quantity');
+
+        return $this->successResponse([
+            'count' => (int) $count,
+        ]);
+    }
+
     private function formatCartItem(CartItem $item): array
     {
         return [

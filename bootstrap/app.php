@@ -30,6 +30,23 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // OWASP [107-112]: Secure error handling - don't expose sensitive info
+        
+        // Handle authentication exceptions first (401)
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                SecurityLogService::logInvalidToken($request->ip());
+                
+                return response()->json([
+                    'success' => false,
+                    'status' => 401,
+                    'message' => 'Authentication required. Please login first.',
+                    'error' => 'UNAUTHENTICATED',
+                    'request_id' => uniqid('req_', true),
+                    'timestamp' => now()->toIso8601String(),
+                ], 401);
+            }
+        });
+        
         $exceptions->render(function (HttpException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 $status = $e->getStatusCode();
@@ -94,7 +111,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (\Throwable $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 // Log the actual error internally
-                \Log::error('Unhandled exception', [
+                \Illuminate\Support\Facades\Log::error('Unhandled exception', [
                     'exception' => get_class($e),
                     'message' => $e->getMessage(),
                     'file' => $e->getFile(),
