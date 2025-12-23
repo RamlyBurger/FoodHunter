@@ -60,7 +60,7 @@
             <div class="card border-0 shadow-sm mt-4">
                 <div class="card-body p-4">
                     <h4 class="mb-4">Send us a Message</h4>
-                    <form method="POST" action="{{ route('contact.send') }}">
+                    <form method="POST" action="{{ route('contact.send') }}" id="contact-form">
                         @csrf
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -90,7 +90,7 @@
                                           placeholder="How can we help you?"></textarea>
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary" id="contact-submit-btn">
                                     <i class="bi bi-send me-2"></i>Send Message
                                 </button>
                             </div>
@@ -101,4 +101,61 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.getElementById('contact-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = document.getElementById('contact-submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Message Sent!',
+                text: data.message,
+                confirmButtonColor: '#FF6B35'
+            });
+            form.reset();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed',
+                text: data.message || 'Failed to send message.',
+                confirmButtonColor: '#FF6B35'
+            });
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    })
+    .catch(err => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.',
+            confirmButtonColor: '#FF6B35'
+        });
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
+</script>
+@endpush
 @endsection

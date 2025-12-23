@@ -312,12 +312,9 @@
                                         <i class="bi bi-receipt"></i> Receipt
                                     </a>
                                     @if($order->status === 'completed')
-                                    <form action="{{ route('orders.reorder', $order) }}" method="POST" class="d-inline" onclick="event.stopPropagation()">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-primary action-btn">
-                                            <i class="bi bi-arrow-repeat"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-primary action-btn" id="reorder-btn-{{ $order->id }}" onclick="event.stopPropagation(); reorderItems({{ $order->id }})">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
                                     @endif
                                 </div>
                             </td>
@@ -398,6 +395,54 @@ function toggleOrderItems(orderId) {
         itemsRow.style.display = 'none';
         expandIcon.classList.remove('expanded');
     }
+}
+
+function reorderItems(orderId) {
+    const btn = document.getElementById('reorder-btn-' + orderId);
+    const originalContent = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
+    fetch('/orders/' + orderId + '/reorder', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Added to Cart!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = data.redirect || '/cart';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed',
+                text: data.message || 'Failed to add items to cart.'
+            });
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    })
+    .catch(err => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.'
+        });
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    });
 }
 </script>
 @endpush

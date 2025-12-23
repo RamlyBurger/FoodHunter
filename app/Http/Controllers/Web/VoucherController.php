@@ -35,12 +35,18 @@ class VoucherController extends Controller
         return view('vouchers.index', compact('vouchers', 'userVouchers'));
     }
 
-    public function redeem(Voucher $voucher)
+    public function redeem(Request $request, Voucher $voucher)
     {
         $user = Auth::user();
 
         // Check if voucher is valid
         if (!$voucher->isValid()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This voucher is no longer available.',
+                ], 400);
+            }
             return back()->with('error', 'This voucher is no longer available.');
         }
 
@@ -50,6 +56,12 @@ class VoucherController extends Controller
             ->first();
 
         if ($existingVoucher) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have already redeemed this voucher.',
+                ], 400);
+            }
             return back()->with('error', 'You have already redeemed this voucher.');
         }
 
@@ -59,6 +71,18 @@ class VoucherController extends Controller
             'voucher_id' => $voucher->id,
             'redeemed_at' => now(),
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Voucher "' . $voucher->name . '" has been added to your account!',
+                'voucher' => [
+                    'id' => $voucher->id,
+                    'code' => $voucher->code,
+                    'name' => $voucher->name,
+                ],
+            ]);
+        }
 
         return back()->with('success', 'Voucher "' . $voucher->name . '" has been added to your account!');
     }

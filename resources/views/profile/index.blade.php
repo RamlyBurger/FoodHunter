@@ -798,10 +798,136 @@ function confirmRemoveAvatar(event) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '{{ route("profile.avatar.remove") }}';
+            removeAvatar();
         }
     });
 }
+
+function removeAvatar() {
+    fetch('{{ route("profile.avatar.remove") }}', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Removed!',
+                text: data.message,
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            showToast(data.message || 'Failed to remove avatar', 'error');
+        }
+    })
+    .catch(err => {
+        showToast('An error occurred', 'error');
+    });
+}
+
+// Profile form AJAX submission
+document.getElementById('profile-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Reset form state
+            document.querySelectorAll('#profile-form input[name]').forEach(input => {
+                if (input.name !== '' && input.type !== 'hidden') {
+                    input.setAttribute('readonly', true);
+                }
+            });
+            document.getElementById('save-buttons').classList.add('d-none');
+            document.getElementById('edit-btn').classList.remove('d-none');
+            
+            // Update displayed name
+            const nameInputs = document.querySelectorAll('.profile-name');
+            nameInputs.forEach(el => el.textContent = data.user.name);
+        } else {
+            showToast(data.message || 'Failed to update profile', 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    })
+    .catch(err => {
+        showToast('An error occurred', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
+
+// Avatar form AJAX submission
+document.querySelector('#avatarModal form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = document.getElementById('avatarSubmit');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Updated!',
+                text: data.message,
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            showToast(data.message || 'Failed to upload avatar', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    })
+    .catch(err => {
+        showToast('An error occurred', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
 </script>
 @endpush
 </div>

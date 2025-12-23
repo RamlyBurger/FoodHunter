@@ -8,12 +8,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-bell me-2" style="color: var(--primary-color);"></i>Notifications</h2>
         @if($notifications->where('is_read', false)->count() > 0)
-        <form action="{{ url('/notifications/read-all') }}" method="POST">
-            @csrf
-            <button type="submit" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-check-all me-1"></i> Mark All as Read
-            </button>
-        </form>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="mark-all-read-btn" onclick="markAllAsRead()">
+            <i class="bi bi-check-all me-1"></i> Mark All as Read
+        </button>
         @endif
     </div>
 
@@ -68,20 +65,13 @@
                     </div>
                     <div class="d-flex gap-1 flex-shrink-0">
                         @if(!$notification->is_read)
-                        <form action="{{ url('/notifications/' . $notification->id . '/read') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Mark as read" style="padding: 4px 8px;">
-                                <i class="bi bi-check"></i>
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Mark as read" style="padding: 4px 8px;" onclick="markAsRead({{ $notification->id }}, this)">
+                            <i class="bi bi-check"></i>
+                        </button>
                         @endif
-                        <form action="{{ url('/notifications/' . $notification->id) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" style="padding: 4px 8px;">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" style="padding: 4px 8px;" onclick="deleteNotification({{ $notification->id }}, this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -103,4 +93,127 @@
     @endif
 </div>
 </div>
+
+@push('scripts')
+<script>
+function markAsRead(notificationId, btn) {
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
+    fetch('/notifications/' + notificationId + '/read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the button and update UI
+            const notificationRow = btn.closest('.p-4');
+            notificationRow.classList.remove('bg-light');
+            notificationRow.style.background = '';
+            const badge = notificationRow.querySelector('.badge.bg-primary');
+            if (badge) badge.remove();
+            btn.remove();
+            showToast('Marked as read', 'success');
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            showToast(data.message || 'Failed to mark as read', 'error');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        showToast('An error occurred', 'error');
+    });
+}
+
+function deleteNotification(notificationId, btn) {
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
+    fetch('/notifications/' + notificationId, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const notificationRow = btn.closest('.p-4');
+            notificationRow.style.transition = 'opacity 0.3s';
+            notificationRow.style.opacity = '0';
+            setTimeout(() => {
+                notificationRow.remove();
+                // Check if there are no more notifications
+                const remainingNotifications = document.querySelectorAll('.card-body .p-4');
+                if (remainingNotifications.length === 0) {
+                    location.reload();
+                }
+            }, 300);
+            showToast('Notification deleted', 'success');
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            showToast(data.message || 'Failed to delete', 'error');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        showToast('An error occurred', 'error');
+    });
+}
+
+function markAllAsRead() {
+    const btn = document.getElementById('mark-all-read-btn');
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+    
+    fetch('/notifications/read-all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Update all notification rows
+            document.querySelectorAll('.card-body .p-4').forEach(row => {
+                row.classList.remove('bg-light');
+                row.style.background = '';
+                const badge = row.querySelector('.badge.bg-primary');
+                if (badge) badge.remove();
+                const markReadBtn = row.querySelector('button[onclick^="markAsRead"]');
+                if (markReadBtn) markReadBtn.remove();
+            });
+            btn.remove();
+            showToast('All notifications marked as read', 'success');
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            showToast(data.message || 'Failed to mark all as read', 'error');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        showToast('An error occurred', 'error');
+    });
+}
+</script>
+@endpush
 @endsection

@@ -314,12 +314,9 @@
                             <i class="bi bi-clipboard"></i>
                         </button>
                         @else
-                        <form action="{{ route('vouchers.redeem', $voucher) }}" method="POST" class="flex-grow-1 redeem-form">
-                            @csrf
-                            <button type="button" class="btn btn-primary w-100" onclick="confirmRedeemVoucher(this.form, '{{ $voucher->name }}')">
-                                <i class="bi bi-plus-circle me-1"></i> Redeem
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-primary flex-grow-1" id="redeem-btn-{{ $voucher->id }}" onclick="confirmRedeemVoucher({{ $voucher->id }}, '{{ $voucher->name }}')">
+                            <i class="bi bi-plus-circle me-1"></i> Redeem
+                        </button>
                         @endif
                     </div>
                 </div>
@@ -386,7 +383,7 @@ function copyCode(code) {
     });
 }
 
-function confirmRedeemVoucher(form, voucherName) {
+function confirmRedeemVoucher(voucherId, voucherName) {
     Swal.fire({
         title: 'Redeem Voucher?',
         text: `Are you sure you want to redeem "${voucherName}"?`,
@@ -398,8 +395,57 @@ function confirmRedeemVoucher(form, voucherName) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            form.submit();
+            redeemVoucher(voucherId);
         }
+    });
+}
+
+function redeemVoucher(voucherId) {
+    const btn = document.getElementById('redeem-btn-' + voucherId);
+    const originalContent = btn.innerHTML;
+    
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Redeeming...';
+    
+    fetch('/vouchers/' + voucherId + '/redeem', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Voucher Redeemed!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed',
+                text: data.message || 'Failed to redeem voucher.'
+            });
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    })
+    .catch(err => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.'
+        });
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
     });
 }
 </script>

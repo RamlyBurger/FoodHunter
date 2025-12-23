@@ -96,10 +96,16 @@ class OrderController extends Controller
     {
         // Security: IDOR Protection
         if ($order->user_id !== Auth::id()) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
             abort(403);
         }
 
         if (!$order->canBeCancelled()) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'This order cannot be cancelled.'], 400);
+            }
             return back()->with('error', 'This order cannot be cancelled.');
         }
 
@@ -119,9 +125,15 @@ class OrderController extends Controller
                 );
             }
             
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Order cancelled successfully.']);
+            }
             return redirect('/orders')->with('success', 'Order cancelled successfully.');
         }
 
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'Failed to cancel order.'], 500);
+        }
         return back()->with('error', 'Failed to cancel order.');
     }
 
@@ -129,6 +141,9 @@ class OrderController extends Controller
     {
         // Security: IDOR Protection
         if ($order->user_id !== Auth::id()) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
             abort(403);
         }
 
@@ -161,12 +176,26 @@ class OrderController extends Controller
         }
 
         if ($addedCount === 0) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'None of the items from this order are currently available.'
+                ], 400);
+            }
             return back()->with('error', 'None of the items from this order are currently available.');
         }
 
         $message = "{$addedCount} item(s) added to your cart.";
         if (!empty($unavailableItems)) {
             $message .= ' Some items were unavailable: ' . implode(', ', $unavailableItems);
+        }
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect' => route('cart.index')
+            ]);
         }
 
         return redirect()->route('cart.index')->with('success', $message);

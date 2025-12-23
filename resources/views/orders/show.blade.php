@@ -488,21 +488,15 @@
                 <!-- Action Buttons -->
                 <div class="action-buttons">
                     @if($order->canBeCancelled())
-                    <form action="{{ url('/orders/' . $order->id . '/cancel') }}" method="POST" class="flex-fill" id="cancel-order-form">
-                        @csrf
-                        <button type="button" class="btn btn-outline-danger w-100" onclick="confirmCancelOrder()">
-                            <i class="bi bi-x-circle me-1"></i> Cancel Order
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-outline-danger flex-fill" id="cancel-order-btn" onclick="confirmCancelOrder({{ $order->id }})">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Order
+                    </button>
                     @endif
                     
                     @if($order->status === 'completed')
-                    <form action="{{ route('orders.reorder', $order) }}" method="POST" class="flex-fill">
-                        @csrf
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-arrow-repeat me-1"></i> Order Again
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-primary flex-fill" id="reorder-btn" onclick="reorderItems({{ $order->id }})">
+                        <i class="bi bi-arrow-repeat me-1"></i> Order Again
+                    </button>
                     @endif
                 </div>
             </div>
@@ -519,7 +513,7 @@
 
 @push('scripts')
 <script>
-function confirmCancelOrder() {
+function confirmCancelOrder(orderId) {
     Swal.fire({
         title: 'Cancel Order?',
         text: 'Are you sure you want to cancel this order? This action cannot be undone.',
@@ -531,8 +525,104 @@ function confirmCancelOrder() {
         cancelButtonText: 'No, keep it'
     }).then((result) => {
         if (result.isConfirmed) {
-            document.getElementById('cancel-order-form').submit();
+            cancelOrder(orderId);
         }
+    });
+}
+
+function cancelOrder(orderId) {
+    const btn = document.getElementById('cancel-order-btn');
+    const originalContent = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Cancelling...';
+    
+    fetch('/orders/' + orderId + '/cancel', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Order Cancelled',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = '/orders';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed',
+                text: data.message || 'Failed to cancel order.'
+            });
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    })
+    .catch(err => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.'
+        });
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    });
+}
+
+function reorderItems(orderId) {
+    const btn = document.getElementById('reorder-btn');
+    const originalContent = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Adding to cart...';
+    
+    fetch('/orders/' + orderId + '/reorder', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Added to Cart!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = data.redirect || '/cart';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed',
+                text: data.message || 'Failed to add items to cart.'
+            });
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    })
+    .catch(err => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.'
+        });
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
     });
 }
 </script>

@@ -86,12 +86,9 @@
                 <a href="{{ url('/menu') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Continue Shopping
                 </a>
-                <form action="{{ url('/cart/clear') }}" method="POST">
-                    @csrf
-                    <button type="button" class="btn btn-outline-danger" onclick="confirmClearCart(this.form)">
-                        <i class="bi bi-trash me-1"></i> Clear Cart
-                    </button>
-                </form>
+                <button type="button" class="btn btn-outline-danger" id="clear-cart-btn" onclick="confirmClearCart()">
+                    <i class="bi bi-trash me-1"></i> Clear Cart
+                </button>
             </div>
         </div>
 
@@ -125,28 +122,25 @@
                     <!-- Voucher Section -->
                     @if(session('applied_voucher'))
                     @php $appliedVoucher = session('applied_voucher'); @endphp
-                    <div class="voucher-applied mb-4">
+                    <div class="voucher-applied mb-4" id="applied-voucher-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <i class="bi bi-check-circle-fill text-success me-2"></i>
                                 <strong>{{ $appliedVoucher['code'] ?? 'Voucher Applied' }}</strong>
                             </div>
-                            <form action="{{ url('/vouchers/remove') }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-link text-danger p-0">Remove</button>
-                            </form>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeVoucher()">Remove</button>
                         </div>
                     </div>
                     @else
-                    <form action="{{ url('/vouchers/apply') }}" method="POST" class="mb-4">
-                        @csrf
+                    <div id="voucher-form-container" class="mb-4">
                         <label class="form-label small" style="font-weight: 600;">Have a voucher code?</label>
                         <div class="input-group">
                             <span class="input-group-text bg-transparent"><i class="bi bi-ticket-perforated"></i></span>
-                            <input type="text" name="voucher_code" class="form-control" placeholder="Enter voucher code">
-                            <button type="submit" class="btn btn-outline-primary">Apply</button>
+                            <input type="text" id="voucher-code-input" class="form-control" placeholder="Enter voucher code">
+                            <button type="button" id="apply-voucher-btn" class="btn btn-outline-primary" onclick="applyVoucher()">Apply</button>
                         </div>
-                    </form>
+                        <div id="voucher-error" class="text-danger small mt-2" style="display: none;"></div>
+                    </div>
                     @endif
 
                     <a href="{{ url('/checkout') }}" class="btn btn-primary w-100 btn-lg mb-3">
@@ -254,7 +248,7 @@
         if (totalEl) totalEl.textContent = 'RM ' + summary.total.toFixed(2);
     }
     
-    function confirmClearCart(form) {
+    function confirmClearCart() {
         Swal.fire({
             title: 'Clear Cart?',
             text: 'This will remove all items from your cart.',
@@ -266,8 +260,131 @@
             cancelButtonText: 'Cancel'
         }).then((result) => {
             if (result.isConfirmed) {
-                form.submit();
+                clearCart();
             }
+        });
+    }
+    
+    function clearCart() {
+        const btn = document.getElementById('clear-cart-btn');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Clearing...';
+        
+        fetch('/cart/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cart Cleared',
+                    text: data.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                showToast(data.message || 'Failed to clear cart', 'error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            showToast('An error occurred', 'error');
+        });
+    }
+    
+    function applyVoucher() {
+        const input = document.getElementById('voucher-code-input');
+        const btn = document.getElementById('apply-voucher-btn');
+        const errorDiv = document.getElementById('voucher-error');
+        const code = input.value.trim();
+        
+        if (!code) {
+            errorDiv.textContent = 'Please enter a voucher code.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        // Disable button and show loading
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        errorDiv.style.display = 'none';
+        
+        fetch('/vouchers/apply', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ voucher_code: code })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Voucher Applied!',
+                    text: data.voucher?.description || data.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                errorDiv.textContent = data.message || 'Failed to apply voucher.';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Apply';
+            }
+        })
+        .catch(err => {
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            errorDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Apply';
+        });
+    }
+    
+    // Allow Enter key to apply voucher
+    document.getElementById('voucher-code-input')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            applyVoucher();
+        }
+    });
+    
+    function removeVoucher() {
+        fetch('/vouchers/remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Voucher removed', 'success');
+                location.reload();
+            } else {
+                showToast(data.message || 'Failed to remove voucher', 'error');
+            }
+        })
+        .catch(err => {
+            showToast('An error occurred', 'error');
         });
     }
     </script>

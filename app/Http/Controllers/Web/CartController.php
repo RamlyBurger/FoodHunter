@@ -128,6 +128,17 @@ class CartController extends Controller
     public function clear()
     {
         CartItem::where('user_id', Auth::id())->delete();
+        
+        // Clear any applied voucher
+        session()->forget('applied_voucher');
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart cleared.'
+            ]);
+        }
+
         return back()->with('success', 'Cart cleared.');
     }
 

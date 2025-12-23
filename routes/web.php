@@ -163,7 +163,14 @@ Route::get('/contact', function () {
     return view('contact');
 })->name('contact');
 
-Route::post('/contact', function () {
+Route::post('/contact', function (\Illuminate\Http\Request $request) {
+    // In a real app, this would send an email or save to database
+    if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Your message has been sent successfully!'
+        ]);
+    }
     return redirect()->route('contact')->with('success', 'Your message has been sent successfully!');
 })->name('contact.send');
 

@@ -72,6 +72,17 @@ class ProfileController extends Controller
             'phone' => $request->phone,
         ]);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully.',
+                'user' => [
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                ]
+            ]);
+        }
+
         return back()->with('success', 'Profile updated successfully.');
     }
 
@@ -92,10 +103,18 @@ class ProfileController extends Controller
         $path = $request->file('avatar')->store('avatars', 'public');
         $user->update(['avatar' => $path]);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile picture updated successfully.',
+                'avatar_url' => asset('storage/' . $path)
+            ]);
+        }
+
         return back()->with('success', 'Profile picture updated successfully.');
     }
 
-    public function removeAvatar()
+    public function removeAvatar(Request $request)
     {
         $user = Auth::user();
 
@@ -104,6 +123,13 @@ class ProfileController extends Controller
         }
 
         $user->update(['avatar' => null]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile picture removed.'
+            ]);
+        }
 
         return back()->with('success', 'Profile picture removed.');
     }
