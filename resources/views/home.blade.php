@@ -32,6 +32,7 @@
         background: rgba(255, 255, 255, 0.1);
         animation: rise 10s infinite ease-in;
     }
+    /* ... existing bubble styles ... */
     .bubble:nth-child(1) { width: 80px; height: 80px; left: 10%; animation-duration: 8s; animation-delay: 0s; }
     .bubble:nth-child(2) { width: 60px; height: 60px; left: 20%; animation-duration: 12s; animation-delay: 1s; }
     .bubble:nth-child(3) { width: 100px; height: 100px; left: 35%; animation-duration: 10s; animation-delay: 2s; }
@@ -92,6 +93,74 @@
         justify-content: center;
         font-size: 1.25rem;
     }
+
+    /* Video Modal Styles */
+    #videoModal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: rgba(0,0,0,0.9); /* Dark overlay */
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    #videoModal.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .video-content {
+        position: relative;
+        width: 80%;
+        max-width: 900px;
+        animation: zoomIn 0.3s ease;
+    }
+
+    #introVideo {
+        width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+
+    .close-video {
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+        line-height: 1;
+    }
+    
+    .close-video:hover {
+        color: var(--warning-color);
+        transform: scale(1.1);
+    }
+
+    @keyframes zoomIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+        .close-video {
+            right: 0;
+            top: -50px;
+        }
+        .video-content {
+            width: 95%;
+        }
+    }
 </style>
 @endpush
 
@@ -120,9 +189,10 @@
                     <a href="{{ url('/menu') }}" class="btn btn-warning btn-lg px-4 text-dark fw-bold">
                         <i class="bi bi-grid-3x3-gap me-2"></i> Browse Menu
                     </a>
-                    <a href="#how-it-works" class="btn btn-outline-light btn-lg px-4">
+                    <!-- Updated Button to Trigger Video -->
+                    <button onclick="toggleVideo()" class="btn btn-outline-light btn-lg px-4">
                         <i class="bi bi-play-circle me-2"></i> How It Works
-                    </a>
+                    </button>
                 </div>
                 <!-- Hero Stats -->
                 @php
@@ -154,6 +224,17 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Video Modal HTML -->
+<div id="videoModal">
+    <div class="video-content">
+        <span class="close-video" onclick="toggleVideo()">&times;</span>
+        <video id="introVideo" controls>
+            <source src="{{ asset('intro.mp4') }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
     </div>
 </div>
 
@@ -459,5 +540,44 @@
         </div>
     </div>
 </section>
-@endsection
 
+@push('scripts')
+<script>
+    function toggleVideo() {
+        const modal = document.getElementById('videoModal');
+        const video = document.getElementById('introVideo');
+        
+        if (modal.classList.contains('show')) {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                video.pause();
+                video.currentTime = 0;
+            }, 300); // Wait for transition
+        } else {
+            modal.style.display = 'flex';
+            // Small delay to allow display flex to apply before opacity transition
+            setTimeout(() => {
+                modal.classList.add('show');
+                video.play().catch(e => console.log('Autoplay prevented by browser policy'));
+            }, 10);
+        }
+    }
+
+    // Close modal when clicking outside of video content
+    document.getElementById('videoModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            toggleVideo();
+        }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('videoModal').classList.contains('show')) {
+            toggleVideo();
+        }
+    });
+</script>
+@endpush
+
+@endsection

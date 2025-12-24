@@ -7,8 +7,8 @@
     <title>@yield('title', 'FoodHunter') - TARUMT Canteen</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://www.tarc.edu.my/images/tarIco.ico">
-    <link rel="apple-touch-icon" href="https://www.tarc.edu.my/images/tarIco.ico">
+    <link rel="icon" type="image/png" href="/images/tarIco.ico">
+    <link rel="apple-touch-icon" href="/images/tarIco.ico">
     
     <!-- Google Fonts - Montserrat -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1080,7 +1080,7 @@
         <div class="container">
             <div class="row g-4">
                 <div class="col-lg-4 col-md-6">
-                    <h5 class="mb-3 d-flex align-items-center"><img src="https://www.tarc.edu.my/images/tarIco.ico" alt="FoodHunter" style="height: 24px; width: 24px; margin-right: 8px; border-radius: 4px;"> FoodHunter</h5>
+                    <h5 class="mb-3 d-flex align-items-center"><img src="/images/tarIco.ico" alt="FoodHunter" style="height: 24px; width: 24px; margin-right: 8px; border-radius: 4px;"> FoodHunter</h5>
                     <p class="small text-light opacity-75 mb-3">TARUMT University Canteen ordering system. Order food, skip the queue, and save with vouchers!</p>
                     <div class="d-flex gap-3">
                         <a href="#" class="text-light opacity-75 hover-opacity-100"><i class="bi bi-facebook fs-5"></i></a>

@@ -7,8 +7,8 @@
     <title>@yield('title', 'Vendor Portal') - FoodHunter</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://www.tarc.edu.my/images/tarIco.ico">
-    <link rel="apple-touch-icon" href="https://www.tarc.edu.my/images/tarIco.ico">
+    <link rel="icon" type="image/png" href="/images/tarIco.ico">
+    <link rel="apple-touch-icon" href="/images/tarIco.ico">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
