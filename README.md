@@ -116,6 +116,11 @@ This system is designed for **5 students** to develop, with each student respons
    php artisan serve
    ```
 
+7. **Test API**
+   ```bash
+   http://127.0.0.1:8000/api-tester
+   ```
+
 ---
 
 ## Test Credentials
