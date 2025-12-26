@@ -2,23 +2,61 @@
 
 ### 3.1 Description of Design Pattern
 
-The State Pattern is a behavioral design pattern that allows an object to alter its behavior when its internal state changes. The object will appear to change its class. This pattern encapsulates state-specific behavior and delegates state transitions to state objects.
+The State Pattern is a behavioral design pattern that allows an object to alter its behavior when its internal state changes. The object will appear to change its class. This pattern encapsulates state-specific behavior and delegates state transitions to state objects. Originally described by the Gang of Four (GoF), the State Pattern is particularly useful for objects whose behavior changes dramatically based on their current state.
 
-In the FoodHunter Order & Pickup Module, the State Pattern is used to manage order status transitions. Each order can be in one of several states (pending, confirmed, preparing, ready, completed, cancelled), and each state defines which transitions are allowed and what actions can be performed.
+#### 3.1.1 Pattern Overview and Finite State Machines
+
+The State Pattern is closely related to the concept of Finite State Machines (FSM) in computer science. An FSM consists of:
+- A finite set of states
+- A set of inputs (events/triggers)
+- A transition function that determines the next state
+- An initial state
+- A set of final states
+
+In the context of order management, the FSM ensures that orders follow a predictable path from creation to completion, with clear rules about which transitions are valid at each stage.
+
+#### 3.1.2 Application in FoodHunter Order Management
+
+In the FoodHunter Order & Pickup Module, the State Pattern is used to manage order status transitions. Each order can be in one of several states, and each state defines:
+
+| State | Description | Valid Transitions |
+|-------|-------------|-------------------|
+| **Pending** | Order created, awaiting vendor | confirmed, cancelled |
+| **Confirmed** | Vendor accepted | preparing, cancelled |
+| **Preparing** | Food being made | ready |
+| **Ready** | Food ready for pickup | completed |
+| **Completed** | Customer collected | (terminal) |
+| **Cancelled** | Order cancelled | (terminal) |
+
+Each state class encapsulates the logic for determining whether a transition is valid and executing the transition with appropriate side effects (timestamps, notifications, etc.).
+
+#### 3.1.3 Why State Pattern is Ideal for Order Management
 
 The State Pattern is ideal for this use case because:
 
-- **Encapsulation**: State-specific behavior is encapsulated in separate classes
-- **Single Responsibility**: Each state class handles only its own transitions
-- **Open/Closed**: New states can be added without modifying existing code
-- **Explicit Transitions**: Invalid state transitions are prevented by design
+- **Encapsulation**: State-specific behavior is encapsulated in separate classes. The `PendingState` class knows that it can only transition to `confirmed` or `cancelled`, and handles those transitions appropriately.
+
+- **Single Responsibility Principle (SRP)**: Each state class handles only its own transitions. This makes the code easier to understand and maintain. Adding new behavior to a specific state doesn't affect other states.
+
+- **Open/Closed Principle (OCP)**: New states can be added without modifying existing code. If FoodHunter adds a "delayed" state for orders waiting on ingredients, a new `DelayedState` class can be created without changing existing state classes.
+
+- **Explicit Transitions**: Invalid state transitions are prevented by design. The pattern makes it impossible for an order to skip from `pending` directly to `ready` - the transition logic is built into the state classes themselves.
+
+- **Eliminates Conditionals**: Without the State Pattern, order status logic would require extensive if-else or switch statements scattered throughout the codebase. The pattern centralizes this logic in dedicated classes.
+
+- **Testability**: Each state class can be unit tested in isolation, verifying that it correctly handles allowed transitions and rejects invalid ones.
+
+#### 3.1.4 Pattern Components
 
 The pattern consists of:
 
-- **State Interface (`OrderStateInterface`)**: Defines methods for state transitions
-- **Abstract State (`AbstractOrderState`)**: Provides default implementations
-- **Concrete States**: `PendingState`, `ConfirmedState`, `PreparingState`, `ReadyState`
-- **State Manager (`OrderStateManager`)**: Factory that creates and manages state objects
+- **State Interface (`OrderStateInterface`)**: Defines methods for state transitions including `confirm()`, `startPreparing()`, `markReady()`, `complete()`, and `cancel()`. Also defines `canTransitionTo()` for validation.
+
+- **Abstract State (`AbstractOrderState`)**: Provides default implementations that return `false` for all transitions. Concrete states override only the transitions they support.
+
+- **Concrete States**: `PendingState`, `ConfirmedState`, `PreparingState`, `ReadyState` - each implements the transitions valid for that state with appropriate database updates and timestamp recording.
+
+- **State Manager (`OrderStateManager`)**: Factory class that creates the appropriate state object based on an order's current status and provides static methods for common operations like `confirm()`, `prepare()`, `ready()`, and `cancel()`.
 
 ### 3.2 Implementation of Design Pattern
 

@@ -2,9 +2,17 @@
 
 ### 5.1 Potential Threats and Attacks
 
+The Cart, Checkout & Notifications Module handles financial transactions and sensitive payment data, making it a prime target for attackers seeking financial gain. This module must implement robust security measures to protect against price manipulation, cross-site attacks, and payment fraud.
+
 #### Threat 1: Price Manipulation
 
 Price manipulation attacks occur when an attacker intercepts and modifies price values in client-side requests. In the Cart & Checkout module, an attacker could use browser DevTools or proxy tools to modify item prices or totals before submitting the checkout form, potentially paying much less than the actual cost.
+
+**Technical Details:**
+- Client-side JavaScript calculations can be modified using browser DevTools
+- HTTP requests can be intercepted and modified using proxy tools like Burp Suite
+- Form fields can be manipulated before submission
+- API requests can be crafted with arbitrary price values using curl or Postman
 
 **Attack Scenario:**
 
@@ -15,9 +23,32 @@ Attacker modifies request: {"total": 0.01, "subtotal": 0.01}
 Without protection: Attacker pays RM 0.01 for RM 50.00 worth of food
 ```
 
+**Advanced Attack Methods:**
+```javascript
+// Using browser DevTools to modify cart total
+document.querySelector('#cart-total').value = 0.01;
+document.querySelector('#checkout-form').submit();
+
+// Using Burp Suite to intercept and modify
+POST /checkout HTTP/1.1
+{"items": [...], "total": 0.01, "payment_method": "cash"}
+```
+
+**Impact if Unmitigated:**
+- Direct financial loss on every manipulated order
+- Potential for large-scale automated fraud
+- Inventory loss without corresponding revenue
+- Business sustainability threat
+
 #### Threat 2: CSRF Attack (Cross-Site Request Forgery)
 
 CSRF attacks occur when an attacker tricks a logged-in user into submitting unwanted requests. An attacker could create a malicious website with hidden forms that auto-submit to FoodHunter, adding items to the victim's cart or even triggering checkout without their knowledge.
+
+**Technical Details:**
+- Exploits the browser's automatic inclusion of session cookies in requests
+- Attacker doesn't need to steal credentials - they leverage the victim's authenticated session
+- Can be delivered via phishing emails, malicious ads, or compromised websites
+- Both form submissions and AJAX requests can be exploited
 
 **Attack Scenario:**
 
@@ -32,9 +63,34 @@ CSRF attacks occur when an attacker tricks a logged-in user into submitting unwa
 Without protection: Items added to victim's cart without consent
 ```
 
+**More Severe CSRF Examples:**
+```html
+<!-- Force checkout with attacker's delivery address -->
+<form action="http://127.0.0.1:8000/checkout" method="POST">
+    <input name="payment_method" value="cash">
+    <input name="delivery_address" value="Attacker's Address">
+</form>
+<script>document.forms[0].submit();</script>
+
+<!-- Clear victim's cart (denial of service) -->
+<img src="http://127.0.0.1:8000/cart/clear" style="display:none">
+```
+
+**Impact if Unmitigated:**
+- Unauthorized purchases using victim's account
+- Cart manipulation causing confusion and frustration
+- Potential for financial fraud through forced transactions
+- Privacy violation through unauthorized data access
+
 #### Threat 3: Replay Attack (Duplicate Payment)
 
 Replay attacks occur when an attacker captures and retransmits a valid payment request. Without idempotency protection, the same payment could be processed multiple times, resulting in duplicate orders or double charges.
+
+**Technical Details:**
+- Valid requests can be captured using network sniffing or browser extensions
+- Replayed requests appear legitimate because they contain valid authentication tokens
+- Time-based tokens can be vulnerable if window is too large
+- Database race conditions can allow duplicate inserts
 
 **Attack Scenario:**
 
@@ -44,6 +100,34 @@ Attacker replays the same request multiple times
 
 Without protection: Multiple orders created, user charged multiple times
 ```
+
+**Technical Exploitation:**
+```python
+# Replay attack script
+import requests
+
+captured_request = {
+    "payment_method": "card",
+    "stripe_payment_method_id": "pm_1234567890",
+    "cart_items": [...]
+}
+
+# Replay the same request multiple times
+for i in range(10):
+    response = requests.post(
+        'http://127.0.0.1:8000/checkout',
+        json=captured_request,
+        cookies={'session': 'valid_session_cookie'}
+    )
+    print(f"Attempt {i}: {response.status_code}")
+```
+
+**Impact if Unmitigated:**
+- Multiple charges to customer's payment method
+- Duplicate orders causing confusion and waste
+- Inventory discrepancies
+- Customer refund requests and chargebacks
+- Damage to business reputation
 
 ---
 

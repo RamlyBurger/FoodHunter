@@ -2,9 +2,17 @@
 
 ### 5.1 Potential Threats and Attacks
 
+The Vendor Management Module handles sensitive business data, financial information, and file uploads, making it a high-value target for attackers. Compromising a vendor account could lead to data theft, financial fraud, or even server compromise through malicious file uploads.
+
 #### Threat 1: Malicious File Upload
 
 Malicious file upload attacks occur when an attacker uploads a file with a dangerous extension (e.g., .php, .exe) disguised as a legitimate image by changing its extension. If the server only validates file extensions, the attacker could upload a PHP script named "image.jpg.php" or embed malicious code in an image file header.
+
+**Technical Details:**
+- File extension validation alone is insufficient - attackers can rename files
+- MIME type from HTTP headers can be spoofed by the client
+- Only magic byte (file header) validation reliably identifies file type
+- Web shells can be hidden in image EXIF data or after valid image headers
 
 **Attack Scenario:**
 
@@ -17,9 +25,35 @@ Attacker accesses: /storage/menu-items/malicious.jpg.php?cmd=whoami
 Result: Remote code execution on server!
 ```
 
+**Advanced Attack Variants:**
+```php
+// Polyglot file - valid JPEG that's also valid PHP
+// GIF89a header followed by PHP code
+GIF89a<?php system($_GET['cmd']); ?>
+
+// Image with PHP in EXIF comment
+// Passes image validation but executes when included
+
+// .htaccess upload to enable PHP execution in upload directory
+AddType application/x-httpd-php .jpg
+```
+
+**Impact if Unmitigated:**
+- Remote code execution on the web server
+- Complete server compromise and data theft
+- Backdoor installation for persistent access
+- Lateral movement to other systems on the network
+- Cryptocurrency mining or botnet participation
+
 #### Threat 2: Information Disclosure via Error Messages
 
 Information disclosure occurs when detailed error messages reveal internal system details to attackers. Stack traces, database errors, file paths, and configuration values can help attackers understand the system architecture and plan targeted attacks.
+
+**Technical Details:**
+- Development error messages often contain sensitive debugging information
+- Database errors can reveal table names, column names, and query structure
+- Stack traces expose file paths, library versions, and code structure
+- Timing differences in error responses can reveal valid vs invalid data
 
 **Attack Scenario:**
 
@@ -30,9 +64,36 @@ Attacker now knows: Database name, table naming convention, MySQL version
 This information aids SQL injection and other attacks!
 ```
 
+**Information Leaked by Poor Error Handling:**
+```
+# Database structure exposure
+"Column 'password_hash' cannot be null" → reveals column names
+
+# File path disclosure
+"File not found: /var/www/foodhunter/storage/app/menu-items/123.jpg"
+
+# Framework version exposure
+"Laravel v12.0.0 (PHP v8.2.0)"
+
+# Configuration disclosure
+"SMTP connection failed to mail.foodhunter.com:587"
+```
+
+**Impact if Unmitigated:**
+- Reconnaissance information for targeted attacks
+- SQL injection query crafting using known table/column names
+- Path traversal attacks using disclosed file paths
+- Version-specific exploit selection
+
 #### Threat 3: Brute Force Authentication Attacks
 
-Brute force attacks occur when an attacker systematically tries many password combinations to gain unauthorized access. Without detection and logging, attackers can run automated scripts attempting thousands of passwords against vendor accounts.
+Brute force attacks occur when an attacker systematically tries many password combinations to gain unauthorized access. Without detection and logging, attackers can run automated scripts attempting thousands of passwords against vendor accounts. Vendor accounts are particularly valuable targets due to their access to business data and revenue.
+
+**Technical Details:**
+- Automated tools can attempt thousands of passwords per minute
+- Credential stuffing uses leaked password databases
+- Low-and-slow attacks avoid rate limiting by spreading attempts over time
+- Without logging, attacks go undetected until successful
 
 **Attack Scenario:**
 
@@ -43,6 +104,29 @@ Without logging: No evidence of attack, no alerts
 Attacker eventually guesses correct password
 Result: Full access to vendor account, orders, revenue!
 ```
+
+**Attack Tools and Techniques:**
+```python
+# Automated brute force script
+import requests
+
+passwords = open('common_passwords.txt').readlines()
+for password in passwords:
+    response = requests.post('/vendor/login', data={
+        'email': 'vendor@foodhunter.com',
+        'password': password.strip()
+    })
+    if 'dashboard' in response.url:
+        print(f"Found password: {password}")
+        break
+```
+
+**Impact if Unmitigated:**
+- Vendor account takeover
+- Access to business revenue data and customer information
+- Ability to modify menu items, prices, and availability
+- Potential for financial fraud through order manipulation
+- Reputation damage to FoodHunter platform
 
 ---
 

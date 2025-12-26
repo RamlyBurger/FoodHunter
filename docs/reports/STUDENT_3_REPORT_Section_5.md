@@ -2,9 +2,17 @@
 
 ### 5.1 Potential Threats and Attacks
 
+The Order & Pickup Module handles sensitive order data and financial transactions, making it a high-value target for attackers. The module must protect against unauthorized access to orders, fraudulent order collection, and data integrity issues during concurrent operations.
+
 #### Threat 1: IDOR (Insecure Direct Object Reference)
 
-IDOR attacks occur when an attacker manipulates object identifiers to access resources belonging to other users. In the Order & Pickup module, an attacker could modify the order ID in API requests to view or cancel orders belonging to other customers.
+IDOR attacks occur when an attacker manipulates object identifiers to access resources belonging to other users. In the Order & Pickup module, an attacker could modify the order ID in API requests to view or cancel orders belonging to other customers. This vulnerability is listed in the OWASP Top 10 as "Broken Access Control."
+
+**Technical Details:**
+- Sequential or predictable IDs make IDOR attacks easier to execute
+- Attackers can use automated tools to enumerate order IDs
+- API endpoints that accept user-supplied IDs are particularly vulnerable
+- Both GET (viewing) and POST/PUT/DELETE (modifying) operations can be exploited
 
 **Attack Scenario:**
 
@@ -15,9 +23,33 @@ Malicious request: GET /api/orders/124 (another user's order)
 Without protection: Attacker views other customers' order details, addresses, payment info
 ```
 
+**Advanced Attack Variants:**
+```
+# Bulk enumeration attack
+for order_id in range(1, 10000):
+    response = requests.get(f'/api/orders/{order_id}', headers=auth_headers)
+    if response.status_code == 200:
+        save_order_data(response.json())
+
+# Order cancellation attack
+DELETE /api/orders/999/cancel  # Cancel competitor's order
+```
+
+**Impact if Unmitigated:**
+- Privacy breach exposing customer names, phone numbers, addresses
+- Financial information disclosure (payment method, amounts)
+- Ability to cancel or modify other users' orders
+- Regulatory violations (PDPA, GDPR)
+
 #### Threat 2: QR Code Tampering
 
-QR code tampering occurs when an attacker modifies or forges QR codes to collect orders that don't belong to them. Without digital signatures, an attacker could generate fake QR codes to fraudulently claim food orders.
+QR code tampering occurs when an attacker modifies or forges QR codes to collect orders that don't belong to them. Without digital signatures, an attacker could generate fake QR codes to fraudulently claim food orders, causing financial loss and customer dissatisfaction.
+
+**Technical Details:**
+- QR codes containing only order ID and queue number are easily forged
+- Attackers can observe legitimate QR code patterns and replicate them
+- QR code scanners typically trust the data without verification
+- Replay attacks can use previously valid QR codes
 
 **Attack Scenario:**
 
@@ -28,9 +60,36 @@ Forged QR: {"order_id": 456, "queue": 100}
 Without protection: Attacker claims someone else's food order
 ```
 
+**Advanced Attack Methods:**
+```
+# QR Code forgery
+1. Attacker observes QR code format from their own order
+2. Attacker creates QR codes for sequential order IDs
+3. Attacker waits near pickup counter with forged codes
+4. Attacker claims orders meant for other customers
+
+# Replay attack
+1. Attacker photographs a valid QR code before pickup
+2. Customer collects their order normally
+3. Attacker presents the same QR code later
+4. System may process the order again if not properly invalidated
+```
+
+**Impact if Unmitigated:**
+- Food theft causing financial loss to vendors
+- Customers arriving to find their orders already collected
+- Negative reviews and reputation damage
+- Potential for organized fraud schemes
+
 #### Threat 3: Race Condition (Double Order Processing)
 
 Race conditions occur when multiple concurrent requests attempt to modify the same resource simultaneously. In order processing, this could result in an order being confirmed twice, status being skipped, or inventory being decremented multiple times.
+
+**Technical Details:**
+- Race conditions exploit the gap between "check" and "act" operations
+- High-concurrency systems are particularly vulnerable
+- Can occur in both database operations and external API calls
+- Difficult to reproduce consistently, making debugging challenging
 
 **Attack Scenario:**
 
@@ -40,6 +99,29 @@ Request 2: POST /api/orders/123/confirm (at time T+1ms)
 
 Without protection: Both requests succeed, order confirmed twice, duplicate notifications sent
 ```
+
+**Technical Exploitation:**
+```python
+# Concurrent request attack using threading
+import threading
+import requests
+
+def confirm_order():
+    requests.post('/api/vendor/orders/123/confirm', headers=auth)
+
+threads = [threading.Thread(target=confirm_order) for _ in range(10)]
+for t in threads: t.start()
+for t in threads: t.join()
+
+# Result without protection: Multiple confirmations, duplicate inventory deduction
+```
+
+**Impact if Unmitigated:**
+- Double-charging customers
+- Inventory discrepancies
+- Duplicate notifications confusing users
+- Order status inconsistencies
+- Database integrity violations
 
 ---
 

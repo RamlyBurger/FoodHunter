@@ -2,9 +2,17 @@
 
 ### 5.1 Potential Threats and Attacks
 
+The User & Authentication Module is the primary target for attackers seeking unauthorized access to the FoodHunter system. As the gateway to user accounts, personal information, and order history, this module must be protected against various attack vectors. The following threats have been identified and addressed through specific security practices.
+
 #### Threat 1: Brute Force Attack
 
-Brute force attacks occur when an attacker systematically attempts multiple password combinations to gain unauthorized access to user accounts. Without proper protection, attackers could continuously submit login requests with different passwords until they find the correct one.
+Brute force attacks occur when an attacker systematically attempts multiple password combinations to gain unauthorized access to user accounts. Without proper protection, attackers could continuously submit login requests with different passwords until they find the correct one. Modern computing power allows attackers to attempt thousands of combinations per second using automated tools.
+
+**Technical Details:**
+- Attackers use tools like Hydra, Burp Suite Intruder, or custom scripts to automate login attempts
+- Dictionary attacks use pre-compiled lists of common passwords (e.g., rockyou.txt with 14 million passwords)
+- Credential stuffing attacks use leaked username/password pairs from other data breaches
+- Without rate limiting, a single server can receive hundreds of login attempts per second
 
 **Attack Scenario:**
 
@@ -16,20 +24,45 @@ Attempt 3: student@tarumt.edu.my / tarumt2024 → Failed
 Attempt 5847: student@tarumt.edu.my / MyP@ssw0rd! → SUCCESS (account compromised)
 ```
 
+**Impact if Unmitigated:**
+- Complete account takeover allowing access to personal information
+- Ability to place fraudulent orders using stored payment methods
+- Access to order history and delivery addresses
+- Potential for identity theft using collected personal data
+
 #### Threat 2: Session Hijacking
 
-Session hijacking occurs when an attacker steals a valid session token to impersonate a legitimate user. Attackers can obtain tokens through network sniffing on public WiFi, XSS attacks, or malware.
+Session hijacking occurs when an attacker steals a valid session token to impersonate a legitimate user. Attackers can obtain tokens through network sniffing on public WiFi, XSS attacks, or malware. This attack is particularly dangerous because it bypasses password authentication entirely.
+
+**Technical Details:**
+- Session tokens are typically stored in cookies or local storage
+- On unsecured networks (HTTP), tokens can be intercepted using packet sniffing tools like Wireshark
+- XSS vulnerabilities can allow JavaScript to read and exfiltrate session cookies
+- Man-in-the-middle (MITM) attacks can intercept tokens even on HTTPS if certificate validation is bypassed
 
 **Attack Scenario:**
 
 1. User logs into FoodHunter and receives token: `1|abc123xyz789...`
-2. Attacker intercepts this token via public WiFi
-3. Attacker uses the stolen token to access user's account
+2. Attacker intercepts this token via public WiFi using ARP spoofing
+3. Attacker uses the stolen token to access user's account from their own device
 4. Without proper session management, attacker maintains access indefinitely
+5. Even if the legitimate user changes their password, the stolen token remains valid
+
+**Impact if Unmitigated:**
+- Attacker can place orders, modify profile, and access sensitive data
+- Legitimate user may not notice the compromise until fraudulent activity occurs
+- Multiple devices could be accessing the account simultaneously
+- Difficulty in forensic analysis due to shared session identifiers
 
 #### Threat 3: Weak Password
 
-Weak passwords are easy targets for dictionary attacks and credential stuffing. Without enforcing password complexity, users may choose simple passwords like "password123" or "123456" which are quickly compromised.
+Weak passwords are easy targets for dictionary attacks and credential stuffing. Without enforcing password complexity, users may choose simple passwords like "password123" or "123456" which are quickly compromised. Studies show that over 80% of data breaches involve weak or stolen passwords.
+
+**Technical Details:**
+- Common passwords like "123456", "password", and "qwerty" appear in every password list
+- Users often reuse passwords across multiple sites, enabling credential stuffing
+- Personal information (birthdays, names, pet names) are commonly used and easily guessed
+- Short passwords (< 8 characters) can be cracked in minutes using modern GPU-based tools
 
 **Attack Scenario:**
 
@@ -37,6 +70,13 @@ Weak passwords are easy targets for dictionary attacks and credential stuffing. 
 2. Attacker uses dictionary attack against FoodHunter login
 3. Users with weak passwords are compromised within minutes
 4. Attacker gains access to multiple accounts using common password lists
+5. Compromised accounts can be used for fraud or sold on dark web markets
+
+**Impact if Unmitigated:**
+- Mass account compromise affecting many users simultaneously
+- Reputation damage to FoodHunter platform
+- Regulatory compliance issues (PDPA violations)
+- Financial losses from fraudulent transactions
 
 ---
 

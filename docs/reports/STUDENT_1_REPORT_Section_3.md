@@ -2,25 +2,54 @@
 
 ### 3.1 Description of Design Pattern
 
-The Strategy Pattern is a behavioral design pattern that enables selecting an algorithm's behavior at runtime. Instead of implementing a single algorithm directly, the code receives run-time instructions specifying which algorithm from a family of algorithms to use. This pattern was introduced by the Gang of Four (GoF) in their seminal book "Design Patterns: Elements of Reusable Object-Oriented Software" (1994).
+The Strategy Pattern is a behavioral design pattern that enables selecting an algorithm's behavior at runtime. Instead of implementing a single algorithm directly, the code receives run-time instructions specifying which algorithm from a family of algorithms to use. This pattern was introduced by the Gang of Four (GoF) in their seminal book "Design Patterns: Elements of Reusable Object-Oriented Software" (1994), and has since become one of the most widely used patterns in enterprise software development.
 
-In the FoodHunter User & Authentication Module, the Strategy Pattern is used to implement different authentication methods. The system supports multiple ways for users to authenticate:
+#### 3.1.1 Pattern Overview and History
 
-1. **Password Authentication**: Traditional email and password login
-2. **Token Authentication**: API token-based authentication for programmatic access
+The Strategy Pattern belongs to the behavioral pattern category, which focuses on how objects interact and distribute responsibility. The pattern's core insight is that algorithms can be encapsulated in separate classes and made interchangeable. This is particularly valuable when:
+
+- Multiple algorithms exist for the same task (e.g., different sorting algorithms, different authentication methods)
+- The algorithm selection needs to happen at runtime based on context
+- The algorithms need to be easily testable in isolation
+- New algorithms may need to be added in the future without disrupting existing code
+
+In traditional procedural programming, different algorithms would be implemented using conditional statements (if-else or switch-case). This approach leads to code that is difficult to maintain, test, and extend. The Strategy Pattern solves these problems by defining a family of algorithms, encapsulating each one, and making them interchangeable.
+
+#### 3.1.2 Application in FoodHunter Authentication
+
+In the FoodHunter User & Authentication Module, the Strategy Pattern is used to implement different authentication methods. The system supports multiple ways for users to authenticate, each with its own unique requirements and security considerations:
+
+1. **Password Authentication**: Traditional email and password login used by web browsers and mobile apps. This strategy validates credentials against the database using BCrypt hash comparison. It is the primary authentication method for most users.
+
+2. **Token Authentication**: API token-based authentication for programmatic access, mobile applications, and single-page applications. This strategy validates Bearer tokens issued by Laravel Sanctum, checking token existence, validity, and expiration.
+
+3. **Future Extensibility**: The pattern allows for easy addition of new strategies such as OAuth strategies (Google, Facebook), biometric authentication, two-factor authentication (TOTP, SMS), SSO integration, and LDAP/Active Directory authentication.
+
+#### 3.1.3 Why Strategy Pattern is Ideal for Authentication
 
 The Strategy Pattern is ideal for this use case because:
 
-- **Flexibility**: New authentication methods (e.g., OAuth, biometric) can be added without modifying existing code
-- **Single Responsibility**: Each authentication strategy is encapsulated in its own class
-- **Open/Closed Principle**: The system is open for extension but closed for modification
-- **Runtime Selection**: The authentication method can be switched dynamically based on the context (web login vs API access)
+- **Flexibility**: New authentication methods (e.g., OAuth, biometric) can be added without modifying existing code. Simply create a new class implementing `AuthStrategyInterface` and the system can use it immediately.
+
+- **Single Responsibility Principle (SRP)**: Each authentication strategy is encapsulated in its own class, handling only one specific authentication method. This makes the code easier to understand, test, and maintain.
+
+- **Open/Closed Principle (OCP)**: The system is open for extension but closed for modification. Adding a new authentication method doesn't require changes to `AuthService`, `AuthContext`, or any existing strategy classes.
+
+- **Runtime Selection**: The authentication method can be switched dynamically based on the context (web login vs API access). The `AuthService` uses password authentication by default but switches to token authentication when validating API tokens.
+
+- **Testability**: Each strategy can be unit tested independently with mock data, without requiring the entire authentication system to be set up. This improves test coverage and reduces test complexity.
+
+- **Dependency Injection**: The pattern naturally supports dependency injection, allowing strategies to be injected into the context, making the code more flexible and testable.
+
+#### 3.1.4 Pattern Components
 
 The pattern consists of three main components:
 
-- **Strategy Interface (`AuthStrategyInterface`)**: Defines the common interface for all authentication strategies
-- **Concrete Strategies (`PasswordAuthStrategy`, `TokenAuthStrategy`)**: Implement specific authentication algorithms
-- **Context (`AuthContext`)**: Maintains a reference to a Strategy object and delegates the authentication work to it
+- **Strategy Interface (`AuthStrategyInterface`)**: Defines the common interface for all authentication strategies. This interface declares the `authenticate()` method that all concrete strategies must implement, ensuring polymorphic behavior.
+
+- **Concrete Strategies (`PasswordAuthStrategy`, `TokenAuthStrategy`)**: Implement specific authentication algorithms. Each strategy encapsulates the logic for one authentication method, including credential validation, error handling, and user retrieval.
+
+- **Context (`AuthContext`)**: Maintains a reference to a Strategy object and delegates the authentication work to it. The context doesn't know which concrete strategy it's using, only that it implements the strategy interface. This decoupling is the key to the pattern's flexibility.
 
 ### 3.2 Implementation of Design Pattern
 

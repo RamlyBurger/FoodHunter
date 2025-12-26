@@ -2,23 +2,60 @@
 
 ### 3.1 Description of Design Pattern
 
-The Observer Pattern is a behavioral design pattern that defines a one-to-many dependency between objects so that when one object changes state, all its dependents are notified and updated automatically. This pattern promotes loose coupling between the subject and its observers.
+The Observer Pattern is a behavioral design pattern that defines a one-to-many dependency between objects so that when one object changes state, all its dependents are notified and updated automatically. This pattern promotes loose coupling between the subject and its observers. Also known as the Publish-Subscribe pattern, it was first documented by the Gang of Four and is widely used in event-driven systems.
 
-In the FoodHunter Cart, Checkout & Notifications Module, the Observer Pattern is used to send notifications when order events occur. When an order is created, its status changes, or it's completed, the OrderSubject notifies all attached observers (like NotificationObserver) which then create appropriate in-app notifications.
+#### 3.1.1 Pattern Overview and Event-Driven Architecture
+
+The Observer Pattern is fundamental to event-driven architecture, where components communicate through events rather than direct method calls. This approach provides several architectural benefits:
+
+- **Loose Coupling**: Publishers don't need to know about subscribers
+- **Scalability**: New subscribers can be added without modifying publishers
+- **Flexibility**: Subscribers can be dynamically attached and detached at runtime
+- **Asynchronous Potential**: Events can be processed synchronously or queued for async processing
+
+In modern applications, the Observer Pattern underpins notification systems, real-time updates, and reactive user interfaces.
+
+#### 3.1.2 Application in FoodHunter Notifications
+
+In the FoodHunter Cart, Checkout & Notifications Module, the Observer Pattern is used to send notifications when order events occur. The system handles three primary event types:
+
+| Event | Trigger | Notification Content |
+|-------|---------|---------------------|
+| `order.created` | Customer completes checkout | "Your order #123 has been placed" |
+| `order.status_changed` | Vendor updates order status | "Your order is now being prepared" |
+| `order.completed` | Customer picks up order | "Thank you! Your order is complete" |
+
+When an order is created, its status changes, or it's completed, the OrderSubject notifies all attached observers (like NotificationObserver) which then create appropriate in-app notifications. This decoupled design means the order processing code doesn't need to know anything about notifications.
+
+#### 3.1.3 Why Observer Pattern is Ideal for Notifications
 
 The Observer Pattern is ideal for this use case because:
 
-- **Decoupling**: Order processing logic is decoupled from notification logic
-- **Extensibility**: New observers (e.g., EmailObserver, SMSObserver) can be added without modifying existing code
-- **Single Responsibility**: Each observer handles only its specific concern
-- **Event-Driven**: Notifications are triggered automatically when events occur
+- **Decoupling**: Order processing logic is completely decoupled from notification logic. The `OrderController` simply creates an order and triggers an event - it doesn't know or care how many observers are listening or what they do.
+
+- **Extensibility**: New observers can be added without modifying existing code. Future enhancements could include:
+  - `EmailObserver`: Send order confirmation emails
+  - `SMSObserver`: Send text messages for ready orders
+  - `PushNotificationObserver`: Send mobile push notifications
+  - `AnalyticsObserver`: Track order events for business intelligence
+
+- **Single Responsibility Principle (SRP)**: Each observer handles only its specific concern. The `NotificationObserver` creates database notifications; a future `EmailObserver` would handle only email sending.
+
+- **Event-Driven**: Notifications are triggered automatically when events occur, eliminating the need for polling or manual notification triggers.
+
+- **Testability**: Each component can be tested independently. The subject can be tested with mock observers, and observers can be tested with mock subjects.
+
+#### 3.1.4 Pattern Components
 
 The pattern consists of:
 
-- **Subject Interface (`SubjectInterface`)**: Defines `attach()`, `detach()`, and `notify()` methods
-- **Concrete Subject (`OrderSubject`)**: Holds order state and notifies observers of events
-- **Observer Interface (`ObserverInterface`)**: Defines the `update()` method
-- **Concrete Observer (`NotificationObserver`)**: Creates in-app notifications on events
+- **Subject Interface (`SubjectInterface`)**: Defines `attach()`, `detach()`, and `notify()` methods. Any class that wants to be observable must implement this interface.
+
+- **Concrete Subject (`OrderSubject`)**: Wraps an Order model and maintains a collection of observers. Provides convenience methods like `orderCreated()`, `orderStatusChanged()`, and `orderCompleted()` that trigger the appropriate notifications.
+
+- **Observer Interface (`ObserverInterface`)**: Defines the `update()` method that receives the subject, event type, and event data. All observers must implement this interface.
+
+- **Concrete Observer (`NotificationObserver`)**: Implements `ObserverInterface` and creates in-app notifications based on event type. Uses PHP's `match` expression for clean event routing.
 
 ### 3.2 Implementation of Design Pattern
 

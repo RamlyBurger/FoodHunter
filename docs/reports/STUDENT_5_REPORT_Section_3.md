@@ -2,22 +2,60 @@
 
 ### 3.1 Description of Design Pattern
 
-The Factory Pattern is a creational design pattern that provides an interface for creating objects without specifying the exact class to create. It encapsulates object creation logic and returns objects of a common interface based on input parameters.
+The Factory Pattern is a creational design pattern that provides an interface for creating objects without specifying the exact class to create. It encapsulates object creation logic and returns objects of a common interface based on input parameters. Originally described by the Gang of Four (GoF), the Factory Pattern is one of the most commonly used patterns in enterprise software development.
 
-In the FoodHunter Vendor Management Module, the Factory Pattern is used to create different voucher types with different discount calculation logic. When a voucher is applied during checkout, the VoucherFactory creates the appropriate voucher object (FixedVoucher or PercentageVoucher) based on the voucher type stored in the database.
+#### 3.1.1 Pattern Overview and Variants
+
+The Factory Pattern exists in several variants:
+
+- **Simple Factory**: A single factory class with a method that creates objects based on parameters (used in FoodHunter)
+- **Factory Method**: Defines an interface for creating objects, letting subclasses decide which class to instantiate
+- **Abstract Factory**: Creates families of related objects without specifying concrete classes
+
+In FoodHunter, we use the Simple Factory (also called Static Factory) variant, where static methods on the `VoucherFactory` class create the appropriate voucher objects. This approach is simpler and well-suited for our use case where we have a small number of voucher types.
+
+#### 3.1.2 Application in FoodHunter Voucher System
+
+In the FoodHunter Vendor Management Module, the Factory Pattern is used to create different voucher types with different discount calculation logic. The system supports two primary voucher types:
+
+| Voucher Type | Example | Calculation Logic |
+|--------------|---------|-------------------|
+| **Fixed** | RM5 off | `discount = min(value, subtotal)` |
+| **Percentage** | 10% off (max RM20) | `discount = min(subtotal × rate, maxDiscount)` |
+
+When a voucher is applied during checkout, the VoucherFactory creates the appropriate voucher object (FixedVoucher or PercentageVoucher) based on the voucher type stored in the database. The calling code doesn't need to know which concrete class is being used - it simply works with the `VoucherInterface`.
+
+#### 3.1.3 Why Factory Pattern is Ideal for Voucher Management
 
 The Factory Pattern is ideal for this use case because:
 
-- **Encapsulation**: Voucher creation logic is centralized in one place
-- **Polymorphism**: Different voucher types share a common interface but have different behaviors
-- **Open/Closed**: New voucher types can be added without modifying existing code
-- **Single Responsibility**: Each voucher class handles only its own discount calculation
+- **Encapsulation**: Voucher creation logic is centralized in one place (`VoucherFactory`). If the creation process changes (e.g., adding validation), only one class needs to be modified.
+
+- **Polymorphism**: Different voucher types share a common interface but have different behaviors. The checkout process can call `calculateDiscount()` on any voucher without knowing its concrete type.
+
+- **Open/Closed Principle (OCP)**: New voucher types can be added without modifying existing code. Future voucher types could include:
+  - `BuyOneGetOneFreeVoucher`: Second item free
+  - `FreeDeliveryVoucher`: Waive delivery fees
+  - `BundleVoucher`: Discount on item combinations
+  - `LoyaltyVoucher`: Points-based discounts
+
+- **Single Responsibility Principle (SRP)**: Each voucher class handles only its own discount calculation. `FixedVoucher` doesn't know about percentages, and `PercentageVoucher` doesn't know about fixed amounts.
+
+- **Testability**: Each voucher type can be unit tested independently, and the factory's creation logic can be tested separately.
+
+- **Type Safety**: The factory ensures only valid voucher types are created, preventing runtime errors from invalid type strings.
+
+#### 3.1.4 Pattern Components
 
 The pattern consists of:
 
-- **Product Interface (`VoucherInterface`)**: Defines `calculateDiscount()`, `isApplicable()`, `getDescription()` methods
-- **Concrete Products**: `FixedVoucher` (fixed amount off), `PercentageVoucher` (percentage off)
-- **Factory (`VoucherFactory`)**: Creates appropriate voucher object based on type
+- **Product Interface (`VoucherInterface`)**: Defines the contract for all voucher types with methods `calculateDiscount()`, `isApplicable()`, `getDescription()`, `getType()`, and `getValue()`.
+
+- **Concrete Products**: 
+  - `FixedVoucher`: Applies a fixed monetary discount (e.g., RM5 off), ensuring the discount doesn't exceed the subtotal
+  - `PercentageVoucher`: Applies a percentage discount with an optional maximum cap (e.g., 10% off, max RM20)
+
+- **Factory (`VoucherFactory`)**: Static factory class with `create()` and `createFromModel()` methods that instantiate the appropriate voucher object based on type. Also provides convenience methods like `calculateDiscount()`, `isApplicable()`, and `getDescription()`.
 
 ### 3.2 Implementation of Design Pattern
 
