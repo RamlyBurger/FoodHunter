@@ -295,12 +295,13 @@ public function updateStatus(Order $order, string $newStatus, ?string $reason = 
                                        │ extends
            ┌───────────────┬───────────┼───────────┬───────────────┐
            │               │           │           │               │
-    ┌──────┴──────┐ ┌──────┴──────┐ ┌──┴───────┐ ┌─┴────────┐
-    │ PendingState│ │ConfirmedState│ │PreparingState│ │ ReadyState │
-    ├─────────────┤ ├─────────────┤ ├─────────────┤ ├────────────┤
-    │ confirm()   │ │ startPreparing()│ │ markReady()│ │ complete() │
-    │ cancel()    │ │ cancel()    │ └─────────────┘ └────────────┘
-    └─────────────┘ └─────────────┘
+    ┌──────┴──────┐ ┌──────┴──────┐ ┌──┴───────────┐ ┌─┴────────────┐
+    │ PendingState│ │ConfirmedState│ │PreparingState │ │  ReadyState  │
+    ├─────────────┤ ├──────────────┤ ├───────────────┤ ├──────────────┤
+    │+getStateName│ │+getStateName │ │+getStateName  │ │+getStateName │
+    │+confirm()   │ │+startPreparing│ │+markReady()   │ │+complete()   │
+    │+cancel()    │ │+cancel()     │ └───────────────┘ └──────────────┘
+    └─────────────┘ └──────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          State Transitions                                   │

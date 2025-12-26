@@ -97,28 +97,21 @@ This system is designed for **5 students** to develop, with each student respons
 
 3. **Configure environment**
    ```bash
-   cp .env.example .env
+   copy .env file from https://drive.google.com/file/d/1noamh6UL4saGwrma91BFsHz4wwYXadAk/view?usp=drive_link
    php artisan key:generate
    ```
 
-4. **Update `.env` with database credentials**
-   ```
-   DB_DATABASE=foodhunter
-   DB_USERNAME=root
-   DB_PASSWORD=your_password
-   ```
-
-5. **Create database**
+4. **Create database**
    ```sql
    CREATE DATABASE foodhunter CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
 
-6. **Run migrations and seeders**
+5. **Run migrations and seeders**
    ```bash
    php artisan migrate:fresh --seed
    ```
 
-7. **Start the development server**
+6. **Start the development server**
    ```bash
    php artisan serve
    ```
@@ -130,10 +123,11 @@ This system is designed for **5 students** to develop, with each student respons
 | Role | Email | Password |
 |------|-------|----------|
 | Customer | john@example.com | password123 |
-| Customer | jane@example.com | password123 |
-| Vendor | makcik@foodhunter.com | password123 |
-| Vendor | western@foodhunter.com | password123 |
-| Admin | admin@foodhunter.com | admin123 |
+| Customer | haerineds-jm22@student.tarc.edu.my | password123 |
+| Customer | ngwx-jm22@student.tarc.edu.my | password123 |
+| Vendor | lownl-jm22@student.tarc.edu.my | password123 |
+| Vendor | leekh-jm22@student.tarc.edu.my | password123 |
+| Vendor | leesy-jm22@student.tarc.edu.my | password123 |
 
 ---
 

@@ -146,6 +146,11 @@ class OrderSubject implements SubjectInterface
         }
     }
 
+    public function getOrder(): Order
+    {
+        return $this->order;
+    }
+
     public function orderCreated(): void
     {
         $this->notify('order.created', [
@@ -273,12 +278,11 @@ class NotificationObserver implements ObserverInterface
 │ + attach(): void           │        └────────────────────────────┘
 │ + detach(): void           │
 │ + notify(): void           │────────notifies────────►
+│ + getOrder(): Order        │
 │ + orderCreated(): void     │
 │ + orderStatusChanged(): void│
 │ + orderCompleted(): void   │
 └────────────────────────────┘
-```
-
 ### 3.4 Justification for Using Observer Pattern
 
 The Observer Pattern was chosen for the Notifications system for the following reasons:

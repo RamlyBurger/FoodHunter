@@ -289,12 +289,16 @@ class MenuController extends Controller
                     ├────────────────────────────────────────┤
                     │ + findById(id): MenuItem               │
                     │ + findBySlug(slug): MenuItem           │
+                    │ + getAll(): Collection                 │
                     │ + getAvailable(): Collection           │
                     │ + getFeatured(limit): Collection       │
+                    │ + getByCategory(id): Collection        │
+                    │ + getByVendor(id): Collection          │
                     │ + search(query): Collection            │
                     │ + create(data): MenuItem               │
                     │ + update(id, data): MenuItem           │
                     │ + delete(id): bool                     │
+                    │ + toggleAvailability(id): MenuItem     │
                     └────────────────────────────────────────┘
                                        │
                                        │ uses

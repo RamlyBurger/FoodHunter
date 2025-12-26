@@ -197,12 +197,28 @@ use App\Models\Voucher;
  */
 class VoucherFactory
 {
-    public static function create(string $type, float $value, ?float $minOrder = null, ?float $maxDiscount = null): VoucherInterface
+    public static function createFromModel(Voucher $voucher): VoucherInterface
     {
+        return self::create(
+            $voucher->type,
+            (float) $voucher->value,
+            $voucher->min_order ? (float) $voucher->min_order : null,
+            $voucher->max_discount ? (float) $voucher->max_discount : null,
+            $voucher->code
+        );
+    }
+
+    public static function create(
+        string $type,
+        float $value,
+        ?float $minOrder = null,
+        ?float $maxDiscount = null,
+        string $code = ''
+    ): VoucherInterface {
         return match ($type) {
-            'fixed' => new FixedVoucher($value, $minOrder),
-            'percentage' => new PercentageVoucher($value, $minOrder, $maxDiscount),
-            default => new FixedVoucher($value, $minOrder),
+            'fixed' => new FixedVoucher($value, $minOrder, $code),
+            'percentage' => new PercentageVoucher($value, $minOrder, $maxDiscount, $code),
+            default => new FixedVoucher($value, $minOrder, $code),
         };
     }
 
@@ -216,6 +232,12 @@ class VoucherFactory
     {
         $voucherObject = self::createFromModel($voucher);
         return $voucherObject->isApplicable($subtotal);
+    }
+
+    public static function getDescription(Voucher $voucher): string
+    {
+        $voucherObject = self::createFromModel($voucher);
+        return $voucherObject->getDescription();
     }
 }
 ```
@@ -247,9 +269,13 @@ class VoucherFactory
               ├─────────────────┤            ├───────────────────┤
               │ - value: float  │            │ - value: float    │
               │ - minOrder: float│           │ - minOrder: float │
-              ├─────────────────┤            │ - maxDiscount: float│
+              │ - code: string  │            │ - maxDiscount: float│
+              ├─────────────────┤            │ - code: string    │
               │ + calculateDiscount()│       ├───────────────────┤
-              │ + getDescription()│          │ + calculateDiscount()│
+              │ + getType(): string│         │ + calculateDiscount()│
+              │ + getValue(): float│         │ + getType(): string│
+              │ + isApplicable()│            │ + getValue(): float│
+              │ + getDescription()│          │ + isApplicable()│
               └─────────────────┘            │ + getDescription()│
                        △                     └───────────────────┘
                        │                               △
@@ -258,10 +284,12 @@ class VoucherFactory
               ┌────────┴───────────────────────────────┴────────┐
               │                VoucherFactory                    │
               ├─────────────────────────────────────────────────┤
-              │ + create(type, value, minOrder, maxDiscount)    │
+              │ + create(type, value, minOrder, maxDiscount,    │
+              │         code): VoucherInterface                 │
               │ + createFromModel(voucher): VoucherInterface    │
               │ + calculateDiscount(voucher, subtotal): float   │
               │ + isApplicable(voucher, subtotal): bool         │
+              │ + getDescription(voucher): string               │
               └─────────────────────────────────────────────────┘
 ```
 
