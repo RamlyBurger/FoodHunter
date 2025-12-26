@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\Category;
 use App\Models\MenuItem;
 use App\Models\Vendor;
@@ -54,7 +55,7 @@ class MenuController extends Controller
             'store_name' => $vendor->store_name,
             'slug' => $vendor->slug,
             'description' => $vendor->description,
-            'logo' => $vendor->logo,
+            'logo' => ImageHelper::vendorLogo($vendor->logo, $vendor->store_name),
             'avg_prep_time' => $vendor->avg_prep_time,
             'is_open' => $vendor->isCurrentlyOpen(),
         ]);
@@ -77,7 +78,7 @@ class MenuController extends Controller
                 'id' => $vendor->id,
                 'store_name' => $vendor->store_name,
                 'description' => $vendor->description,
-                'logo' => $vendor->logo,
+                'logo' => ImageHelper::vendorLogo($vendor->logo, $vendor->store_name),
                 'is_open' => $vendor->isCurrentlyOpen(),
             ],
             'menu' => $grouped,
@@ -175,6 +176,49 @@ class MenuController extends Controller
         );
     }
 
+    /**
+     * Web Service: Expose - Popular Items API
+     * Other modules (Order, Cart) consume this for recommendations
+     * Uses Repository Pattern for data access
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function popularItems(Request $request): JsonResponse
+    {
+        $categoryId = $request->get('category_id');
+        $vendorId = $request->get('vendor_id');
+        $limit = min((int) $request->get('limit', 10), 20);
+        
+        $query = MenuItem::where('is_available', true)
+            ->with(['category:id,name', 'vendor:id,store_name']);
+        
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+        
+        if ($vendorId) {
+            $query->where('vendor_id', $vendorId);
+        }
+        
+        $items = $query->orderBy('total_sold', 'desc')
+            ->limit($limit)
+            ->get();
+        
+        return $this->successResponse([
+            'items' => $items->map(fn($item) => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'price' => (float) $item->price,
+                'total_sold' => $item->total_sold,
+                'image' => ImageHelper::menuItem($item->image),
+                'category' => $item->category ? ['id' => $item->category->id, 'name' => $item->category->name] : null,
+                'vendor' => $item->vendor ? ['id' => $item->vendor->id, 'store_name' => $item->vendor->store_name] : null,
+            ]),
+            'total' => $items->count(),
+        ]);
+    }
+
     private function formatMenuItem(MenuItem $item, bool $detailed = false): array
     {
         $data = [
@@ -183,7 +227,7 @@ class MenuController extends Controller
             'slug' => $item->slug,
             'price' => (float) $item->price,
             'original_price' => $item->original_price ? (float) $item->original_price : null,
-            'image' => $item->image,
+            'image' => ImageHelper::menuItem($item->image),
             'is_available' => $item->is_available,
             'is_featured' => $item->is_featured,
             'has_discount' => $item->hasDiscount(),
@@ -195,6 +239,7 @@ class MenuController extends Controller
             'vendor' => $item->vendor ? [
                 'id' => $item->vendor->id,
                 'store_name' => $item->vendor->store_name,
+                'logo' => $item->vendor->logo ? ImageHelper::vendorLogo($item->vendor->logo, $item->vendor->store_name) : null,
             ] : null,
         ];
 

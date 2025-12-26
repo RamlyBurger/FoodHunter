@@ -234,6 +234,58 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Web Service: Expose - Validate Pickup QR Code API
+     * Vendor module consumes this to verify pickup codes before completing orders
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function validatePickupQr(Request $request): JsonResponse
+    {
+        $request->validate([
+            'qr_code' => 'required|string',
+        ]);
+
+        $pickup = Pickup::where('qr_code', $request->qr_code)->first();
+
+        if (!$pickup) {
+            return $this->errorResponse('Invalid QR code', 404, 'QR_NOT_FOUND');
+        }
+
+        $order = $pickup->order;
+
+        if (!$order) {
+            return $this->errorResponse('Order not found', 404, 'ORDER_NOT_FOUND');
+        }
+
+        // Check if order is ready for pickup
+        if ($order->status !== 'ready') {
+            return $this->errorResponse(
+                "Order is not ready for pickup. Current status: {$order->status}",
+                400,
+                'ORDER_NOT_READY'
+            );
+        }
+
+        // Check if already picked up
+        if ($pickup->status === 'picked_up') {
+            return $this->errorResponse('Order already picked up', 400, 'ALREADY_PICKED_UP');
+        }
+
+        return $this->successResponse([
+            'valid' => true,
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'vendor_id' => $order->vendor_id,
+            'customer_name' => $order->user->name ?? 'Customer',
+            'queue_number' => $pickup->queue_number,
+            'total' => (float) $order->total,
+            'items_count' => $order->items->count(),
+            'status' => $order->status,
+        ]);
+    }
+
     private function formatOrder(Order $order, bool $detailed = false): array
     {
         $data = [
@@ -309,6 +361,40 @@ class OrderController extends Controller
             'message' => "Added {$addedCount} items to cart",
             'items_added' => $addedCount,
             'items_unavailable' => $order->items->count() - $addedCount,
+        ]);
+    }
+
+    /**
+     * Get order history with user statistics
+     * Web Service: Consumes Student 1's User Stats API for order insights
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Consume Student 1's User Stats internally
+        $totalOrders = Order::where('user_id', $user->id)->count();
+        $completedOrders = Order::where('user_id', $user->id)->where('status', 'completed')->count();
+        $totalSpent = Order::where('user_id', $user->id)->where('status', 'completed')->sum('total');
+        
+        // Get recent orders
+        $recentOrders = Order::where('user_id', $user->id)
+            ->with(['vendor:id,store_name', 'pickup'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return $this->successResponse([
+            'user_stats' => [
+                'total_orders' => $totalOrders,
+                'completed_orders' => $completedOrders,
+                'total_spent' => round((float) $totalSpent, 2),
+                'average_order' => $completedOrders > 0 ? round($totalSpent / $completedOrders, 2) : 0,
+            ],
+            'recent_orders' => $recentOrders->map(fn($order) => $this->formatOrder($order)),
         ]);
     }
 }

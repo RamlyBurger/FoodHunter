@@ -256,7 +256,7 @@
 
 
         <!-- Orders Table -->
-        <div class="content-card">
+        <div class="content-card" id="orders-container">
             @if($orders->count() > 0)
             <div class="table-responsive">
                 <table class="orders-table">
@@ -325,7 +325,7 @@
                                     <h6 class="mb-3 fw-semibold">Order Items</h6>
                                     @foreach($order->items as $item)
                                     <a href="{{ $item->menuItem ? url('/menu/' . $item->menuItem->id) : '#' }}" class="item-detail text-decoration-none text-dark">
-                                        <img src="{{ $item->menuItem && $item->menuItem->image ? (Str::startsWith($item->menuItem->image, ['http://', 'https://']) ? $item->menuItem->image : asset('storage/' . $item->menuItem->image)) : '' }}" 
+                                        <img src="{{ $item->menuItem ? \App\Helpers\ImageHelper::menuItem($item->menuItem->image) : '' }}" 
                                              alt="{{ $item->item_name ?? 'Item' }}"
                                              onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($item->item_name ?? 'Item') }}&background=f3f4f6&color=9ca3af&size=120&font-size=0.33&bold=true';">
                                         <div class="flex-grow-1">
@@ -375,14 +375,109 @@
 
 @push('scripts')
 <script>
+// AJAX filtering for orders
 function setStatusFilter(status) {
     const statusSelect = document.getElementById('statusFilter');
     if (statusSelect) {
         statusSelect.value = status;
-        // Auto-submit the form
-        document.getElementById('filter-form').submit();
+        loadOrders();
     }
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
 }
+
+function loadOrders(page = 1) {
+    const form = document.getElementById('filter-form');
+    const formData = new FormData(form);
+    formData.set('page', page);
+    const params = new URLSearchParams(formData);
+    const targetUrl = `{{ url('/orders') }}?${params.toString()}`;
+    
+    const ordersContainer = document.getElementById('orders-container');
+    ordersContainer.style.opacity = '0.5';
+    
+    fetch(targetUrl, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(response => {
+        if (response.success && response.data) {
+            renderOrders(response.data);
+            window.history.pushState({}, '', targetUrl);
+        }
+        ordersContainer.style.opacity = '1';
+    })
+    .catch(err => {
+        console.error('Filter error:', err);
+        ordersContainer.style.opacity = '1';
+        showToast('Error loading orders', 'error');
+    });
+}
+
+function renderOrders(data) {
+    const ordersContainer = document.getElementById('orders-container');
+    const paginationContainer = document.querySelector('.pagination')?.parentElement;
+    
+    if (!data.orders || data.orders.length === 0) {
+        ordersContainer.innerHTML = `
+            <div class="text-center py-5">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 100px; height: 100px; background: var(--gray-100);">
+                    <i class="bi bi-receipt" style="font-size: 40px; color: var(--gray-400);"></i>
+                </div>
+                <h5 style="font-weight: 600;">No orders found</h5>
+                <p class="text-muted mb-4">No orders in this category</p>
+                <a href="{{ url('/menu') }}" class="btn btn-primary"><i class="bi bi-search me-1"></i> Browse Menu</a>
+            </div>
+        `;
+        if (paginationContainer) paginationContainer.innerHTML = '';
+        return;
+    }
+    
+    let html = `<div class="table-responsive"><table class="orders-table"><thead><tr>
+        <th style="width: 40px;"></th><th>Order</th><th>Restaurant</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th style="width: 120px;"></th>
+    </tr></thead><tbody>`;
+    
+    data.orders.forEach(order => {
+        const statusClass = {
+            'pending': 'warning', 'confirmed': 'info', 'preparing': 'primary',
+            'ready': 'success', 'completed': 'success', 'cancelled': 'danger'
+        }[order.status] || 'secondary';
+        
+        html += `
+            <tr class="order-row-main" onclick="toggleOrderItems(${order.id})">
+                <td class="text-center"><i class="bi bi-chevron-right expand-icon" id="expand-icon-${order.id}"></i></td>
+                <td><a href="/orders/${order.id}" class="fw-semibold text-decoration-none" style="color: var(--primary-color);">${order.order_number}</a></td>
+                <td>${order.vendor?.store_name || 'N/A'}</td>
+                <td><span class="badge bg-light text-dark">${order.items_count} item(s)</span></td>
+                <td class="fw-semibold">RM ${order.total.toFixed(2)}</td>
+                <td><span class="badge bg-${statusClass}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>
+                <td class="text-muted small">${order.created_at_human}</td>
+                <td>
+                    <a href="/orders/${order.id}" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-eye"></i></a>
+                    ${['completed', 'cancelled'].includes(order.status) ? `<button class="btn btn-sm btn-outline-success" id="reorder-btn-${order.id}" onclick="event.stopPropagation(); reorderItems(${order.id})"><i class="bi bi-arrow-repeat"></i></button>` : ''}
+                </td>
+            </tr>
+            <tr class="order-items-expanded" id="order-items-${order.id}" style="display: none;">
+                <td colspan="8"><div class="p-2"><em class="text-muted">View order details for item breakdown</em></div></td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    ordersContainer.innerHTML = html;
+}
+
+// Attach filter listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filter-form');
+    form?.querySelectorAll('select, input').forEach(el => {
+        el.addEventListener('change', () => loadOrders(1));
+    });
+});
 
 function toggleOrderItems(orderId) {
     const itemsRow = document.getElementById('order-items-' + orderId);

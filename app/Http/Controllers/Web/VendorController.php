@@ -3,25 +3,28 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\Order;
 use App\Models\MenuItem;
 use App\Models\Pickup;
 use App\Models\Voucher;
 use App\Patterns\State\OrderStateManager;
 use App\Services\NotificationService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class VendorController extends Controller
 {
+    use ApiResponse;
     public function dashboard(Request $request)
     {
         $vendor = Auth::user()->vendor;
 
         if (!$vendor) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'No vendor profile found.'], 403);
+                return $this->forbiddenResponse('No vendor profile found.');
             }
             return redirect('/')->with('error', 'No vendor profile found.');
         }
@@ -54,8 +57,7 @@ class VendorController extends Controller
 
         // Return JSON for AJAX requests (polling)
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'todayOrders' => $todayOrders,
                 'todayRevenue' => (float) $todayRevenue,
                 'pendingOrders' => $pendingOrders->count(),
@@ -110,6 +112,44 @@ class VendorController extends Controller
             'cancelled' => Order::where('vendor_id', $vendor->id)->where('status', 'cancelled')->count(),
         ];
 
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'orders' => $orders->map(function ($order) {
+                    return [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'total' => (float) $order->total,
+                        'created_at' => $order->created_at->format('M d, Y H:i'),
+                        'created_at_human' => $order->created_at->diffForHumans(),
+                        'customer' => [
+                            'name' => $order->user->name ?? 'Unknown',
+                            'email' => $order->user->email ?? '',
+                        ],
+                        'items_count' => $order->items->count(),
+                        'pickup' => $order->pickup ? [
+                            'queue_number' => $order->pickup->queue_number,
+                        ] : null,
+                    ];
+                }),
+                'pagination' => [
+                    'current_page' => $orders->currentPage(),
+                    'last_page' => $orders->lastPage(),
+                    'per_page' => $orders->perPage(),
+                    'total' => $orders->total(),
+                    'from' => $orders->firstItem(),
+                    'to' => $orders->lastItem(),
+                ],
+                'stats' => $stats,
+                'filters' => [
+                    'status' => $status,
+                    'search' => $request->search,
+                    'date' => $request->date,
+                ],
+            ]);
+        }
+
         return view('vendor.orders', compact('vendor', 'orders', 'status', 'stats'));
     }
 
@@ -119,7 +159,7 @@ class VendorController extends Controller
 
         if ($order->vendor_id !== $vendor->id) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
             abort(403);
         }
@@ -127,17 +167,7 @@ class VendorController extends Controller
         $order->load(['user', 'items.menuItem', 'payment', 'pickup']);
 
         if ($request->ajax() || $request->wantsJson()) {
-            // Get customer avatar with proper fallback
-            $customerAvatar = null;
-            if ($order->user) {
-                $avatar = $order->user->avatar;
-                if ($avatar) {
-                    $customerAvatar = str_starts_with($avatar, 'http') ? $avatar : asset('storage/' . $avatar);
-                }
-            }
-            
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'order' => [
                     'id' => $order->id,
                     'order_number' => $order->order_number,
@@ -145,23 +175,18 @@ class VendorController extends Controller
                     'total' => (float) $order->total,
                     'customer_name' => $order->user->name ?? 'Unknown',
                     'customer_email' => $order->user->email ?? '',
-                    'customer_avatar' => $customerAvatar,
+                    'customer_avatar' => $order->user ? ImageHelper::avatar($order->user->avatar, $order->user->name ?? 'User') : null,
                     'payment_method' => $order->payment->method ?? 'Cash',
                     'queue_number' => $order->pickup->queue_number ?? null,
                     'created_at' => $order->created_at->format('M d, Y h:i A'),
                     'items' => $order->items->map(function($item) {
-                        $image = null;
-                        if ($item->menuItem && $item->menuItem->image) {
-                            $img = $item->menuItem->image;
-                            $image = str_starts_with($img, 'http') ? $img : asset('storage/' . $img);
-                        }
                         return [
                             'id' => $item->id,
                             'item_name' => $item->item_name,
                             'quantity' => (int) $item->quantity,
                             'price' => (float) $item->price,
                             'unit_price' => (float) ($item->price / max($item->quantity, 1)),
-                            'image' => $image,
+                            'image' => $item->menuItem ? ImageHelper::menuItem($item->menuItem->image) : null,
                         ];
                     }),
                 ]
@@ -178,7 +203,7 @@ class VendorController extends Controller
 
         if ($order->vendor_id !== $vendor->id) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
             abort(403);
         }
@@ -191,7 +216,7 @@ class VendorController extends Controller
 
         if (!OrderStateManager::canTransitionTo($order, $newStatus)) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => "Cannot change status from {$order->status} to {$newStatus}."]);
+                return $this->errorResponse("Cannot change status from {$order->status} to {$newStatus}.", 400);
             }
             return back()->with('error', "Cannot change status from {$order->status} to {$newStatus}.");
         }
@@ -216,13 +241,13 @@ class VendorController extends Controller
             );
             
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Order status updated to ' . ucfirst($newStatus)]);
+                return $this->successResponse(null, 'Order status updated to ' . ucfirst($newStatus));
             }
             return back()->with('success', 'Order status updated to ' . ucfirst($newStatus));
         }
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => false, 'message' => 'Failed to update order status.']);
+            return $this->errorResponse('Failed to update order status.', 500);
         }
         return back()->with('error', 'Failed to update order status.');
     }
@@ -250,6 +275,40 @@ class VendorController extends Controller
         
         $items = $query->orderBy('name')->paginate($perPage)->withQueryString();
 
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'items' => $items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'description' => $item->description,
+                        'price' => (float) $item->price,
+                        'category' => $item->category ? [
+                            'id' => $item->category->id,
+                            'name' => $item->category->name,
+                        ] : null,
+                        'is_available' => $item->is_available,
+                        'image' => ImageHelper::menuItem($item->image),
+                        'total_sold' => $item->total_sold ?? 0,
+                    ];
+                }),
+                'pagination' => [
+                    'current_page' => $items->currentPage(),
+                    'last_page' => $items->lastPage(),
+                    'per_page' => $items->perPage(),
+                    'total' => $items->total(),
+                    'from' => $items->firstItem(),
+                    'to' => $items->lastItem(),
+                ],
+                'filters' => [
+                    'search' => $request->search,
+                    'category' => $request->category,
+                    'status' => $request->status,
+                ],
+            ]);
+        }
+
         return view('vendor.menu', compact('vendor', 'items'));
     }
 
@@ -259,7 +318,7 @@ class VendorController extends Controller
 
         if ($menuItem->vendor_id !== $vendor->id) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
             abort(403);
         }
@@ -267,8 +326,7 @@ class VendorController extends Controller
         $menuItem->load('category');
         
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'item' => [
                     'id' => $menuItem->id,
                     'name' => $menuItem->name,
@@ -276,7 +334,7 @@ class VendorController extends Controller
                     'price' => $menuItem->price,
                     'category' => $menuItem->category->name ?? 'Uncategorized',
                     'is_available' => $menuItem->is_available,
-                    'image' => $menuItem->image ? (str_starts_with($menuItem->image, 'http') ? $menuItem->image : asset('storage/' . $menuItem->image)) : null,
+                    'image' => ImageHelper::menuItem($menuItem->image),
                     'prep_time' => $menuItem->prep_time,
                     'total_sold' => $menuItem->total_sold ?? 0,
                     'created_at' => $menuItem->created_at->format('d M Y'),
@@ -321,21 +379,33 @@ class VendorController extends Controller
                 $validated['image'] = $file->store('menu-items', 'public');
             }
 
-            MenuItem::create($validated);
+            $menuItem = MenuItem::create($validated);
+            $menuItem->load('category');
 
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Menu item created successfully.']);
+                return $this->successResponse([
+                    'item' => [
+                        'id' => $menuItem->id,
+                        'name' => $menuItem->name,
+                        'description' => $menuItem->description,
+                        'price' => $menuItem->price,
+                        'is_available' => $menuItem->is_available,
+                        'category_id' => $menuItem->category_id,
+                        'category' => $menuItem->category ? ['name' => $menuItem->category->name] : null,
+                        'image' => ImageHelper::menuItem($menuItem->image),
+                    ]
+                ], 'Menu item created successfully.');
             }
 
             return redirect()->route('vendor.menu')->with('success', 'Menu item created successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+                return $this->validationErrorResponse($e->errors());
             }
             throw $e;
         } catch (\Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'An error occurred while creating the item.'], 500);
+                return $this->serverErrorResponse('An error occurred while creating the item.');
             }
             throw $e;
         }
@@ -347,7 +417,7 @@ class VendorController extends Controller
 
         if ($menuItem->vendor_id !== $vendor->id) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
+                return $this->forbiddenResponse('Unauthorized action.');
             }
             abort(403);
         }
@@ -383,20 +453,32 @@ class VendorController extends Controller
             }
 
             $menuItem->update($validated);
+            $menuItem->load('category');
 
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Menu item updated successfully.']);
+                return $this->successResponse([
+                    'item' => [
+                        'id' => $menuItem->id,
+                        'name' => $menuItem->name,
+                        'description' => $menuItem->description,
+                        'price' => $menuItem->price,
+                        'is_available' => $menuItem->is_available,
+                        'category_id' => $menuItem->category_id,
+                        'category' => $menuItem->category ? ['name' => $menuItem->category->name] : null,
+                        'image' => ImageHelper::menuItem($menuItem->image),
+                    ]
+                ], 'Menu item updated successfully.');
             }
 
             return redirect()->route('vendor.menu')->with('success', 'Menu item updated successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+                return $this->validationErrorResponse($e->errors());
             }
             throw $e;
         } catch (\Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'An error occurred while updating the item.'], 500);
+                return $this->serverErrorResponse('An error occurred while updating the item.');
             }
             throw $e;
         }
@@ -408,7 +490,7 @@ class VendorController extends Controller
 
         if ($menuItem->vendor_id !== $vendor->id) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
+                return $this->forbiddenResponse('Unauthorized action.');
             }
             abort(403);
         }
@@ -422,24 +504,31 @@ class VendorController extends Controller
             $menuItem->delete();
 
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Menu item deleted successfully.']);
+                return $this->successResponse(null, 'Menu item deleted successfully.');
             }
 
             return redirect()->route('vendor.menu')->with('success', 'Menu item deleted successfully.');
         } catch (\Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'An error occurred while deleting the item.'], 500);
+                return $this->serverErrorResponse('An error occurred while deleting the item.');
             }
             throw $e;
         }
     }
 
-    public function toggleOpen()
+    public function toggleOpen(Request $request)
     {
         $vendor = Auth::user()->vendor;
         $vendor->update(['is_open' => !$vendor->is_open]);
 
         $status = $vendor->is_open ? 'open' : 'closed';
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'is_open' => $vendor->is_open,
+            ], "Store is now {$status}.");
+        }
+        
         return back()->with('success', "Store is now {$status}.");
     }
 
@@ -469,7 +558,7 @@ class VendorController extends Controller
 
         if (!$pickup) {
             if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Invalid QR code.']);
+                return $this->errorResponse('Invalid QR code.', 400);
             }
             return back()->with('error', 'Invalid QR code.');
         }
@@ -479,7 +568,7 @@ class VendorController extends Controller
         // Verify this order belongs to this vendor
         if ($order->vendor_id !== $vendor->id) {
             if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'This order is not for your store.']);
+                return $this->forbiddenResponse('This order is not for your store.');
             }
             return back()->with('error', 'This order is not for your store.');
         }
@@ -487,17 +576,13 @@ class VendorController extends Controller
         // Check order status
         if ($order->status !== 'ready') {
             if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => "Order is not ready for pickup. Current status: {$order->status}"
-                ]);
+                return $this->errorResponse("Order is not ready for pickup. Current status: {$order->status}", 400);
             }
             return back()->with('error', "Order is not ready for pickup. Current status: {$order->status}");
         }
 
         if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'order' => [
                     'id' => $order->id,
                     'order_number' => $order->order_number,
@@ -515,15 +600,21 @@ class VendorController extends Controller
         return view('vendor.pickup-confirm', compact('vendor', 'order', 'pickup'));
     }
 
-    public function completePickup(Order $order)
+    public function completePickup(Request $request, Order $order)
     {
         $vendor = Auth::user()->vendor;
 
         if ($order->vendor_id !== $vendor->id) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->forbiddenResponse('Unauthorized');
+            }
             abort(403);
         }
 
         if ($order->status !== 'ready') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->errorResponse('Order must be ready before completing pickup.', 400);
+            }
             return back()->with('error', 'Order must be ready before completing pickup.');
         }
 
@@ -546,9 +637,16 @@ class VendorController extends Controller
                 $vendor->store_name
             );
 
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->successResponse(null, "Order #{$order->order_number} completed!");
+            }
+
             return redirect()->route('vendor.dashboard')->with('success', "Order #{$order->order_number} completed!");
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->errorResponse('Failed to complete order.', 500);
+        }
         return back()->with('error', 'Failed to complete order.');
     }
 
@@ -564,34 +662,25 @@ class VendorController extends Controller
 
             // Verify order belongs to this vendor
             if ($order->vendor_id !== $vendor->id) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
 
             // Validate request
             $qrCode = $request->input('qr_code');
             if (empty($qrCode) || !is_string($qrCode)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'QR code is required'
-                ]);
+                return $this->errorResponse('QR code is required', 400);
             }
 
             $qrCode = trim($qrCode);
 
             // Validate format - QR codes start with PU-
             if (!str_starts_with(strtoupper($qrCode), 'PU-')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid QR code format'
-                ]);
+                return $this->errorResponse('Invalid QR code format', 400);
             }
 
             // Verify order status is ready
             if ($order->status !== 'ready') {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Order is not ready for pickup. Current status: {$order->status}"
-                ]);
+                return $this->errorResponse("Order is not ready for pickup. Current status: {$order->status}", 400);
             }
 
             // Find pickup by QR code (consistent with verifyQrCode method)
@@ -610,18 +699,12 @@ class VendorController extends Controller
                     'ip' => $request->ip(),
                 ]);
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid QR code. Please check the code and try again.'
-                ]);
+                return $this->errorResponse('Invalid QR code. Please check the code and try again.', 400);
             }
 
             // Verify the pickup belongs to this order
             if ($pickup->order_id !== $order->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This QR code does not match the selected order.'
-                ]);
+                return $this->errorResponse('This QR code does not match the selected order.', 400);
             }
 
             // Complete the order
@@ -651,16 +734,10 @@ class VendorController extends Controller
                     ]);
                 }
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Order completed successfully'
-                ]);
+                return $this->successResponse(null, 'Order completed successfully');
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to complete order. Please try again.'
-            ]);
+            return $this->errorResponse('Failed to complete order. Please try again.', 500);
         } catch (\Exception $e) {
             \Log::error('Complete pickup error', [
                 'order_id' => $order->id ?? null,
@@ -668,10 +745,7 @@ class VendorController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred. Please try again.'
-            ], 500);
+            return $this->serverErrorResponse('An error occurred. Please try again.');
         }
     }
 
@@ -717,6 +791,43 @@ class VendorController extends Controller
             'total_usage' => Voucher::where('vendor_id', $vendor->id)->sum('usage_count'),
         ];
 
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'vouchers' => $vouchers->map(function ($voucher) {
+                    return [
+                        'id' => $voucher->id,
+                        'code' => $voucher->code,
+                        'name' => $voucher->name,
+                        'description' => $voucher->description,
+                        'type' => $voucher->type,
+                        'value' => (float) $voucher->value,
+                        'min_order' => $voucher->min_order ? (float) $voucher->min_order : null,
+                        'max_discount' => $voucher->max_discount ? (float) $voucher->max_discount : null,
+                        'usage_limit' => $voucher->usage_limit,
+                        'usage_count' => $voucher->usage_count,
+                        'per_user_limit' => $voucher->per_user_limit,
+                        'is_active' => $voucher->is_active,
+                        'expires_at' => $voucher->expires_at ? $voucher->expires_at->format('Y-m-d') : null,
+                        'is_expired' => $voucher->expires_at && $voucher->expires_at->isPast(),
+                    ];
+                }),
+                'pagination' => [
+                    'current_page' => $vouchers->currentPage(),
+                    'last_page' => $vouchers->lastPage(),
+                    'per_page' => $vouchers->perPage(),
+                    'total' => $vouchers->total(),
+                    'from' => $vouchers->firstItem(),
+                    'to' => $vouchers->lastItem(),
+                ],
+                'stats' => $stats,
+                'filters' => [
+                    'search' => $request->search,
+                    'status' => $request->status,
+                ],
+            ]);
+        }
+
         return view('vendor.vouchers', compact('vendor', 'vouchers', 'stats'));
     }
 
@@ -724,7 +835,7 @@ class VendorController extends Controller
     {
         $vendor = Auth::user()->vendor;
         if (!$vendor) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            return $this->forbiddenResponse('Unauthorized');
         }
 
         try {
@@ -780,26 +891,20 @@ class VendorController extends Controller
             ]);
 
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Voucher created successfully!', 'voucher' => $voucher]);
+                return $this->successResponse(['voucher' => $voucher], 'Voucher created successfully!');
             }
 
             return back()->with('success', 'Voucher created successfully!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
-                $errors = $e->errors();
-                $firstError = collect($errors)->flatten()->first();
-                return response()->json([
-                    'success' => false, 
-                    'message' => $firstError,
-                    'errors' => $errors
-                ], 422);
+                return $this->validationErrorResponse($e->errors());
             }
             throw $e;
         } catch (\Exception $e) {
             \Log::error('Voucher creation failed', ['error' => $e->getMessage()]);
             if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Failed to create voucher. Please try again.'], 500);
+                return $this->serverErrorResponse('Failed to create voucher. Please try again.');
             }
             return back()->with('error', 'Failed to create voucher.');
         }
@@ -809,7 +914,7 @@ class VendorController extends Controller
     {
         $vendor = Auth::user()->vendor;
         if (!$vendor || $voucher->vendor_id !== $vendor->id) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            return $this->forbiddenResponse('Unauthorized');
         }
 
         try {
@@ -851,26 +956,20 @@ class VendorController extends Controller
             ]);
 
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Voucher updated successfully!']);
+                return $this->successResponse(['voucher' => $voucher], 'Voucher updated successfully!');
             }
 
             return back()->with('success', 'Voucher updated successfully!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
-                $errors = $e->errors();
-                $firstError = collect($errors)->flatten()->first();
-                return response()->json([
-                    'success' => false, 
-                    'message' => $firstError,
-                    'errors' => $errors
-                ], 422);
+                return $this->validationErrorResponse($e->errors());
             }
             throw $e;
         } catch (\Exception $e) {
             \Log::error('Voucher update failed', ['error' => $e->getMessage()]);
             if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Failed to update voucher.'], 500);
+                return $this->serverErrorResponse('Failed to update voucher.');
             }
             return back()->with('error', 'Failed to update voucher.');
         }
@@ -880,13 +979,13 @@ class VendorController extends Controller
     {
         $vendor = Auth::user()->vendor;
         if (!$vendor || $voucher->vendor_id !== $vendor->id) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            return $this->forbiddenResponse('Unauthorized');
         }
 
         $voucher->delete();
 
         if (request()->ajax()) {
-            return response()->json(['success' => true, 'message' => 'Voucher deleted successfully!']);
+            return $this->successResponse(null, 'Voucher deleted successfully!');
         }
 
         return back()->with('success', 'Voucher deleted successfully!');
@@ -896,23 +995,21 @@ class VendorController extends Controller
     {
         $vendor = Auth::user()->vendor;
         if (!$vendor || $voucher->vendor_id !== $vendor->id) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            return $this->forbiddenResponse('Unauthorized');
         }
 
         $voucher->update(['is_active' => !$voucher->is_active]);
 
-        return response()->json([
-            'success' => true,
-            'message' => $voucher->is_active ? 'Voucher activated!' : 'Voucher deactivated!',
+        return $this->successResponse([
             'is_active' => $voucher->is_active,
-        ]);
+        ], $voucher->is_active ? 'Voucher activated!' : 'Voucher deactivated!');
     }
 
     public function toggleStatus(Request $request)
     {
         $vendor = Auth::user()->vendor;
         if (!$vendor) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            return $this->forbiddenResponse('Unauthorized');
         }
 
         $request->validate([
@@ -921,18 +1018,16 @@ class VendorController extends Controller
 
         $vendor->update(['is_open' => $request->is_open]);
 
-        return response()->json([
-            'success' => true,
-            'message' => $request->is_open ? 'Your store is now open!' : 'Your store is now closed.',
+        return $this->successResponse([
             'is_open' => $vendor->is_open,
-        ]);
+        ], $request->is_open ? 'Your store is now open!' : 'Your store is now closed.');
     }
 
     public function updateHours(Request $request)
     {
         $vendor = Auth::user()->vendor;
         if (!$vendor) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            return $this->forbiddenResponse('Unauthorized');
         }
 
         $request->validate([
@@ -958,9 +1053,6 @@ class VendorController extends Controller
             );
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Operating hours updated successfully!',
-        ]);
+        return $this->successResponse(null, 'Operating hours updated successfully!');
     }
 }

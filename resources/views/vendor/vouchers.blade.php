@@ -115,7 +115,7 @@
                     </thead>
                     <tbody>
                         @forelse($vouchers as $voucher)
-                        <tr>
+                        <tr id="voucher-row-{{ $voucher->id }}" data-voucher-id="{{ $voucher->id }}">
                             <td class="px-4 py-3">
                                 <span class="voucher-code">{{ $voucher->code }}</span>
                             </td>
@@ -209,6 +209,16 @@
 
 @push('styles')
 <style>
+/* Row animations for CRUD operations */
+@keyframes flashHighlight {
+    0% { background-color: rgba(102, 126, 234, 0.3); }
+    100% { background-color: transparent; }
+}
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(-20px); }
+}
+
 /* Table Font Size */
 .vouchers-table {
     font-size: 0.85rem;
@@ -690,13 +700,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (res.ok && data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: data.message,
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => location.reload());
+                closeEditModal();
+                const voucher = data.data?.voucher || data.voucher;
+                
+                if (currentEditId && voucher) {
+                    // Update existing row
+                    updateVoucherRow(voucher);
+                    showToast('Voucher updated successfully!', 'success');
+                } else if (voucher) {
+                    // Add new row
+                    addVoucherRow(voucher);
+                    showToast('Voucher created successfully!', 'success');
+                } else {
+                    showToast(data.message || 'Voucher saved successfully!', 'success');
+                    // Fallback reload only if no voucher data returned
+                    setTimeout(() => location.reload(), 1000);
+                }
             } else {
                 const errorMessage = data.message || 'Operation failed. Please check your input.';
                 errorEl.textContent = errorMessage;
@@ -726,13 +745,26 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const data = await res.json();
             if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: data.is_active ? 'Activated!' : 'Deactivated!',
-                    text: data.message,
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => location.reload());
+                const isActive = data.is_active || data.data?.is_active;
+                const row = document.getElementById('voucher-row-' + id);
+                if (row) {
+                    // Update status badge
+                    const statusCell = row.querySelectorAll('td')[6];
+                    if (statusCell) {
+                        statusCell.innerHTML = isActive 
+                            ? '<span class="badge bg-success">Active</span>'
+                            : '<span class="badge bg-secondary">Inactive</span>';
+                    }
+                    // Update toggle button
+                    btn.className = `btn btn-sm btn-action-sm ${isActive ? 'btn-outline-warning' : 'btn-outline-success'}`;
+                    btn.innerHTML = `<i class="bi bi-${isActive ? 'pause' : 'play'}"></i>`;
+                    
+                    // Flash animation
+                    row.style.animation = 'none';
+                    row.offsetHeight;
+                    row.style.animation = 'flashHighlight 1s ease';
+                }
+                showToast(data.message || (isActive ? 'Voucher activated!' : 'Voucher deactivated!'), 'success');
             }
         } catch (e) {
             Swal.fire('Error', 'An error occurred', 'error');
@@ -764,13 +796,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     const data = await res.json();
                     if (data.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Deleted!',
-                            text: data.message,
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => location.reload());
+                        // Remove row from DOM
+                        const row = document.getElementById('voucher-row-' + id);
+                        if (row) {
+                            row.style.animation = 'fadeOut 0.3s ease';
+                            setTimeout(() => {
+                                row.remove();
+                                // Check if table is empty
+                                const tbody = document.querySelector('.vouchers-table tbody');
+                                if (tbody && tbody.querySelectorAll('tr[data-voucher-id]').length === 0) {
+                                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4"><i class="bi bi-ticket-perforated fs-1 text-muted"></i><p class="text-muted mt-2">No vouchers found</p></td></tr>`;
+                                }
+                            }, 300);
+                        }
+                        showToast('Voucher deleted successfully!', 'success');
                     }
                 } catch (e) {
                     Swal.fire('Error', 'An error occurred', 'error');
@@ -778,6 +817,62 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     };
+
+    // Update existing voucher row in DOM
+    function updateVoucherRow(voucher) {
+        const row = document.getElementById('voucher-row-' + voucher.id);
+        if (!row) return;
+        
+        const cells = row.querySelectorAll('td');
+        
+        // Update cells
+        cells[0].innerHTML = `<span class="voucher-code">${voucher.code}</span>`;
+        cells[1].textContent = voucher.name;
+        cells[2].innerHTML = voucher.type === 'percentage' 
+            ? `<strong>${parseFloat(voucher.value).toFixed(0)}%</strong>${voucher.max_discount ? '<br><small class="text-muted">max RM' + parseFloat(voucher.max_discount).toFixed(2) + '</small>' : ''}`
+            : `<strong>RM ${parseFloat(voucher.value).toFixed(2)}</strong>`;
+        cells[3].textContent = 'RM ' + parseFloat(voucher.min_order || 0).toFixed(2);
+        
+        // Flash animation
+        row.style.animation = 'none';
+        row.offsetHeight;
+        row.style.animation = 'flashHighlight 1s ease';
+    }
+    
+    // Add new voucher row to DOM
+    function addVoucherRow(voucher) {
+        const tbody = document.querySelector('.vouchers-table tbody');
+        if (!tbody) return;
+        
+        // Remove empty state if exists
+        const emptyRow = tbody.querySelector('td[colspan="8"]');
+        if (emptyRow) emptyRow.closest('tr').remove();
+        
+        const newRow = document.createElement('tr');
+        newRow.id = 'voucher-row-' + voucher.id;
+        newRow.dataset.voucherId = voucher.id;
+        
+        newRow.innerHTML = `
+            <td class="px-4 py-3"><span class="voucher-code">${voucher.code}</span></td>
+            <td class="py-3">${voucher.name}</td>
+            <td class="py-3">${voucher.type === 'percentage' ? '<strong>' + parseFloat(voucher.value).toFixed(0) + '%</strong>' : '<strong>RM ' + parseFloat(voucher.value).toFixed(2) + '</strong>'}</td>
+            <td class="py-3">RM ${parseFloat(voucher.min_order || 0).toFixed(2)}</td>
+            <td class="py-3">0${voucher.usage_limit ? ' / ' + voucher.usage_limit : ''}</td>
+            <td class="py-3">${voucher.expires_at ? new Date(voucher.expires_at).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'}) : '<span class="text-muted">No expiry</span>'}</td>
+            <td class="py-3"><span class="badge bg-success">Active</span></td>
+            <td class="py-3 text-end pe-4">
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-info btn-action-sm" data-voucher-id="${voucher.id}" onclick="viewVoucher(this)"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-primary btn-action-sm" data-voucher='${JSON.stringify(voucher)}' onclick="editVoucher(this)"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-action-sm btn-outline-warning" data-voucher-id="${voucher.id}" onclick="toggleVoucher(this)"><i class="bi bi-pause"></i></button>
+                    <button class="btn btn-sm btn-outline-danger btn-action-sm" data-voucher-id="${voucher.id}" data-voucher-name="${voucher.name}" onclick="deleteVoucher(this)"><i class="bi bi-trash"></i></button>
+                </div>
+            </td>
+        `;
+        
+        tbody.insertBefore(newRow, tbody.firstChild);
+        newRow.style.animation = 'flashHighlight 1s ease';
+    }
 
     // Close modals on escape
     document.addEventListener('keydown', function(e) {

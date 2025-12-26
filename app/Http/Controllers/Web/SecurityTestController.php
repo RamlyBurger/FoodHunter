@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -22,6 +23,7 @@ use App\Models\Notification;
  */
 class SecurityTestController extends Controller
 {
+    use ApiResponse;
     public function __construct()
     {
         // Only allow in local environment

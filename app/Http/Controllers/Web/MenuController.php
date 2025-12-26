@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\Category;
 use App\Models\MenuItem;
 use App\Models\Vendor;
 use App\Models\Wishlist;
 use App\Patterns\Repository\MenuItemRepositoryInterface;
 use App\Patterns\Repository\EloquentMenuItemRepository;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,6 +21,8 @@ use Illuminate\Support\Facades\Auth;
  */
 class MenuController extends Controller
 {
+    use ApiResponse;
+    
     private MenuItemRepositoryInterface $menuRepository;
 
     public function __construct()
@@ -77,6 +81,48 @@ class MenuController extends Controller
         $wishlistIds = [];
         if (Auth::check()) {
             $wishlistIds = Wishlist::where('user_id', Auth::id())->pluck('menu_item_id')->toArray();
+        }
+
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'items' => $items->map(function ($item) use ($wishlistIds) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'description' => $item->description,
+                        'price' => (float) $item->price,
+                        'image' => ImageHelper::menuItem($item->image),
+                        'is_available' => $item->is_available,
+                        'total_sold' => $item->total_sold,
+                        'vendor' => [
+                            'id' => $item->vendor->id,
+                            'store_name' => $item->vendor->store_name,
+                            'is_open' => $item->vendor->is_open,
+                            'logo' => ImageHelper::vendorLogo($item->vendor->logo ?? null, $item->vendor->store_name),
+                        ],
+                        'category' => $item->category ? [
+                            'id' => $item->category->id,
+                            'name' => $item->category->name,
+                        ] : null,
+                        'in_wishlist' => in_array($item->id, $wishlistIds),
+                    ];
+                }),
+                'pagination' => [
+                    'current_page' => $items->currentPage(),
+                    'last_page' => $items->lastPage(),
+                    'per_page' => $items->perPage(),
+                    'total' => $items->total(),
+                    'from' => $items->firstItem(),
+                    'to' => $items->lastItem(),
+                ],
+                'filters' => [
+                    'search' => $request->search,
+                    'category' => $request->category,
+                    'vendor' => $request->vendor,
+                    'sort' => $sort,
+                ],
+            ]);
         }
 
         return view('menu.index', compact('categories', 'vendors', 'items', 'wishlistIds'));

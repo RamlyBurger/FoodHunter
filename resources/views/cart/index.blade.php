@@ -198,8 +198,10 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById('item-total-' + cartItemId).textContent = 'RM ' + data.item_total.toFixed(2);
-                    updateCartSummary(data.summary);
+                    // Handle standardized API response format
+                    const responseData = data.data || data;
+                    document.getElementById('item-total-' + cartItemId).textContent = 'RM ' + (responseData.item_total || data.item_total).toFixed(2);
+                    updateCartSummary(responseData.summary || data.summary);
                     pulseCartBadge();
                     loadCartDropdown();
                 }
@@ -221,14 +223,33 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                // Handle standardized API response format
+                const responseData = data.data || data;
+                const summary = responseData.summary || data.summary;
                 const row = btn.closest('.p-4');
                 row.remove();
-                updateCartSummary(data.summary);
+                updateCartSummary(summary);
                 pulseCartBadge();
                 loadCartDropdown();
                 
-                if (data.summary.item_count === 0) {
-                    location.reload();
+                if (summary.item_count === 0) {
+                    // Show empty cart state
+                    const cartContainer = document.querySelector('.col-md-8');
+                    if (cartContainer) {
+                        cartContainer.innerHTML = `
+                            <div class="card">
+                                <div class="card-body text-center py-5">
+                                    <i class="bi bi-cart-x fs-1 text-muted mb-3 d-block"></i>
+                                    <h5 class="text-muted mb-3">Your cart is empty</h5>
+                                    <a href="{{ url('/menu') }}" class="btn btn-primary">
+                                        <i class="bi bi-arrow-left me-1"></i> Browse Menu
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    const summaryCard = document.querySelector('.col-md-4');
+                    if (summaryCard) summaryCard.style.display = 'none';
                 }
             }
         })
@@ -282,15 +303,28 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Cart Cleared',
-                    text: data.message,
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => {
-                    location.reload();
-                });
+                // Remove all cart items from DOM and show empty state
+                const cartContainer = document.querySelector('.col-md-8');
+                if (cartContainer) {
+                    cartContainer.innerHTML = `
+                        <div class="card">
+                            <div class="card-body text-center py-5">
+                                <i class="bi bi-cart-x fs-1 text-muted mb-3 d-block"></i>
+                                <h5 class="text-muted mb-3">Your cart is empty</h5>
+                                <a href="{{ url('/menu') }}" class="btn btn-primary">
+                                    <i class="bi bi-arrow-left me-1"></i> Browse Menu
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }
+                // Hide summary card
+                const summaryCard = document.querySelector('.col-md-4');
+                if (summaryCard) summaryCard.style.display = 'none';
+                
+                pulseCartBadge();
+                loadCartDropdown();
+                showToast(data.message || 'Cart cleared', 'success');
             } else {
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
@@ -321,27 +355,70 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         errorDiv.style.display = 'none';
         
-        fetch('/vouchers/apply', {
+        // First validate voucher using Student 5's API
+        const subtotal = parseFloat(document.querySelector('.subtotal-value')?.textContent?.replace('RM ', '') || 0);
+        
+        fetch('/api/vouchers/validate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ voucher_code: code })
+            body: JSON.stringify({ code: code, subtotal: subtotal })
         })
         .then(res => res.json())
+        .then(validateData => {
+            if (!validateData.success) {
+                errorDiv.textContent = validateData.message || 'Invalid voucher code.';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = 'Apply';
+                return Promise.reject('validation_failed');
+            }
+            // Voucher validated via Student 5 API, now apply it
+            return fetch('/vouchers/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ voucher_code: code })
+            });
+        })
+        .then(res => res ? res.json() : null)
         .then(data => {
+            if (!data) return;
             if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Voucher Applied!',
-                    text: data.voucher?.description || data.message,
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => {
-                    location.reload();
-                });
+                // Handle standardized API response format
+                const responseData = data.data || data;
+                const voucher = responseData.voucher || {};
+                
+                // Replace voucher form with applied voucher display
+                const formContainer = document.getElementById('voucher-form-container');
+                if (formContainer) {
+                    formContainer.outerHTML = `
+                        <div class="voucher-applied mb-4" id="applied-voucher-section">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <strong>${voucher.name || code}</strong>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeVoucher()">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Recalculate cart totals - need to reload to get server-side calculation
+                // For now, show success and update UI elements we can
+                showToast(voucher.description || data.message || 'Voucher applied!', 'success');
+                btn.disabled = false;
+                btn.textContent = 'Apply';
+                
+                // Reload cart dropdown to reflect changes
+                loadCartDropdown();
             } else {
                 errorDiv.textContent = data.message || 'Failed to apply voucher.';
                 errorDiv.style.display = 'block';
@@ -377,8 +454,37 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                // Replace applied voucher display with form
+                const appliedSection = document.getElementById('applied-voucher-section');
+                if (appliedSection) {
+                    appliedSection.outerHTML = `
+                        <div id="voucher-form-container" class="mb-4">
+                            <label class="form-label small" style="font-weight: 600;">Have a voucher code?</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent"><i class="bi bi-ticket-perforated"></i></span>
+                                <input type="text" id="voucher-code-input" class="form-control" placeholder="Enter voucher code">
+                                <button type="button" id="apply-voucher-btn" class="btn btn-primary" onclick="applyVoucher()">Apply</button>
+                            </div>
+                            <div id="voucher-error" class="text-danger small mt-1" style="display: none;"></div>
+                        </div>
+                    `;
+                    // Re-attach Enter key listener
+                    document.getElementById('voucher-code-input')?.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            applyVoucher();
+                        }
+                    });
+                }
+                
+                // Remove discount line if exists
+                const discountLine = document.querySelector('[style*="--success-color"]');
+                if (discountLine && discountLine.closest('.d-flex')) {
+                    discountLine.closest('.d-flex').remove();
+                }
+                
                 showToast('Voucher removed', 'success');
-                location.reload();
+                loadCartDropdown();
             } else {
                 showToast(data.message || 'Failed to remove voucher', 'error');
             }

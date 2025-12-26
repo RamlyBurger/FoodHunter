@@ -211,16 +211,13 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="mb-1">{{ $vendor->store_name }}</p>
-                                <span class="badge bg-{{ $vendor->is_open ? 'success' : 'secondary' }}">
-                                    {{ $vendor->is_open ? 'Open' : 'Closed' }}
+                                <span class="store-status-badge badge bg-{{ $vendor->is_open ? 'success' : 'secondary' }}">
+                                    <i class="bi bi-{{ $vendor->is_open ? 'check-circle' : 'x-circle' }} me-1"></i>{{ $vendor->is_open ? 'Open' : 'Closed' }}
                                 </span>
                             </div>
-                            <form action="{{ route('vendor.toggle') }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-outline-{{ $vendor->is_open ? 'danger' : 'success' }}">
-                                    {{ $vendor->is_open ? 'Close Store' : 'Open Store' }}
-                                </button>
-                            </form>
+                            <button type="button" class="store-toggle-btn btn btn-sm btn-outline-{{ $vendor->is_open ? 'danger' : 'success' }}" onclick="toggleStoreStatus({{ $vendor->is_open ? 'false' : 'true' }})">
+                                <i class="bi bi-{{ $vendor->is_open ? 'pause' : 'play' }}-fill me-1"></i>{{ $vendor->is_open ? 'Close Store' : 'Open Store' }}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -235,14 +232,9 @@
                                 <strong class="text-primary">#{{ $order->pickup->queue_number ?? 'N/A' }}</strong>
                                 <p class="mb-0 small text-muted">{{ $order->user->name }}</p>
                             </div>
-                            <form action="{{ url('/vendor/orders/' . $order->id . '/status') }}" method="POST">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="status" value="completed">
-                                <button type="submit" class="btn btn-sm btn-success">
-                                    <i class="bi bi-check-lg"></i> Done
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-sm btn-success" onclick="completeOrder({{ $order->id }})">
+                                <i class="bi bi-check-lg"></i> Done
+                            </button>
                         </div>
                         @empty
                         <p class="text-center text-muted mb-0">No orders ready for pickup</p>
@@ -424,13 +416,29 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Check if there are new orders
                 if (data.todayOrders > lastOrderCount || data.pendingOrders > lastPendingCount) {
-                    // Show notification
-                    if (typeof showToast === 'function') {
-                        showToast('New order received!', 'info');
-                    }
+                    // Show notification with action button
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'New Order!',
+                        text: 'You have received a new order.',
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="bi bi-arrow-clockwise me-1"></i> Refresh Now',
+                        cancelButtonText: 'Later',
+                        confirmButtonColor: '#FF9500',
+                        timer: 10000,
+                        timerProgressBar: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            location.reload();
+                        }
+                    });
                     
-                    // Reload page to show new orders
-                    setTimeout(() => location.reload(), 1500);
+                    // Update stats cards
+                    const todayOrdersEl = document.querySelector('.col-sm-6.col-md-3:nth-child(1) h3');
+                    if (todayOrdersEl) todayOrdersEl.textContent = data.todayOrders;
+                    
+                    const pendingBadge = document.querySelector('.badge.bg-warning');
+                    if (pendingBadge) pendingBadge.textContent = data.pendingOrders + ' Pending';
                 }
                 lastOrderCount = data.todayOrders;
                 lastPendingCount = data.pendingOrders;
@@ -514,6 +522,84 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.closeOrderModal = function() {
         document.getElementById('orderViewModal').classList.remove('show');
+    };
+
+    // Toggle store status via AJAX
+    window.toggleStoreStatus = async function(isOpen) {
+        try {
+            const res = await fetch('/vendor/toggle-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ is_open: isOpen })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Update store status UI without reload
+                const statusBadge = document.querySelector('.store-status-badge');
+                const toggleBtn = document.querySelector('.store-toggle-btn');
+                
+                if (statusBadge) {
+                    statusBadge.className = `store-status-badge badge ${isOpen ? 'bg-success' : 'bg-secondary'}`;
+                    statusBadge.innerHTML = `<i class="bi bi-${isOpen ? 'check-circle' : 'x-circle'} me-1"></i>${isOpen ? 'Open' : 'Closed'}`;
+                }
+                
+                if (toggleBtn) {
+                    toggleBtn.className = `store-toggle-btn btn btn-sm ${isOpen ? 'btn-outline-danger' : 'btn-outline-success'}`;
+                    toggleBtn.innerHTML = `<i class="bi bi-${isOpen ? 'pause' : 'play'}-fill me-1"></i>${isOpen ? 'Close Store' : 'Open Store'}`;
+                    toggleBtn.setAttribute('onclick', `toggleStoreStatus(${!isOpen})`);
+                }
+                
+                showToast(data.message || (isOpen ? 'Store is now open!' : 'Store is now closed!'), 'success');
+            } else {
+                Swal.fire('Error', data.message || 'Failed to update store status', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Error', 'An error occurred', 'error');
+        }
+    };
+
+    // Complete order via AJAX
+    window.completeOrder = async function(orderId) {
+        const result = await Swal.fire({
+            title: 'Complete Order?',
+            text: 'Mark this order as completed?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'Yes, complete it'
+        });
+        
+        if (!result.isConfirmed) return;
+        
+        try {
+            const res = await fetch(`/vendor/orders/${orderId}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ _method: 'PUT', status: 'completed' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Remove order card from recent orders without reload
+                const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
+                if (orderCard) {
+                    orderCard.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => orderCard.remove(), 300);
+                }
+                showToast('Order completed successfully!', 'success');
+            } else {
+                Swal.fire('Error', data.message || 'Failed to complete order', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Error', 'An error occurred', 'error');
+        }
     };
 
     // Close modal with Escape key

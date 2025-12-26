@@ -419,15 +419,25 @@ function redeemVoucher(voucherId) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Voucher Redeemed!',
-                text: data.message,
-                timer: 2000,
-                showConfirmButton: false
-            }).then(() => {
-                location.reload();
-            });
+            // Update the voucher card to show redeemed state
+            const card = btn.closest('.voucher-card');
+            if (card) {
+                // Change button to "Redeemed" state
+                btn.className = 'btn btn-sm btn-secondary rounded-pill px-3';
+                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Redeemed';
+                btn.disabled = true;
+                btn.removeAttribute('onclick');
+                
+                // Add redeemed badge if not exists
+                const cardHeader = card.querySelector('.card-header') || card.querySelector('.position-relative');
+                if (cardHeader && !cardHeader.querySelector('.badge-redeemed')) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-success position-absolute top-0 end-0 m-2 badge-redeemed';
+                    badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>Redeemed';
+                    cardHeader.appendChild(badge);
+                }
+            }
+            showToast(data.message || 'Voucher redeemed successfully!', 'success');
         } else {
             Swal.fire({
                 icon: 'error',

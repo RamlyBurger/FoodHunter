@@ -5,17 +5,23 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class VendorReportController extends Controller
 {
+    use ApiResponse;
+    
     public function index(Request $request)
     {
         $user = Auth::user();
         
         if (!$user->isVendor() || !$user->vendor) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->forbiddenResponse('Access denied. Vendor only.');
+            }
             abort(403, 'Access denied. Vendor only.');
         }
         
@@ -28,6 +34,25 @@ class VendorReportController extends Controller
         $topSellingItems = $this->getTopSellingItems($vendor->id, $dateRange, 5);
         $salesChartData = $this->getSalesChartData($vendor->id, $dateRange);
         $orderStatusDistribution = $this->getOrderStatusDistribution($vendor->id, $dateRange);
+        
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'revenueStats' => $revenueStats,
+                'orderStats' => $orderStats,
+                'topSellingItems' => $topSellingItems->map(fn($item) => [
+                    'menu_item_id' => $item->menu_item_id,
+                    'name' => $item->name,
+                    'price' => (float) $item->price,
+                    'order_count' => $item->order_count,
+                    'total_quantity' => $item->total_quantity,
+                    'total_sales' => (float) $item->total_sales,
+                ]),
+                'salesChartData' => $salesChartData,
+                'orderStatusDistribution' => $orderStatusDistribution,
+                'period' => $period,
+            ]);
+        }
         
         return view('vendor.reports', compact(
             'vendor',

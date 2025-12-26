@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\CartItem;
 use App\Models\MenuItem;
 use App\Models\Order;
@@ -14,6 +15,7 @@ use App\Patterns\Factory\VoucherFactory;
 use App\Models\UserVoucher;
 use App\Models\Voucher;
 use App\Services\NotificationService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -26,13 +28,42 @@ use Illuminate\Support\Facades\DB;
  */
 class CartController extends Controller
 {
-    public function index()
+    use ApiResponse;
+    public function index(Request $request)
     {
         $cartItems = CartItem::where('user_id', Auth::id())
             ->with('menuItem.vendor')
             ->get();
 
         $summary = $this->calculateSummary($cartItems);
+
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'items' => $cartItems->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'menu_item_id' => $item->menu_item_id,
+                        'quantity' => $item->quantity,
+                        'special_instructions' => $item->special_instructions,
+                        'menu_item' => [
+                            'id' => $item->menuItem->id,
+                            'name' => $item->menuItem->name,
+                            'price' => (float) $item->menuItem->price,
+                            'image' => ImageHelper::menuItem($item->menuItem->image),
+                            'is_available' => $item->menuItem->is_available,
+                        ],
+                        'vendor' => $item->menuItem->vendor ? [
+                            'id' => $item->menuItem->vendor->id,
+                            'store_name' => $item->menuItem->vendor->store_name,
+                            'is_open' => $item->menuItem->vendor->is_open,
+                        ] : null,
+                        'subtotal' => (float) ($item->menuItem->price * $item->quantity),
+                    ];
+                }),
+                'summary' => $summary,
+            ]);
+        }
 
         return view('cart.index', compact('cartItems', 'summary'));
     }
@@ -48,6 +79,9 @@ class CartController extends Controller
         $item = MenuItem::findOrFail($request->menu_item_id);
 
         if (!$item->is_available) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->errorResponse('This item is currently unavailable.', 400);
+            }
             return back()->with('error', 'This item is currently unavailable.');
         }
 
@@ -70,10 +104,9 @@ class CartController extends Controller
         }
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $item->name . ' added to cart!'
-            ]);
+            return $this->successResponse([
+                'item_name' => $item->name,
+            ], $item->name . ' added to cart!');
         }
 
         return redirect('/cart')->with('success', $item->name . ' added to cart!');
@@ -92,12 +125,10 @@ class CartController extends Controller
             $cartItems = CartItem::where('user_id', Auth::id())->with('menuItem')->get();
             $summary = $this->calculateSummary($cartItems);
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Cart updated.',
+            return $this->successResponse([
                 'item_total' => $cartItem->menuItem->price * $cartItem->quantity,
                 'summary' => $summary
-            ]);
+            ], 'Cart updated.');
         }
 
         return back()->with('success', 'Cart updated.');
@@ -115,11 +146,9 @@ class CartController extends Controller
             $cartItems = CartItem::where('user_id', Auth::id())->with('menuItem')->get();
             $summary = $this->calculateSummary($cartItems);
             
-            return response()->json([
-                'success' => true, 
-                'message' => 'Item removed from cart.',
+            return $this->successResponse([
                 'summary' => $summary
-            ]);
+            ], 'Item removed from cart.');
         }
 
         return back()->with('success', 'Item removed from cart.');
@@ -133,10 +162,7 @@ class CartController extends Controller
         session()->forget('applied_voucher');
 
         if (request()->ajax() || request()->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Cart cleared.'
-            ]);
+            return $this->successResponse(null, 'Cart cleared.');
         }
 
         return back()->with('success', 'Cart cleared.');
@@ -314,6 +340,17 @@ class CartController extends Controller
                 $notificationService->notifyOrderCreated(Auth::id(), $order->id);
             }
 
+            // Return JSON for AJAX requests
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->successResponse([
+                    'orders' => collect($orders)->map(fn($o) => [
+                        'id' => $o->id,
+                        'order_number' => $o->order_number,
+                    ]),
+                    'redirect' => count($orders) === 1 ? '/orders/' . $orders[0]->id : '/orders',
+                ], count($orders) === 1 ? 'Order placed successfully!' : count($orders) . ' orders placed successfully!');
+            }
+
             if (count($orders) === 1) {
                 return redirect('/orders/' . $orders[0]->id)->with('success', 'Order placed successfully!');
             }
@@ -322,6 +359,9 @@ class CartController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->serverErrorResponse('Failed to place order. Please try again.');
+            }
             return back()->with('error', 'Failed to place order. Please try again.');
         }
     }
@@ -329,7 +369,7 @@ class CartController extends Controller
     public function count()
     {
         $count = CartItem::where('user_id', Auth::id())->sum('quantity');
-        return response()->json(['count' => $count]);
+        return $this->successResponse(['count' => (int) $count]);
     }
 
     public function dropdown()
@@ -345,13 +385,13 @@ class CartController extends Controller
                 'name' => $item->menuItem->name,
                 'price' => $item->menuItem->price,
                 'quantity' => $item->quantity,
-                'image' => $item->menuItem->image,
+                'image' => ImageHelper::menuItem($item->menuItem->image),
             ];
         });
 
         $total = $cartItems->sum(fn($item) => $item->menuItem->price * $item->quantity);
 
-        return response()->json([
+        return $this->successResponse([
             'count' => $cartItems->sum('quantity'),
             'total' => $total,
             'items' => $items,

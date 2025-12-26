@@ -4,7 +4,7 @@
     <div class="card menu-card h-100 position-relative" style="cursor: pointer;">
         <a href="{{ url('/menu/' . $item->id) }}" class="card-link-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;"></a>
         <div class="position-relative">
-            <img src="{{ $item->image ? (Str::startsWith($item->image, ['http://', 'https://']) ? $item->image : asset('storage/' . $item->image)) : '' }}" 
+            <img src="{{ \App\Helpers\ImageHelper::menuItem($item->image) }}" 
                  class="card-img-top" 
                  alt="{{ $item->name }}" 
                  style="height: 160px; object-fit: cover;"
@@ -54,13 +54,7 @@
             <!-- Vendor Info with Avatar -->
             @if($showVendor && $item->vendor)
             <div class="d-flex align-items-center gap-2 mb-2">
-                @if($item->vendor->logo)
-                <img src="{{ $item->vendor->logo }}" alt="{{ $item->vendor->store_name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                @else
-                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; font-size: 0.6rem; display: flex; align-items: center; justify-content: center;">
-                    {{ substr($item->vendor->store_name ?? 'V', 0, 1) }}
-                </div>
-                @endif
+                <img src="{{ \App\Helpers\ImageHelper::vendorLogo($item->vendor->logo, $item->vendor->store_name) }}" alt="{{ $item->vendor->store_name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <span class="text-muted" style="font-size: 0.75rem;">{{ Str::limit($item->vendor->store_name ?? 'Vendor', 18) }}</span>
             </div>
             @endif

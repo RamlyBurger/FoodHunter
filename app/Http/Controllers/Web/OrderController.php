@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\Order;
 use App\Models\CartItem;
 use App\Patterns\State\OrderStateManager;
 use App\Services\NotificationService;
+use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
+    use ApiResponse;
     public function index()
     {
         $filter = request('filter', 'active');
@@ -77,6 +80,45 @@ class OrderController extends Controller
         ->orderBy('created_at', 'desc')
         ->paginate(15);
 
+        // Return JSON for AJAX requests
+        if (request()->ajax() || request()->wantsJson()) {
+            return $this->successResponse([
+                'orders' => $orders->map(function ($order) {
+                    return [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'total' => (float) $order->total,
+                        'created_at' => $order->created_at->format('M d, Y H:i'),
+                        'created_at_human' => $order->created_at->diffForHumans(),
+                        'vendor' => $order->vendor ? [
+                            'id' => $order->vendor->id,
+                            'store_name' => $order->vendor->store_name,
+                            'logo' => ImageHelper::vendorLogo($order->vendor->logo, $order->vendor->store_name),
+                        ] : null,
+                        'items_count' => $order->items->count(),
+                        'pickup' => $order->pickup ? [
+                            'queue_number' => $order->pickup->queue_number,
+                        ] : null,
+                        'can_cancel' => $order->canBeCancelled(),
+                    ];
+                }),
+                'pagination' => [
+                    'current_page' => $orders->currentPage(),
+                    'last_page' => $orders->lastPage(),
+                    'per_page' => $orders->perPage(),
+                    'total' => $orders->total(),
+                    'from' => $orders->firstItem(),
+                    'to' => $orders->lastItem(),
+                ],
+                'filters' => [
+                    'status' => $statusFilter,
+                    'date_range' => $dateRange,
+                    'search' => $search,
+                ],
+            ]);
+        }
+
         return view('orders.index', compact('orders'));
     }
 
@@ -97,14 +139,14 @@ class OrderController extends Controller
         // Security: IDOR Protection
         if ($order->user_id !== Auth::id()) {
             if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
             abort(403);
         }
 
         if (!$order->canBeCancelled()) {
             if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'This order cannot be cancelled.'], 400);
+                return $this->errorResponse('This order cannot be cancelled.', 400);
             }
             return back()->with('error', 'This order cannot be cancelled.');
         }
@@ -126,13 +168,13 @@ class OrderController extends Controller
             }
             
             if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Order cancelled successfully.']);
+                return $this->successResponse(null, 'Order cancelled successfully.');
             }
             return redirect('/orders')->with('success', 'Order cancelled successfully.');
         }
 
         if (request()->ajax() || request()->wantsJson()) {
-            return response()->json(['success' => false, 'message' => 'Failed to cancel order.'], 500);
+            return $this->serverErrorResponse('Failed to cancel order.');
         }
         return back()->with('error', 'Failed to cancel order.');
     }
@@ -142,7 +184,7 @@ class OrderController extends Controller
         // Security: IDOR Protection
         if ($order->user_id !== Auth::id()) {
             if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
             abort(403);
         }
@@ -177,10 +219,7 @@ class OrderController extends Controller
 
         if ($addedCount === 0) {
             if (request()->ajax() || request()->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'None of the items from this order are currently available.'
-                ], 400);
+                return $this->errorResponse('None of the items from this order are currently available.', 400);
             }
             return back()->with('error', 'None of the items from this order are currently available.');
         }
@@ -191,11 +230,9 @@ class OrderController extends Controller
         }
 
         if (request()->ajax() || request()->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $message,
+            return $this->successResponse([
                 'redirect' => route('cart.index')
-            ]);
+            ], $message);
         }
 
         return redirect()->route('cart.index')->with('success', $message);

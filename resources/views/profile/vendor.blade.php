@@ -184,10 +184,7 @@
                     <label for="avatarInput" class="avatar-upload">
                         <i class="bi bi-camera text-primary"></i>
                     </label>
-                    <form id="avatarForm" action="{{ route('profile.avatar') }}" method="POST" enctype="multipart/form-data" style="display: none;">
-                        @csrf
-                        <input type="file" id="avatarInput" name="avatar" accept="image/*" onchange="document.getElementById('avatarForm').submit();">
-                    </form>
+                    <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;" onchange="uploadAvatarAjax(this)">
                 </div>
             </div>
             <div class="col">
@@ -237,7 +234,7 @@
                 <h5 class="section-title">
                     <i class="bi bi-shop text-primary"></i> Store Information
                 </h5>
-                <form action="{{ route('profile.update') }}" method="POST">
+                <form action="{{ route('profile.update') }}" method="POST" id="storeInfoForm">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="is_vendor" value="1">
@@ -585,6 +582,92 @@ document.querySelectorAll('.notif-toggle').forEach(toggle => {
         });
     });
 });
+
+// Store Info Form AJAX submission
+document.getElementById('storeInfoForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Saved!',
+                text: data.message || 'Store information updated successfully',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire('Error', data.message || 'Failed to update store info', 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    })
+    .catch(err => {
+        Swal.fire('Error', 'An error occurred', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
+
+// Avatar upload via AJAX
+async function uploadAvatarAjax(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    if (file.size > 2 * 1024 * 1024) {
+        Swal.fire('Error', 'Image must be less than 2MB', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    try {
+        const res = await fetch('{{ route("profile.avatar") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Update avatar images with new URL
+            const newAvatarUrl = data.data?.avatar_url || data.avatar_url;
+            if (newAvatarUrl) {
+                document.querySelectorAll('.profile-avatar').forEach(img => img.src = newAvatarUrl);
+                document.querySelectorAll('.navbar-avatar').forEach(img => img.src = newAvatarUrl);
+            }
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('avatarModal'));
+            if (modal) modal.hide();
+            showToast(data.message || 'Avatar updated successfully', 'success');
+        } else {
+            Swal.fire('Error', data.message || 'Failed to upload avatar', 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', 'An error occurred', 'error');
+    }
+}
 </script>
 @endpush
 @endsection

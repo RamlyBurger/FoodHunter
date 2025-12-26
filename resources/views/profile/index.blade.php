@@ -815,15 +815,12 @@ function removeAvatar() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Removed!',
-                text: data.message,
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                location.reload();
-            });
+            // Update avatar image to default
+            const defaultAvatar = 'https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6c757d&color=fff&size=200';
+            document.querySelectorAll('.profile-avatar').forEach(img => img.src = defaultAvatar);
+            // Also update navbar avatar if exists
+            document.querySelectorAll('.navbar-avatar').forEach(img => img.src = defaultAvatar);
+            showToast(data.message || 'Avatar removed successfully', 'success');
         } else {
             showToast(data.message || 'Failed to remove avatar', 'error');
         }
@@ -907,15 +904,18 @@ document.querySelector('#avatarModal form')?.addEventListener('submit', function
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Updated!',
-                text: data.message,
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                location.reload();
-            });
+            // Update avatar images with new URL
+            const newAvatarUrl = data.data?.avatar_url || data.avatar_url;
+            if (newAvatarUrl) {
+                document.querySelectorAll('.profile-avatar').forEach(img => img.src = newAvatarUrl);
+                document.querySelectorAll('.navbar-avatar').forEach(img => img.src = newAvatarUrl);
+            }
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('avatarModal'));
+            if (modal) modal.hide();
+            showToast(data.message || 'Avatar updated successfully', 'success');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         } else {
             showToast(data.message || 'Failed to upload avatar', 'error');
             submitBtn.disabled = false;
@@ -928,6 +928,35 @@ document.querySelector('#avatarModal form')?.addEventListener('submit', function
         submitBtn.innerHTML = originalBtnText;
     });
 });
+
+// Load user stats using Student 1's API
+function loadUserStats() {
+    fetch('/api/auth/user-stats', {
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + (document.querySelector('meta[name="api-token"]')?.content || '')
+        }
+    })
+    .then(res => res.json())
+    .then(response => {
+        const data = response.data || response;
+        if (data.total_orders !== undefined) {
+            // Update stats display
+            const statsContainer = document.querySelector('.stat-card-mini .value');
+            if (statsContainer) {
+                document.querySelectorAll('.stat-card-mini').forEach((card, index) => {
+                    const valueEl = card.querySelector('.value');
+                    if (index === 0 && valueEl) valueEl.textContent = data.total_orders;
+                    if (index === 1 && valueEl) valueEl.textContent = 'RM ' + data.total_spent.toFixed(0);
+                });
+            }
+        }
+    })
+    .catch(err => console.log('Stats API not available'));
+}
+
+// Load stats on page load
+document.addEventListener('DOMContentLoaded', loadUserStats);
 </script>
 @endpush
 </div>

@@ -3,19 +3,50 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\Wishlist;
 use App\Models\MenuItem;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WishlistController extends Controller
 {
-    public function index()
+    use ApiResponse;
+    public function index(Request $request)
     {
         $wishlistItems = Wishlist::where('user_id', Auth::id())
             ->with(['menuItem.vendor', 'menuItem.category'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'items' => $wishlistItems->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'menu_item_id' => $item->menu_item_id,
+                        'name' => $item->menuItem->name,
+                        'description' => $item->menuItem->description,
+                        'price' => (float) $item->menuItem->price,
+                        'image' => ImageHelper::menuItem($item->menuItem->image),
+                        'is_available' => $item->menuItem->is_available,
+                        'vendor' => $item->menuItem->vendor ? [
+                            'id' => $item->menuItem->vendor->id,
+                            'store_name' => $item->menuItem->vendor->store_name,
+                            'is_open' => $item->menuItem->vendor->is_open,
+                        ] : null,
+                        'category' => $item->menuItem->category ? [
+                            'id' => $item->menuItem->category->id,
+                            'name' => $item->menuItem->category->name,
+                        ] : null,
+                        'added_at' => $item->created_at->format('M d, Y'),
+                    ];
+                }),
+                'count' => $wishlistItems->count(),
+            ]);
+        }
 
         return view('wishlist.index', compact('wishlistItems'));
     }
@@ -46,12 +77,10 @@ class WishlistController extends Controller
         $wishlistCount = Wishlist::where('user_id', Auth::id())->count();
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $message,
+            return $this->successResponse([
                 'in_wishlist' => $inWishlist,
                 'wishlist_count' => $wishlistCount
-            ]);
+            ], $message);
         }
 
         return back()->with('success', $message);
@@ -66,11 +95,9 @@ class WishlistController extends Controller
         $wishlistItem->delete();
 
         if (request()->ajax() || request()->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Removed from wishlist',
+            return $this->successResponse([
                 'wishlist_count' => Wishlist::where('user_id', Auth::id())->count()
-            ]);
+            ], 'Removed from wishlist');
         }
 
         return back()->with('success', 'Item removed from wishlist');
@@ -80,7 +107,7 @@ class WishlistController extends Controller
     {
         $count = Wishlist::where('user_id', Auth::id())->count();
         
-        return response()->json(['count' => $count]);
+        return $this->successResponse(['count' => $count]);
     }
 
     public function dropdown()
@@ -97,12 +124,12 @@ class WishlistController extends Controller
                 'menu_item_id' => $item->menu_item_id,
                 'name' => $item->menuItem->name,
                 'price' => $item->menuItem->price,
-                'image' => $item->menuItem->image,
+                'image' => ImageHelper::menuItem($item->menuItem->image),
                 'is_available' => $item->menuItem->is_available,
             ];
         });
 
-        return response()->json([
+        return $this->successResponse([
             'count' => Wishlist::where('user_id', Auth::id())->count(),
             'items' => $items,
         ]);

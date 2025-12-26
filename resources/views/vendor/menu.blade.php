@@ -142,12 +142,14 @@
                             $catName = $item->category->name ?? 'Uncategorized';
                         @endphp
                         <tr class="menu-item-row" 
+                            id="menu-row-{{ $item->id }}"
+                            data-item-id="{{ $item->id }}"
                             data-name="{{ strtolower($item->name) }}" 
                             data-category="{{ $catName }}"
                             data-status="{{ $item->is_available ? 'available' : 'unavailable' }}">
                             <td class="px-4">
                                 <div class="d-flex align-items-center">
-                                    <img src="{{ $item->image ? (Str::startsWith($item->image, ['http://', 'https://']) ? $item->image : asset('storage/' . $item->image)) : '' }}" 
+                                    <img src="{{ \App\Helpers\ImageHelper::menuItem($item->image) }}" 
                                          class="rounded me-3" 
                                          width="50" height="50" 
                                          alt="{{ $item->name }}" 
@@ -192,7 +194,7 @@
                                             data-item-price="{{ $item->price }}"
                                             data-item-description="{{ $item->description ?? '' }}"
                                             data-item-available="{{ $item->is_available ? '1' : '0' }}"
-                                            data-item-image="{{ $item->image ? (Str::startsWith($item->image, ['http://', 'https://']) ? $item->image : asset('storage/' . $item->image)) : '' }}"
+                                            data-item-image="{{ \App\Helpers\ImageHelper::menuItem($item->image) }}"
                                             onclick="editItem(this)">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -240,6 +242,16 @@
 }
 .btn-action-sm:hover {
     filter: brightness(0.85);
+}
+
+/* Row animations for CRUD operations */
+@keyframes flashHighlight {
+    0% { background-color: rgba(255, 193, 7, 0.3); }
+    100% { background-color: transparent; }
+}
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(-20px); }
 }
 
 /* Custom Modal Styling */
@@ -696,7 +708,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await res.json();
 
             if (result.success) {
-                location.reload();
+                closeEditModal();
+                const item = result.data?.item || result.item;
+                
+                if (currentEditId && item) {
+                    // Update existing row
+                    updateMenuRow(item);
+                    showToast('Menu item updated successfully!', 'success');
+                } else if (item) {
+                    // Add new row
+                    addMenuRow(item);
+                    showToast('Menu item created successfully!', 'success');
+                } else {
+                    // Fallback if no item data returned
+                    location.reload();
+                }
             } else {
                 let msg = result.message || 'An error occurred';
                 if (result.errors) msg = Object.values(result.errors).flat().join(', ');
@@ -708,6 +734,151 @@ document.addEventListener('DOMContentLoaded', function() {
             errorEl.style.display = 'block';
         }
     };
+    
+    // Update existing menu row in DOM
+    function updateMenuRow(item) {
+        const row = document.getElementById('menu-row-' + item.id);
+        if (!row) return;
+        
+        const catName = item.category?.name || 'Uncategorized';
+        const categoryColors = {
+            'Burgers & Sandwiches': '#28a745',
+            'Rice & Noodles': '#fd7e14',
+            'Local Favorites': '#ffc107',
+            'Beverages': '#17a2b8',
+            'Desserts': '#e83e8c',
+        };
+        const catColor = categoryColors[catName] || '#6c757d';
+        
+        // Update row data attributes
+        row.dataset.name = item.name.toLowerCase();
+        row.dataset.category = catName;
+        row.dataset.status = item.is_available ? 'available' : 'unavailable';
+        
+        // Update cells
+        const cells = row.querySelectorAll('td');
+        
+        // Cell 0: Image and name
+        const imgEl = cells[0].querySelector('img');
+        if (imgEl && item.image) imgEl.src = item.image;
+        const nameEl = cells[0].querySelector('.fw-semibold');
+        if (nameEl) nameEl.textContent = item.name;
+        const descEl = cells[0].querySelector('small');
+        if (descEl) descEl.textContent = (item.description || '').substring(0, 40) + ((item.description || '').length > 40 ? '...' : '');
+        
+        // Cell 1: Category badge
+        cells[1].innerHTML = `<span class="badge rounded-pill" style="background: ${catColor}; padding: 0.4rem 0.8rem; font-weight: 500;">${catName}</span>`;
+        
+        // Cell 2: Price
+        cells[2].innerHTML = `RM ${parseFloat(item.price).toFixed(2)}`;
+        
+        // Cell 3: Availability badge
+        cells[3].innerHTML = `<span class="badge rounded-pill bg-${item.is_available ? 'success' : 'danger'}" style="padding: 0.4rem 0.8rem; font-weight: 500;">${item.is_available ? 'Available' : 'Out of Stock'}</span>`;
+        
+        // Update edit button data attributes
+        const editBtn = cells[4].querySelector('button[title="Edit"]');
+        if (editBtn) {
+            editBtn.dataset.itemName = item.name;
+            editBtn.dataset.itemCategory = item.category_id;
+            editBtn.dataset.itemPrice = item.price;
+            editBtn.dataset.itemDescription = item.description || '';
+            editBtn.dataset.itemAvailable = item.is_available ? '1' : '0';
+            if (item.image) editBtn.dataset.itemImage = item.image;
+        }
+        
+        // Update delete button data
+        const deleteBtn = cells[4].querySelector('button[title="Delete"]');
+        if (deleteBtn) {
+            deleteBtn.dataset.itemName = item.name;
+        }
+        
+        // Flash animation
+        row.style.animation = 'none';
+        row.offsetHeight; // Trigger reflow
+        row.style.animation = 'flashHighlight 1s ease';
+    }
+    
+    // Add new menu row to DOM
+    function addMenuRow(item) {
+        const tbody = document.querySelector('.table tbody');
+        if (!tbody) return;
+        
+        // Remove empty state row if exists
+        const emptyRow = tbody.querySelector('td[colspan="5"]');
+        if (emptyRow) emptyRow.closest('tr').remove();
+        
+        const catName = item.category?.name || 'Uncategorized';
+        const categoryColors = {
+            'Burgers & Sandwiches': '#28a745',
+            'Rice & Noodles': '#fd7e14',
+            'Local Favorites': '#ffc107',
+            'Beverages': '#17a2b8',
+            'Desserts': '#e83e8c',
+        };
+        const catColor = categoryColors[catName] || '#6c757d';
+        
+        const newRow = document.createElement('tr');
+        newRow.className = 'menu-item-row';
+        newRow.id = 'menu-row-' + item.id;
+        newRow.dataset.itemId = item.id;
+        newRow.dataset.name = item.name.toLowerCase();
+        newRow.dataset.category = catName;
+        newRow.dataset.status = item.is_available ? 'available' : 'unavailable';
+        
+        newRow.innerHTML = `
+            <td class="px-4">
+                <div class="d-flex align-items-center">
+                    <img src="${item.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(item.name) + '&background=f3f4f6&color=9ca3af&size=100'}" 
+                         class="rounded me-3" width="50" height="50" alt="${item.name}" style="object-fit: cover;"
+                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=100';">
+                    <div>
+                        <div class="fw-semibold">${item.name}</div>
+                        <small class="text-muted">${(item.description || '').substring(0, 40)}${(item.description || '').length > 40 ? '...' : ''}</small>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge rounded-pill" style="background: ${catColor}; padding: 0.4rem 0.8rem; font-weight: 500;">${catName}</span></td>
+            <td class="fw-bold" style="color: #ffc107;">RM ${parseFloat(item.price).toFixed(2)}</td>
+            <td><span class="badge rounded-pill bg-${item.is_available ? 'success' : 'danger'}" style="padding: 0.4rem 0.8rem; font-weight: 500;">${item.is_available ? 'Available' : 'Out of Stock'}</span></td>
+            <td class="text-end px-4">
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-primary btn-action-sm" title="View" style="background-color: #17A2B8; border: none;"
+                            data-item-id="${item.id}" onclick="viewItem(this)">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-warning btn-action-sm" title="Edit" 
+                            data-item-id="${item.id}"
+                            data-item-name="${item.name}"
+                            data-item-category="${item.category_id}"
+                            data-item-price="${item.price}"
+                            data-item-description="${item.description || ''}"
+                            data-item-available="${item.is_available ? '1' : '0'}"
+                            data-item-image="${item.image || ''}"
+                            onclick="editItem(this)">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-action-sm" title="Delete" 
+                            data-item-id="${item.id}"
+                            data-item-name="${item.name}"
+                            onclick="deleteItem(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        
+        tbody.insertBefore(newRow, tbody.firstChild);
+        newRow.style.animation = 'flashHighlight 1s ease';
+        
+        // Update stats
+        updateStats(1);
+    }
+    
+    // Update stats cards
+    function updateStats(delta) {
+        const totalEl = document.querySelector('.col-md-3:nth-child(1) h3');
+        if (totalEl) totalEl.textContent = parseInt(totalEl.textContent) + delta;
+    }
 
     // Delete Item with SweetAlert
     window.deleteItem = function(btn) {
@@ -748,15 +919,22 @@ document.addEventListener('DOMContentLoaded', function() {
             allowOutsideClick: () => !Swal.isLoading()
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Deleted!',
-                    text: 'Menu item has been deleted successfully.',
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => {
-                    location.reload();
-                });
+                // Remove row from DOM
+                const row = document.getElementById('menu-row-' + itemId);
+                if (row) {
+                    row.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => {
+                        row.remove();
+                        updateStats(-1);
+                        
+                        // Check if table is empty
+                        const tbody = document.querySelector('.table tbody');
+                        if (tbody && tbody.querySelectorAll('.menu-item-row').length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><i class="bi bi-inbox fs-1 text-muted"></i><p class="text-muted mt-2">No menu items found</p></td></tr>`;
+                        }
+                    }, 300);
+                }
+                showToast('Menu item deleted successfully!', 'success');
             }
         });
     };

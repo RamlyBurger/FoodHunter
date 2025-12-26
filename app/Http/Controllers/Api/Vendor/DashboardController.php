@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\Order;
 use App\Models\MenuItem;
 use App\Models\OrderItem;
@@ -105,7 +106,7 @@ class DashboardController extends Controller
                 'total_sold' => $item->total_sold,
                 'price' => (float) $item->price,
                 'revenue' => (float) ($item->total_sold * $item->price),
-                'image' => $item->image,
+                'image' => ImageHelper::menuItem($item->image),
             ]);
 
         return $this->successResponse($topItems);

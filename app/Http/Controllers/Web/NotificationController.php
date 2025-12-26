@@ -4,16 +4,44 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
-    public function index()
+    use ApiResponse;
+    public function index(Request $request)
     {
         $notifications = Notification::where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'notifications' => $notifications->map(fn($n) => [
+                    'id' => $n->id,
+                    'type' => $n->type,
+                    'title' => $n->title,
+                    'message' => $n->message,
+                    'url' => $n->data['url'] ?? null,
+                    'is_read' => $n->is_read,
+                    'read_at' => $n->read_at,
+                    'time_ago' => $n->created_at->diffForHumans(),
+                    'created_at' => $n->created_at->format('M d, Y H:i'),
+                ]),
+                'pagination' => [
+                    'current_page' => $notifications->currentPage(),
+                    'last_page' => $notifications->lastPage(),
+                    'per_page' => $notifications->perPage(),
+                    'total' => $notifications->total(),
+                    'from' => $notifications->firstItem(),
+                    'to' => $notifications->lastItem(),
+                ],
+                'unread_count' => Notification::where('user_id', Auth::id())->where('is_read', false)->count(),
+            ]);
+        }
 
         return view('notifications.index', compact('notifications'));
     }
@@ -32,7 +60,7 @@ class NotificationController extends Controller
             ->where('is_read', false)
             ->count();
 
-        return response()->json([
+        return $this->successResponse([
             'notifications' => $notifications->map(fn($n) => [
                 'id' => $n->id,
                 'type' => $n->type,
@@ -50,7 +78,7 @@ class NotificationController extends Controller
     {
         if ($notification->user_id !== Auth::id()) {
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
             abort(403);
         }
@@ -58,7 +86,7 @@ class NotificationController extends Controller
         $notification->markAsRead();
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Notification marked as read.']);
+            return $this->successResponse(null, 'Notification marked as read.');
         }
 
         return back()->with('success', 'Notification marked as read.');
@@ -74,7 +102,7 @@ class NotificationController extends Controller
             ]);
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'All notifications marked as read.', 'count' => $count]);
+            return $this->successResponse(['count' => $count], 'All notifications marked as read.');
         }
 
         return back()->with('success', 'All notifications marked as read.');
@@ -84,7 +112,7 @@ class NotificationController extends Controller
     {
         if ($notification->user_id !== Auth::id()) {
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
             abort(403);
         }
@@ -92,7 +120,7 @@ class NotificationController extends Controller
         $notification->delete();
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Notification deleted.']);
+            return $this->successResponse(null, 'Notification deleted.');
         }
 
         return back()->with('success', 'Notification deleted.');

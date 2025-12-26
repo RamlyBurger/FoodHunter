@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\Category;
 use App\Models\MenuItem;
 use App\Traits\ApiResponse;
@@ -26,7 +27,7 @@ class MenuController extends Controller
                 'id' => $item->id,
                 'name' => $item->name,
                 'price' => (float) $item->price,
-                'image' => $item->image,
+                'image' => ImageHelper::menuItem($item->image),
                 'is_available' => $item->is_available,
                 'is_featured' => $item->is_featured,
                 'total_sold' => $item->total_sold,
@@ -159,7 +160,7 @@ class MenuController extends Controller
             'description' => $menuItem->description,
             'price' => (float) $menuItem->price,
             'original_price' => $menuItem->original_price ? (float) $menuItem->original_price : null,
-            'image' => $menuItem->image,
+            'image' => ImageHelper::menuItem($menuItem->image),
             'is_available' => $menuItem->is_available,
             'is_featured' => $menuItem->is_featured,
             'total_sold' => $menuItem->total_sold,

@@ -1192,13 +1192,6 @@
         // CSRF Token for AJAX
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         
-        // Image helper - handles URL vs local path
-        function getImageUrl(image, placeholder = '/images/defaults/food-placeholder.svg') {
-            if (!image) return placeholder;
-            if (image.startsWith('http://') || image.startsWith('https://')) return image;
-            return '/storage/' + image;
-        }
-        
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
             const navbar = document.querySelector('.navbar');
@@ -1323,33 +1316,55 @@
             });
         }
         
-        // Add to cart via AJAX
+        // Add to cart via AJAX (consumes Student 2's Item Availability API first)
         function addToCart(itemId, quantity = 1, btn = null) {
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             }
             
-            fetch('{{ route("cart.add") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ menu_item_id: itemId, quantity: quantity })
+            // First check item availability using Student 2's API
+            fetch('/api/menu/' + itemId + '/availability', {
+                headers: { 'Accept': 'application/json' }
             })
             .then(res => res.json())
+            .then(availData => {
+                const data = availData.data || availData;
+                if (!data.available || !data.is_available) {
+                    showToast('Sorry, this item is currently unavailable', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-cart3"></i>';
+                    }
+                    return Promise.reject('unavailable');
+                }
+                
+                // Item is available, proceed to add to cart
+                return fetch('{{ route("cart.add") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ menu_item_id: itemId, quantity: quantity })
+                });
+            })
+            .then(res => res ? res.json() : null)
             .then(data => {
-                if (data.success) {
+                if (data && data.success) {
                     // Pulse animation on cart badge
                     pulseCartBadge();
                     loadCartDropdown();
-                } else {
+                } else if (data) {
                     showToast(data.message || 'Failed to add to cart', 'error');
                 }
             })
-            .catch(() => showToast('Failed to add to cart', 'error'))
+            .catch(err => {
+                if (err !== 'unavailable') {
+                    showToast('Failed to add to cart', 'error');
+                }
+            })
             .finally(() => { 
                 if (btn) {
                     btn.disabled = false;
@@ -1468,7 +1483,9 @@
         function loadCartDropdown() {
             fetch('/api/cart/dropdown', { headers: { 'Accept': 'application/json' } })
             .then(res => res.json())
-            .then(data => {
+            .then(response => {
+                // Handle standardized API response format (data nested under response.data)
+                const data = response.data || response;
                 const container = document.getElementById('cart-items');
                 const countEl = document.getElementById('cart-count');
                 const totalEl = document.getElementById('cart-total-header');
@@ -1484,10 +1501,12 @@
                     return;
                 }
                 
-                container.innerHTML = data.items.map(item => `
+                container.innerHTML = data.items.map(item => {
+                    const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200`;
+                    return `
                     <div class="cart-item">
                         <a href="/menu/${item.menu_item_id}">
-                            <img src="${getImageUrl(item.image)}" alt="${item.name}" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200&font-size=0.25&bold=true';">
+                            <img src="${item.image || fallback}" alt="${item.name}" onerror="this.src='${fallback}'">
                         </a>
                         <div class="cart-item-info">
                             <a href="/menu/${item.menu_item_id}" class="text-decoration-none text-dark">
@@ -1499,8 +1518,8 @@
                         <button class="btn btn-sm btn-link text-danger p-0" onclick="removeFromCart(${item.id})">
                             <i class="bi bi-trash"></i>
                         </button>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             })
             .catch(() => {});
         }
@@ -1525,7 +1544,9 @@
         function loadWishlistDropdown() {
             fetch('/api/wishlist/dropdown', { headers: { 'Accept': 'application/json' } })
             .then(res => res.json())
-            .then(data => {
+            .then(response => {
+                // Handle standardized API response format (data nested under response.data)
+                const data = response.data || response;
                 const container = document.getElementById('wishlist-items');
                 const countEl = document.getElementById('wishlist-count');
                 
@@ -1539,10 +1560,12 @@
                     return;
                 }
                 
-                container.innerHTML = data.items.map(item => `
+                container.innerHTML = data.items.map(item => {
+                    const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200`;
+                    return `
                     <div class="wishlist-item">
                         <a href="/menu/${item.menu_item_id}">
-                            <img src="${getImageUrl(item.image)}" alt="${item.name}" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200&font-size=0.25&bold=true';">
+                            <img src="${item.image || fallback}" alt="${item.name}" onerror="this.src='${fallback}'">
                         </a>
                         <div class="wishlist-item-info">
                             <a href="/menu/${item.menu_item_id}" class="text-decoration-none text-dark">
@@ -1556,8 +1579,8 @@
                         <button class="btn btn-sm btn-link text-danger p-0" onclick="removeFromWishlistDropdown(${item.id})" title="Remove">
                             <i class="bi bi-x"></i>
                         </button>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             })
             .catch(() => {});
         }
@@ -1585,17 +1608,19 @@
         function loadNotificationDropdown() {
             fetch('/api/notifications/dropdown', { headers: { 'Accept': 'application/json' } })
             .then(res => res.json())
-            .then(data => {
+            .then(response => {
                 const container = document.getElementById('notification-items');
                 const countEl = document.getElementById('notification-count');
                 
+                // Handle standardized API response format
+                const data = response.data || response;
                 const unreadCount = data.unread_count || 0;
                 countEl.textContent = unreadCount;
                 countEl.style.display = unreadCount > 0 ? 'flex' : 'none';
                 
                 // Show SweetAlert toast if new notifications arrived
                 if (lastCustomerNotificationCount !== null && unreadCount > lastCustomerNotificationCount) {
-                    const newNotifications = data.notifications.filter(n => !n.read_at);
+                    const newNotifications = (data.notifications || []).filter(n => !n.read_at);
                     if (newNotifications.length > 0) {
                         const latestNotif = newNotifications[0];
                         showToast(latestNotif.title + ': ' + latestNotif.message, 'info');

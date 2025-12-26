@@ -8,6 +8,7 @@ use App\Models\EmailVerification;
 use App\Services\AuthService;
 use App\Patterns\Strategy\AuthContext;
 use App\Patterns\Strategy\PasswordAuthStrategy;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -23,6 +24,8 @@ use App\Services\SecurityLogService;
  */
 class AuthController extends Controller
 {
+    use ApiResponse;
+    
     private AuthService $authService;
 
     public function __construct(AuthService $authService)
@@ -211,7 +214,7 @@ class AuthController extends Controller
     {
         $registrationData = session('registration_data');
         if (!$registrationData) {
-            return response()->json(['success' => false, 'message' => 'Registration session expired.']);
+            return $this->errorResponse('Registration session expired.', 400);
         }
 
         $verification = EmailVerification::createForSignup($registrationData['email']);
@@ -223,8 +226,7 @@ class AuthController extends Controller
             'sent' => false,
         ]]);
         
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'email' => $registrationData['email'],
             'code' => $verification->code,
         ]);
@@ -237,7 +239,7 @@ class AuthController extends Controller
             $otpData['sent'] = true;
             session(['otp_data' => $otpData]);
         }
-        return response()->json(['success' => true]);
+        return $this->successResponse(null);
     }
 
     public function logout(Request $request)
@@ -272,18 +274,12 @@ class AuthController extends Controller
 
         // Verify current password
         if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Current password is incorrect.'
-            ], 400);
+            return $this->errorResponse('Current password is incorrect.', 400);
         }
 
         // Check if new password is different
         if (Hash::check($request->new_password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'New password must be different from current password.'
-            ], 400);
+            return $this->errorResponse('New password must be different from current password.', 400);
         }
 
         // Store new password in session (OTP will be handled by Supabase)
@@ -292,10 +288,7 @@ class AuthController extends Controller
             'password_change_expires' => now()->addMinutes(15),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Please verify with OTP sent to your email.'
-        ]);
+        return $this->successResponse(null, 'Please verify with OTP sent to your email.');
     }
 
     /**
@@ -323,19 +316,13 @@ class AuthController extends Controller
         ]);
 
         if (!session()->has('password_change_new_password')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Session expired. Please start again.'
-            ], 400);
+            return $this->errorResponse('Session expired. Please start again.', 400);
         }
 
         // Check if session expired
         if (now()->gt(session('password_change_expires'))) {
             session()->forget(['password_change_new_password', 'password_change_expires']);
-            return response()->json([
-                'success' => false,
-                'message' => 'Session has expired. Please start again.'
-            ], 400);
+            return $this->errorResponse('Session has expired. Please start again.', 400);
         }
 
         $user = Auth::user();
@@ -345,10 +332,7 @@ class AuthController extends Controller
         $result = $supabaseService->verifyOtp($user->email, $request->otp, 'recovery');
 
         if (!$result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message']
-            ], 400);
+            return $this->errorResponse($result['message'], 400);
         }
 
         // Update password
@@ -364,11 +348,7 @@ class AuthController extends Controller
         // Determine redirect based on user type
         $redirect = $user->vendor ? '/profile/vendor' : '/profile';
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password changed successfully.',
-            'redirect' => $redirect
-        ]);
+        return $this->successResponse(['redirect' => $redirect], 'Password changed successfully.');
     }
 
     /**
@@ -377,10 +357,7 @@ class AuthController extends Controller
     public function resendPasswordChangeOtp(Request $request)
     {
         if (!session()->has('password_change_new_password')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Session expired. Please start again.'
-            ], 400);
+            return $this->errorResponse('Session expired. Please start again.', 400);
         }
 
         // Update session expiry
@@ -388,10 +365,7 @@ class AuthController extends Controller
             'password_change_expires' => now()->addMinutes(15),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Ready to resend OTP.'
-        ]);
+        return $this->successResponse(null, 'Ready to resend OTP.');
     }
 
     /**
@@ -510,10 +484,7 @@ class AuthController extends Controller
 
         // Check if new email is different from current
         if ($request->new_email === $user->email) {
-            return response()->json([
-                'success' => false,
-                'message' => 'New email must be different from current email.'
-            ], 400);
+            return $this->errorResponse('New email must be different from current email.', 400);
         }
 
         // Store new email in session (OTP will be handled by Supabase)
@@ -522,10 +493,7 @@ class AuthController extends Controller
             'email_change_expires' => now()->addMinutes(15),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Please verify your new email address.'
-        ]);
+        return $this->successResponse(null, 'Please verify your new email address.');
     }
 
     /**
@@ -553,19 +521,13 @@ class AuthController extends Controller
         ]);
 
         if (!session()->has('email_change_new_email')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Session expired. Please start again.'
-            ], 400);
+            return $this->errorResponse('Session expired. Please start again.', 400);
         }
 
         // Check if session expired
         if (now()->gt(session('email_change_expires'))) {
             session()->forget(['email_change_new_email', 'email_change_expires']);
-            return response()->json([
-                'success' => false,
-                'message' => 'Session has expired. Please start again.'
-            ], 400);
+            return $this->errorResponse('Session has expired. Please start again.', 400);
         }
 
         $newEmail = session('email_change_new_email');
@@ -575,10 +537,7 @@ class AuthController extends Controller
         $result = $supabaseService->verifyOtp($newEmail, $request->otp, 'magiclink');
 
         if (!$result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message']
-            ], 400);
+            return $this->errorResponse($result['message'], 400);
         }
 
         // Update email
@@ -595,11 +554,7 @@ class AuthController extends Controller
         // Determine redirect based on user type
         $redirect = $user->vendor ? '/profile/vendor' : '/profile';
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Email changed successfully.',
-            'redirect' => $redirect
-        ]);
+        return $this->successResponse(['redirect' => $redirect], 'Email changed successfully.');
     }
 
     /**
@@ -608,10 +563,7 @@ class AuthController extends Controller
     public function resendEmailChangeOtp(Request $request)
     {
         if (!session()->has('email_change_new_email')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Session expired. Please start again.'
-            ], 400);
+            return $this->errorResponse('Session expired. Please start again.', 400);
         }
 
         // Update session expiry
@@ -619,9 +571,6 @@ class AuthController extends Controller
             'email_change_expires' => now()->addMinutes(15),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Ready to resend OTP.'
-        ]);
+        return $this->successResponse(null, 'Ready to resend OTP.');
     }
 }

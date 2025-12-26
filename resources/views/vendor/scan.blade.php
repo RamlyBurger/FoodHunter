@@ -83,12 +83,9 @@
                             <br>
                             <small class="text-muted">RM {{ number_format((float)$order->total, 2) }}</small>
                         </div>
-                        <form action="{{ route('vendor.pickup.complete', $order) }}" method="POST" class="pickup-form">
-                            @csrf
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmPickupComplete(this.form)">
-                                <i class="bi bi-check2-circle"></i>
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmPickupComplete({{ $order->id }})">
+                            <i class="bi bi-check2-circle"></i>
+                        </button>
                     </div>
                     @endforeach
                 @endif
@@ -108,35 +105,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const cameraPreview = document.getElementById('cameraPreview');
     let stream = null;
 
-    // AJAX form submission
+    // AJAX form submission - Uses Student 4's validatePickupQr API
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        fetch(form.action, {
+        // First validate QR using Student 4's API
+        fetch('/api/orders/validate-pickup', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (document.querySelector('meta[name="api-token"]')?.content || '')
             },
             body: JSON.stringify({ qr_code: input.value })
         })
         .then(res => res.json())
-        .then(data => {
-            if (data.success) {
+        .then(response => {
+            // Handle Student 4's API response format
+            const data = response.data || response;
+            if (response.success && data.valid) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Order Found!',
                     html: `
                         <div class="text-start">
-                            <p><strong>Order:</strong> #${data.order.order_number}</p>
-                            <p><strong>Customer:</strong> ${data.order.customer_name}</p>
-                            <p><strong>Queue:</strong> <span class="fs-4 fw-bold text-primary">#${data.order.queue_number}</span></p>
-                            <p><strong>Total:</strong> RM ${parseFloat(data.order.total).toFixed(2)}</p>
-                            <p><strong>Items:</strong></p>
-                            <ul class="mb-0">
-                                ${data.order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('')}
-                            </ul>
+                            <p><strong>Order:</strong> #${data.order_number}</p>
+                            <p><strong>Customer:</strong> ${data.customer_name}</p>
+                            <p><strong>Queue:</strong> <span class="fs-4 fw-bold text-primary">#${data.queue_number}</span></p>
+                            <p><strong>Total:</strong> RM ${parseFloat(data.total).toFixed(2)}</p>
+                            <p><strong>Items:</strong> ${data.items_count} item(s)</p>
                         </div>
                     `,
                     showCancelButton: true,
@@ -146,13 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // Submit the form
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = `/vendor/pickup/${data.order.id}/complete`;
-                        form.innerHTML = `<input type="hidden" name="_token" value="${csrfToken}">`;
-                        document.body.appendChild(form);
-                        form.submit();
+                        // Complete pickup via AJAX
+                        completePickupAjax(data.order_id);
                     }
                 });
             } else {
@@ -189,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function confirmPickupComplete(form) {
+function confirmPickupComplete(orderId) {
     Swal.fire({
         title: 'Complete Pickup?',
         text: 'Mark this order as collected by the customer?',
@@ -201,9 +194,47 @@ function confirmPickupComplete(form) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            form.submit();
+            completePickupAjax(orderId);
         }
     });
+}
+
+// Complete pickup via AJAX
+async function completePickupAjax(orderId) {
+    try {
+        const res = await fetch(`/vendor/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ _method: 'PUT', status: 'completed' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Reset scanner UI instead of reload
+            const orderDetails = document.getElementById('order-details');
+            if (orderDetails) {
+                orderDetails.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-qr-code-scan fs-1 text-primary mb-3 d-block"></i>
+                        <h5 class="text-muted">Ready to scan next order</h5>
+                        <p class="text-muted small">Scan a QR code to verify pickup</p>
+                    </div>
+                `;
+            }
+            // Reset any scanner state if needed
+            if (typeof resetScanner === 'function') {
+                resetScanner();
+            }
+            showToast(data.message || 'Pickup completed successfully!', 'success');
+        } else {
+            Swal.fire('Error', data.message || 'Failed to complete pickup', 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', 'An error occurred. Please try again.', 'error');
+    }
 }
 </script>
 @endpush

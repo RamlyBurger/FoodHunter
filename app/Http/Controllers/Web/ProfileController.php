@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Models\EmailVerification;
 use App\Services\SupabaseService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class ProfileController extends Controller
 {
+    use ApiResponse;
     public function index()
     {
         $user = Auth::user();
@@ -58,6 +61,18 @@ class ProfileController extends Controller
                 'avg_prep_time' => $request->avg_prep_time ?? 15,
             ]);
 
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->successResponse([
+                    'vendor' => [
+                        'store_name' => $user->vendor->store_name,
+                        'phone' => $user->vendor->phone,
+                        'description' => $user->vendor->description,
+                        'min_order_amount' => $user->vendor->min_order_amount,
+                        'avg_prep_time' => $user->vendor->avg_prep_time,
+                    ]
+                ], 'Store information updated successfully.');
+            }
+
             return back()->with('success', 'Store information updated successfully.');
         }
 
@@ -73,14 +88,12 @@ class ProfileController extends Controller
         ]);
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile updated successfully.',
+            return $this->successResponse([
                 'user' => [
                     'name' => $user->name,
                     'phone' => $user->phone,
                 ]
-            ]);
+            ], 'Profile updated successfully.');
         }
 
         return back()->with('success', 'Profile updated successfully.');
@@ -104,11 +117,9 @@ class ProfileController extends Controller
         $user->update(['avatar' => $path]);
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile picture updated successfully.',
-                'avatar_url' => asset('storage/' . $path)
-            ]);
+            return $this->successResponse([
+                'avatar_url' => ImageHelper::avatar($path, $user->name)
+            ], 'Profile picture updated successfully.');
         }
 
         return back()->with('success', 'Profile picture updated successfully.');
@@ -125,10 +136,7 @@ class ProfileController extends Controller
         $user->update(['avatar' => null]);
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile picture removed.'
-            ]);
+            return $this->successResponse(null, 'Profile picture removed.');
         }
 
         return back()->with('success', 'Profile picture removed.');
@@ -155,12 +163,19 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         if (!Hash::check($request->current_password, $user->password)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->errorResponse('Current password is incorrect.', 400);
+            }
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
         $user->update([
             'password' => Hash::make($request->password),
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse(null, 'Password changed successfully.');
+        }
 
         return back()->with('success', 'Password changed successfully.');
     }

@@ -351,7 +351,7 @@
                     <div class="section-title">Items Ordered</div>
                     @foreach($order->items as $item)
                     <a href="{{ $item->menuItem ? url('/menu/' . $item->menuItem->id) : '#' }}" class="item-row">
-                        <img src="{{ $item->menuItem && $item->menuItem->image ? (Str::startsWith($item->menuItem->image, ['http://', 'https://']) ? $item->menuItem->image : asset('storage/' . $item->menuItem->image)) : '' }}" 
+                        <img src="{{ $item->menuItem ? \App\Helpers\ImageHelper::menuItem($item->menuItem->image) : '' }}" 
                              alt="{{ $item->item_name }}"
                              onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($item->item_name) }}&background=f3f4f6&color=9ca3af&size=100&font-size=0.33&bold=true';">
                         <div class="item-info">
@@ -513,6 +513,69 @@
 
 @push('scripts')
 <script>
+// AJAX polling for order status updates (consumes Student 4's Order Status API)
+const orderId = {{ $order->id }};
+const currentStatus = '{{ $order->status }}';
+let statusCheckInterval = null;
+
+function checkOrderStatus() {
+    // Only poll for active orders (not completed or cancelled)
+    if (['completed', 'cancelled'].includes(currentStatus)) {
+        return;
+    }
+    
+    fetch('/api/orders/' + orderId + '/status', {
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + (document.querySelector('meta[name="api-token"]')?.content || '')
+        }
+    })
+    .then(res => res.json())
+    .then(response => {
+        const data = response.data || response;
+        if (data.status && data.status !== currentStatus) {
+            // Status changed - update UI dynamically
+            const statusConfig = {
+                'pending': { bg: '#fef3c7', color: '#d97706', icon: 'hourglass-split' },
+                'confirmed': { bg: '#dcfce7', color: '#16a34a', icon: 'check-circle' },
+                'preparing': { bg: '#dbeafe', color: '#2563eb', icon: 'fire' },
+                'ready': { bg: '#ede9fe', color: '#7c3aed', icon: 'bell' },
+                'completed': { bg: '#f3f4f6', color: '#374151', icon: 'check-circle-fill' },
+                'cancelled': { bg: '#fee2e2', color: '#dc2626', icon: 'x-circle' }
+            };
+            const config = statusConfig[data.status] || statusConfig['pending'];
+            
+            // Update status badge
+            const statusBadge = document.querySelector('.order-status-badge');
+            if (statusBadge) {
+                statusBadge.style.background = config.bg;
+                statusBadge.style.color = config.color;
+                statusBadge.innerHTML = `<i class="bi bi-${config.icon} me-1"></i>${data.status.charAt(0).toUpperCase() + data.status.slice(1)}`;
+            }
+            
+            // Update current status for next poll
+            currentStatus = data.status;
+            
+            // Stop polling if order is completed or cancelled
+            if (['completed', 'cancelled'].includes(data.status) && statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+            
+            showToast('Order status updated to: ' + data.status.charAt(0).toUpperCase() + data.status.slice(1), 'info');
+        }
+    })
+    .catch(() => {
+        // Silent fail - will retry on next interval
+    });
+}
+
+// Start polling every 15 seconds for active orders
+if (!['completed', 'cancelled'].includes(currentStatus)) {
+    statusCheckInterval = setInterval(checkOrderStatus, 15000);
+    // Also check immediately after 3 seconds
+    setTimeout(checkOrderStatus, 3000);
+}
+
 function confirmCancelOrder(orderId) {
     Swal.fire({
         title: 'Cancel Order?',

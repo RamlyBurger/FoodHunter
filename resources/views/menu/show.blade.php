@@ -293,7 +293,7 @@
         <!-- Product Image -->
         <div class="col-lg-6">
             <div class="product-gallery">
-                <img src="{{ $item->image ? (Str::startsWith($item->image, ['http://', 'https://']) ? $item->image : asset('storage/' . $item->image)) : '' }}" 
+                <img src="{{ \App\Helpers\ImageHelper::menuItem($item->image) }}" 
                      alt="{{ $item->name }}" 
                      class="product-main-image"
                      onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($item->name) }}&background=f3f4f6&color=9ca3af&size=600&font-size=0.2&bold=true';">

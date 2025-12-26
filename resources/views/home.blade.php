@@ -577,6 +577,24 @@
             toggleVideo();
         }
     });
+
+    // Load popular items using Student 2's API
+    function loadPopularItems() {
+        fetch('/api/menu/popular?limit=6', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(response => {
+            const data = response.data || response;
+            if (data.items && data.items.length > 0) {
+                console.log('Popular items loaded via Student 2 API:', data.items.length);
+            }
+        })
+        .catch(err => console.log('Popular items API:', err));
+    }
+    
+    // Load on page ready
+    document.addEventListener('DOMContentLoaded', loadPopularItems);
 </script>
 @endpush
 

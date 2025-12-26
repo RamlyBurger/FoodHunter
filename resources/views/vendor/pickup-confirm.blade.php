@@ -55,12 +55,9 @@
                     @endforeach
                 </div>
 
-                <form action="{{ route('vendor.pickup.complete', $order) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-success btn-lg w-100 mb-2">
-                        <i class="bi bi-bag-check me-2"></i>Complete Pickup
-                    </button>
-                </form>
+                <button type="button" class="btn btn-success btn-lg w-100 mb-2" onclick="completePickup({{ $order->id }})">
+                    <i class="bi bi-bag-check me-2"></i>Complete Pickup
+                </button>
 
                 <a href="{{ route('vendor.scan') }}" class="btn btn-outline-secondary w-100">
                     <i class="bi bi-qr-code-scan me-2"></i>Scan Another
@@ -69,4 +66,36 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+async function completePickup(orderId) {
+    try {
+        const res = await fetch(`/vendor/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ _method: 'PUT', status: 'completed' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Pickup Complete!',
+                text: data.message || 'Order has been marked as completed.',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => window.location.href = '/vendor/dashboard');
+        } else {
+            Swal.fire('Error', data.message || 'Failed to complete pickup', 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', 'An error occurred. Please try again.', 'error');
+    }
+}
+</script>
+@endpush
 @endsection

@@ -37,9 +37,10 @@ Route::get('/vendors', [MenuController::class, 'vendors']);
 Route::get('/vendors/{vendor}', [MenuController::class, 'vendorMenu']);
 Route::get('/menu/featured', [MenuController::class, 'featured']);
 Route::get('/menu/search', [MenuController::class, 'search']);
+// Web Service: Popular Items (Student 2 exposes, Order/Cart modules consume)
+Route::get('/menu/popular', [MenuController::class, 'popularItems']);
 Route::get('/menu/{menuItem}', [MenuController::class, 'show']);
 Route::get('/menu/{menuItem}/related', [MenuController::class, 'related']);
-
 // Web Service: Menu Item Availability (Student 2 exposes, Student 3 consumes)
 Route::get('/menu/{menuItem}/availability', [MenuController::class, 'checkAvailability']);
 
@@ -54,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/user', [AuthController::class, 'user']);
     // Web Service: Token Validation (Student 1 exposes, others consume)
     Route::post('/auth/validate-token', [AuthController::class, 'validateToken']);
+    // Web Service: User Statistics (Student 1 exposes, Order/Menu modules consume)
+    Route::get('/auth/user-stats', [AuthController::class, 'userStats']);
 
     // Cart (Student 3)
     Route::get('/cart', [CartController::class, 'index']);
@@ -62,11 +65,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart/{cartItem}', [CartController::class, 'remove']);
     Route::delete('/cart', [CartController::class, 'clear']);
     Route::get('/cart/count', [CartController::class, 'count']);
+    // Web Service: Cart Validation (Student 3 exposes, Checkout/Order modules consume)
+    Route::get('/cart/validate', [CartController::class, 'validateCart']);
+    // Web Service: Cart Recommendations (Student 3 consumes Student 2's Popular Items)
+    Route::get('/cart/recommendations', [CartController::class, 'recommendations']);
 
     // Orders (Student 4)
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/active', [OrderController::class, 'active']);
+    // Web Service: Order History (Student 4 consumes Student 1's User Stats)
+    Route::get('/orders/history', [OrderController::class, 'history']);
+    // Web Service: Pickup QR Validation (Student 4 exposes, Vendor module consumes)
+    Route::post('/orders/validate-pickup', [OrderController::class, 'validatePickupQr']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder']);
@@ -140,7 +151,11 @@ Route::middleware('auth:sanctum')->group(function () {
             if (!$url) {
                 return response()->json([
                     'success' => false,
+                    'status' => 400,
                     'message' => 'URL is required',
+                    'error' => 'BAD_REQUEST',
+                    'request_id' => \Illuminate\Support\Str::uuid()->toString(),
+                    'timestamp' => now()->toIso8601String(),
                 ], 400);
             }
 
@@ -161,14 +176,24 @@ Route::middleware('auth:sanctum')->group(function () {
 
             return response()->json([
                 'success' => true,
-                'status' => $response->getStatusCode(),
-                'headers' => $response->getHeaders(),
-                'body' => json_decode($response->getBody()->getContents(), true),
+                'status' => 200,
+                'message' => 'Request completed',
+                'request_id' => \Illuminate\Support\Str::uuid()->toString(),
+                'timestamp' => now()->toIso8601String(),
+                'data' => [
+                    'response_status' => $response->getStatusCode(),
+                    'response_headers' => $response->getHeaders(),
+                    'response_body' => json_decode($response->getBody()->getContents(), true),
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
+                'status' => 500,
                 'message' => $e->getMessage(),
+                'error' => 'SERVER_ERROR',
+                'request_id' => \Illuminate\Support\Str::uuid()->toString(),
+                'timestamp' => now()->toIso8601String(),
             ], 500);
         }
     });

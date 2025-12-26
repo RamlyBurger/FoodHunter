@@ -157,7 +157,20 @@ function deleteNotification(notificationId, btn) {
                 // Check if there are no more notifications
                 const remainingNotifications = document.querySelectorAll('.card-body .p-4');
                 if (remainingNotifications.length === 0) {
-                    location.reload();
+                    // Show empty state instead of reload
+                    const cardBody = document.querySelector('.card-body');
+                    if (cardBody) {
+                        cardBody.innerHTML = `
+                            <div class="text-center py-5">
+                                <i class="bi bi-bell-slash fs-1 text-muted mb-3 d-block"></i>
+                                <h5 class="text-muted mb-2">No notifications</h5>
+                                <p class="text-muted small">You're all caught up!</p>
+                            </div>
+                        `;
+                    }
+                    // Hide mark all read button
+                    const markAllBtn = document.getElementById('mark-all-read-btn');
+                    if (markAllBtn) markAllBtn.style.display = 'none';
                 }
             }, 300);
             showToast('Notification deleted', 'success');

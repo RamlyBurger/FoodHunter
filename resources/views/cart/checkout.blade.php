@@ -196,7 +196,7 @@
                     <h5 class="fw-bold mb-3"><i class="bi bi-bag-check me-2"></i>Your Order ({{ count($cartItems) }} items)</h5>
                     @foreach($cartItems as $item)
                     <div class="order-item">
-                        <img src="{{ $item->menuItem->image ? (Str::startsWith($item->menuItem->image, ['http://', 'https://']) ? $item->menuItem->image : asset('storage/' . $item->menuItem->image)) : '' }}" 
+                        <img src="{{ \App\Helpers\ImageHelper::menuItem($item->menuItem->image) }}" 
                              class="order-item-image"
                              onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($item->menuItem->name) }}&background=f3f4f6&color=9ca3af&size=100'">
                         <div class="flex-grow-1">
@@ -522,9 +522,31 @@ async function processPayment() {
     }
     
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validating...';
     
     try {
+        // Validate cart using Student 3's API before processing
+        const cartValidation = await fetch('/api/cart/validate', {
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': 'Bearer ' + (document.querySelector('meta[name="api-token"]')?.content || '')
+            }
+        }).then(r => r.json());
+        
+        if (!cartValidation.success || !cartValidation.data?.valid) {
+            const issues = cartValidation.data?.issues || [];
+            let issueMsg = 'Some items in your cart are no longer available.';
+            if (issues.length > 0) {
+                issueMsg = issues.map(i => i.item_name + ': ' + i.type.replace('_', ' ')).join(', ');
+            }
+            Swal.fire({ title: 'Cart Issue', text: issueMsg, icon: 'warning', confirmButtonColor: '#FF6B35' });
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Pay RM {{ number_format($summary["total"], 2) }}';
+            return;
+        }
+        
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        
         if (paymentMethod.value === 'card') {
             // Create Stripe payment method
             const { paymentMethod: stripePaymentMethod, error } = await stripe.createPaymentMethod({
@@ -542,7 +564,38 @@ async function processPayment() {
             document.getElementById('stripe_payment_method_id').value = stripePaymentMethod.id;
         }
         
-        form.submit();
+        // Use AJAX instead of form.submit()
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Order Placed!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                if (data.data?.redirect) {
+                    window.location.href = data.data.redirect;
+                } else {
+                    window.location.href = '/orders';
+                }
+            });
+        } else {
+            Swal.fire({ title: 'Error', text: data.message || 'Failed to place order.', icon: 'error', confirmButtonColor: '#FF6B35' });
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Pay RM {{ number_format($summary["total"], 2) }}';
+        }
     } catch (err) {
         Swal.fire({ title: 'Error', text: 'Payment failed. Please try again.', icon: 'error', confirmButtonColor: '#FF6B35' });
         submitBtn.disabled = false;

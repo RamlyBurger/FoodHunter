@@ -641,13 +641,10 @@
                     <span class="status-dot {{ $vendor->is_open ? 'open' : '' }}"></span>
                     <span>{{ $vendor->is_open ? 'Store Open' : 'Store Closed' }}</span>
                 </div>
-                <form action="{{ url('/vendor/toggle-open') }}" method="POST" class="d-inline" id="toggleStoreForm">
-                    @csrf
-                    <label class="toggle-switch">
-                        <input type="checkbox" {{ $vendor->is_open ? 'checked' : '' }} onchange="document.getElementById('toggleStoreForm').submit()">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </form>
+                <label class="toggle-switch">
+                    <input type="checkbox" {{ $vendor->is_open ? 'checked' : '' }} onchange="toggleStoreStatusSidebar(this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
             </div>
             @endif
         </div>
@@ -819,17 +816,19 @@
                 headers: { 'Accept': 'application/json' }
             })
             .then(res => res.json())
-            .then(data => {
+            .then(response => {
                 const container = document.getElementById('vendor-notification-items');
                 const countEl = document.getElementById('vendor-notification-count');
                 
+                // Handle standardized API response format
+                const data = response.data || response;
                 const unreadCount = data.unread_count || 0;
                 countEl.textContent = unreadCount;
                 countEl.style.display = unreadCount > 0 ? 'flex' : 'none';
                 
                 // Show SweetAlert toast if new notifications arrived
                 if (lastVendorNotificationCount !== null && unreadCount > lastVendorNotificationCount) {
-                    const newNotifications = data.notifications.filter(n => !n.read_at);
+                    const newNotifications = (data.notifications || []).filter(n => !n.read_at);
                     if (newNotifications.length > 0) {
                         const latestNotif = newNotifications[0];
                         showToast(latestNotif.title + ': ' + latestNotif.message, 'info');
@@ -918,6 +917,37 @@
         });
         
         document.getElementById('vendorNotificationToggle')?.addEventListener('show.bs.dropdown', loadVendorNotifications);
+        
+        // Toggle store status from sidebar via AJAX
+        window.toggleStoreStatusSidebar = async function(isOpen) {
+            try {
+                const res = await fetch('/vendor/toggle-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ is_open: isOpen })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    // Update UI elements
+                    const statusDot = document.querySelector('.status-dot');
+                    const statusText = document.querySelector('.store-status-indicator span:last-child');
+                    if (statusDot) statusDot.classList.toggle('open', isOpen);
+                    if (statusText) statusText.textContent = isOpen ? 'Store Open' : 'Store Closed';
+                    showToast(data.message || (isOpen ? 'Store is now open!' : 'Store is now closed.'), 'success');
+                } else {
+                    showToast(data.message || 'Failed to update store status', 'error');
+                    // Revert checkbox
+                    document.querySelector('.toggle-switch input').checked = !isOpen;
+                }
+            } catch (e) {
+                showToast('An error occurred', 'error');
+                document.querySelector('.toggle-switch input').checked = !isOpen;
+            }
+        };
     </script>
     
     @stack('scripts')

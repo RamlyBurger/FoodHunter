@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\ImageHelper;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
@@ -116,6 +117,35 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Web Service: Expose - User Statistics API
+     * Other modules (Order, Menu) consume this to get user activity stats
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function userStats(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Get user statistics
+        $totalOrders = \App\Models\Order::where('user_id', $user->id)->count();
+        $completedOrders = \App\Models\Order::where('user_id', $user->id)->where('status', 'completed')->count();
+        $totalSpent = \App\Models\Order::where('user_id', $user->id)->where('status', 'completed')->sum('total');
+        $activeVouchers = \App\Models\UserVoucher::where('user_id', $user->id)
+            ->whereHas('voucher', fn($q) => $q->where('is_active', true))
+            ->count();
+        
+        return $this->successResponse([
+            'user_id' => $user->id,
+            'total_orders' => $totalOrders,
+            'completed_orders' => $completedOrders,
+            'total_spent' => round((float) $totalSpent, 2),
+            'active_vouchers' => $activeVouchers,
+            'member_since' => $user->created_at->toIso8601String(),
+        ]);
+    }
+
     private function formatUser(User $user): array
     {
         return [
@@ -124,6 +154,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'phone' => $user->phone,
             'role' => $user->role,
+            'avatar' => ImageHelper::avatar($user->avatar, $user->name),
             'created_at' => $user->created_at,
         ];
     }

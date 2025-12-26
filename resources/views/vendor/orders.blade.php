@@ -131,13 +131,11 @@
                         @php
                             $firstItem = $order->items->first();
                             $remainingCount = $order->items->count() - 1;
-                            $firstItemImage = null;
-                            if ($firstItem && $firstItem->menuItem) {
-                                $img = $firstItem->menuItem->image;
-                                $firstItemImage = $img ? (Str::startsWith($img, ['http://', 'https://']) ? $img : asset('storage/' . $img)) : null;
-                            }
+                            $firstItemImage = ($firstItem && $firstItem->menuItem) 
+                                ? \App\Helpers\ImageHelper::menuItem($firstItem->menuItem->image) 
+                                : null;
                         @endphp
-                        <tr class="order-row">
+                        <tr class="order-row" id="order-row-{{ $order->id }}" data-order-id="{{ $order->id }}">
                             <td class="px-4">
                                 <div class="d-flex align-items-center">
                                     @if($firstItemImage)
@@ -157,20 +155,13 @@
                                 </div>
                             </td>
                             <td>
-                                @php
-                                    $userAvatar = $order->user->avatar ?? null;
-                                    $avatarUrl = $userAvatar 
-                                        ? (Str::startsWith($userAvatar, ['http://', 'https://']) ? $userAvatar : asset('storage/' . $userAvatar))
-                                        : null;
-                                    $fallbackAvatar = 'https://ui-avatars.com/api/?name=' . urlencode($order->user->name ?? 'U') . '&background=6c757d&color=fff&size=100';
-                                @endphp
                                 <div class="d-flex align-items-center">
-                                    <img src="{{ $avatarUrl ?? $fallbackAvatar }}" 
+                                    <img src="{{ \App\Helpers\ImageHelper::avatar($order->user->avatar ?? null, $order->user->name ?? 'Customer') }}" 
                                          alt="{{ $order->user->name ?? 'Customer' }}" 
                                          class="rounded-circle me-2" 
                                          width="38" height="38" 
                                          style="object-fit: cover; border: 2px solid #e5e7eb;"
-                                         onerror="this.src='{{ $fallbackAvatar }}'">
+                                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($order->user->name ?? 'U') }}&background=6c757d&color=fff&size=100'">
                                     <div>
                                         <div class="fw-semibold">{{ $order->user->name ?? 'Unknown' }}</div>
                                         <small class="text-muted">{{ Str::limit($order->user->email ?? '', 20) }}</small>
@@ -272,6 +263,12 @@
 
 @push('styles')
 <style>
+/* Row animations for CRUD operations */
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(-20px); }
+}
+
 .border-4 {
     border-width: 4px !important;
 }
@@ -1145,13 +1142,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Updated!',
-                    text: `Order status changed to ${statusLabel}`,
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => location.reload());
+                // Remove row from current view since it moved to different status tab
+                const row = document.getElementById('order-row-' + orderId);
+                if (row) {
+                    row.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => {
+                        row.remove();
+                        // Check if table is empty
+                        const tbody = document.querySelector('.orders-table tbody');
+                        if (tbody && tbody.querySelectorAll('.order-row').length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5">
+                                <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                                </div>
+                                <h6 class="text-muted mb-1">No orders found</h6>
+                                <p class="text-muted small mb-0">Orders will appear here when customers place them</p>
+                            </td></tr>`;
+                        }
+                    }, 300);
+                }
+                showToast(`Order status changed to ${statusLabel}`, 'success');
             }
         });
     };
@@ -1326,13 +1336,24 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.success) {
                 closeQRModal();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Order Completed!',
-                    text: 'The pickup has been verified successfully.',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => location.reload());
+                // Remove row from current view
+                const row = document.getElementById('order-row-' + currentQROrderId);
+                if (row) {
+                    row.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => {
+                        row.remove();
+                        const tbody = document.querySelector('.orders-table tbody');
+                        if (tbody && tbody.querySelectorAll('.order-row').length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5">
+                                <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                                </div>
+                                <h6 class="text-muted mb-1">No orders found</h6>
+                            </td></tr>`;
+                        }
+                    }, 300);
+                }
+                showToast('Order completed successfully!', 'success');
             } else {
                 showQRError(data.message || 'Invalid QR code');
                 btn.disabled = false;
@@ -1409,13 +1430,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Order Rejected',
-                    text: 'The order has been rejected and the customer will be notified.',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => location.reload());
+                // Remove row from current view
+                const row = document.getElementById('order-row-' + orderId);
+                if (row) {
+                    row.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => {
+                        row.remove();
+                        const tbody = document.querySelector('.orders-table tbody');
+                        if (tbody && tbody.querySelectorAll('.order-row').length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5">
+                                <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                                </div>
+                                <h6 class="text-muted mb-1">No orders found</h6>
+                            </td></tr>`;
+                        }
+                    }, 300);
+                }
+                showToast('Order rejected successfully', 'success');
             }
         });
     };
