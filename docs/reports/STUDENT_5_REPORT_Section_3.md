@@ -61,11 +61,13 @@ class FixedVoucher implements VoucherInterface
 {
     private float $value;
     private ?float $minOrder;
+    private string $code;
 
-    public function __construct(float $value, ?float $minOrder = null)
+    public function __construct(float $value, ?float $minOrder = null, string $code = '')
     {
         $this->value = $value;
         $this->minOrder = $minOrder;
+        $this->code = $code;
     }
 
     public function calculateDiscount(float $subtotal): float
@@ -77,6 +79,9 @@ class FixedVoucher implements VoucherInterface
         return min($this->value, $subtotal);
     }
 
+    public function getType(): string { return 'fixed'; }
+    public function getValue(): float { return $this->value; }
+
     public function isApplicable(float $subtotal): bool
     {
         return $this->minOrder === null || $subtotal >= $this->minOrder;
@@ -84,7 +89,11 @@ class FixedVoucher implements VoucherInterface
 
     public function getDescription(): string
     {
-        return "RM" . number_format($this->value, 2) . " off";
+        $desc = "RM" . number_format($this->value, 2) . " off";
+        if ($this->minOrder > 0) {
+            $desc .= " (min order RM" . number_format($this->minOrder, 2) . ")";
+        }
+        return $desc;
     }
 }
 ```
