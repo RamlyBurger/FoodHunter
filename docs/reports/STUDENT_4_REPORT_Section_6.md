@@ -82,23 +82,21 @@ Accept: application/json
 #### 6.1.7 Frontend Consumption Example
 
 ```javascript
-// resources/views/layouts/app.blade.php
-// Load cart summary for navigation badge
+// resources/views/cart/index.blade.php (line 262-270)
+// Updates cart summary display when cart items are modified
 
-async function loadCartSummary() {
-    const response = await fetch('/api/cart/summary', {
-        headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer ' + getToken()
-        }
-    });
-    const data = await response.json();
+function updateCartSummary(summary) {
+    const itemCountEl = document.querySelector('[data-summary="item-count"]');
+    const subtotalEl = document.querySelector('[data-summary="subtotal"]');
+    const totalEl = document.querySelector('[data-summary="total"]');
     
-    if (data.success) {
-        document.querySelector('.cart-badge').textContent = data.data.item_count;
-        document.querySelector('.cart-total').textContent = 'RM ' + data.data.total.toFixed(2);
-    }
+    if (itemCountEl) itemCountEl.textContent = summary.item_count;
+    if (subtotalEl) subtotalEl.textContent = 'RM ' + summary.subtotal.toFixed(2);
+    if (totalEl) totalEl.textContent = 'RM ' + summary.total.toFixed(2);
 }
+
+// Called after quantity update (line 204):
+// updateCartSummary(responseData.summary || data.summary);
 ```
 
 #### 6.1.8 Modules That Consume This API
@@ -217,28 +215,30 @@ Accept: application/json
 }
 ```
 
-#### 6.2.8 Frontend Consumption Example
+#### 6.2.8 Backend Consumption Example
 
-```javascript
-// app/Services/NotificationService.php usage
-// Student 1 consumes this API to send welcome notifications
+```php
+// app/Http/Controllers/Api/AuthController.php (line 41-48)
+// Student 1 consumes Send Notification API to send welcome notifications after registration
 
-async function sendWelcomeNotification(userId) {
-    const response = await fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': 'Bearer ' + getToken()
-        },
-        body: JSON.stringify({
-            user_id: userId,
-            type: 'welcome',
-            title: 'Welcome to FoodHunter!',
-            message: 'Thank you for joining. Start exploring delicious food now!'
-        })
-    });
-    return await response.json();
+public function register(RegisterRequest $request): JsonResponse
+{
+    $user = $this->authService->register($request->validated());
+    $token = $user->createToken('auth-token')->plainTextToken;
+
+    // Web Service: Consume Notification Service (Student 4)
+    $this->notificationService->send(
+        $user->id,
+        'welcome',
+        'Welcome to FoodHunter!',
+        'Thank you for joining FoodHunter. Start exploring delicious food now!',
+        ['registration_date' => now()->toDateString()]
+    );
+
+    return $this->createdResponse([
+        'user' => $this->formatUser($user),
+        'token' => $token,
+    ], 'Registration successful');
 }
 ```
 
@@ -342,7 +342,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 ---
 
-### 6.6 Complete API Endpoints Summary
+### 6.5 Complete API Endpoints Summary
 
 The following API endpoints are implemented in the Cart, Checkout & Notifications module:
 
@@ -374,7 +374,7 @@ The following API endpoints are implemented in the Cart, Checkout & Notification
 
 ---
 
-### 6.9 Implementation Files
+### 6.7 Implementation Files
 
 | File | Purpose |
 |------|---------|

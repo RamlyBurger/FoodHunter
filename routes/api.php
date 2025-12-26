@@ -35,6 +35,8 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/categories', [MenuController::class, 'categories']);
 Route::get('/vendors', [MenuController::class, 'vendors']);
 Route::get('/vendors/{vendor}', [MenuController::class, 'vendorMenu']);
+// Web Service: Vendor Availability (Student 5 exposes, Cart/Order modules consume)
+Route::get('/vendors/{vendor}/availability', [MenuController::class, 'vendorAvailability']);
 Route::get('/menu/featured', [MenuController::class, 'featured']);
 Route::get('/menu/search', [MenuController::class, 'search']);
 // Web Service: Popular Items (Student 2 exposes, Order/Cart modules consume)
@@ -58,43 +60,43 @@ Route::middleware('auth:sanctum')->group(function () {
     // Web Service: User Statistics (Student 1 exposes, Order/Menu modules consume)
     Route::get('/auth/user-stats', [AuthController::class, 'userStats']);
 
-    // Cart (Student 3)
+    // Cart (Student 4 - Cart, Checkout & Notifications Module)
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'add']);
     Route::put('/cart/{cartItem}', [CartController::class, 'update']);
     Route::delete('/cart/{cartItem}', [CartController::class, 'remove']);
     Route::delete('/cart', [CartController::class, 'clear']);
     Route::get('/cart/count', [CartController::class, 'count']);
-    // Web Service: Cart Validation (Student 3 exposes, Checkout/Order modules consume)
+    // Web Service: Cart Validation (Student 4 exposes, Order module consumes)
     Route::get('/cart/validate', [CartController::class, 'validateCart']);
-    // Web Service: Cart Recommendations (Student 3 consumes Student 2's Popular Items)
+    // Web Service: Cart Recommendations (consumes Student 2's Popular Items)
     Route::get('/cart/recommendations', [CartController::class, 'recommendations']);
 
-    // Orders (Student 4)
+    // Orders (Student 3 - Order & Pickup Module)
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/active', [OrderController::class, 'active']);
-    // Web Service: Order History (Student 4 consumes Student 1's User Stats)
+    // Web Service: Order History (consumes Student 1's User Stats)
     Route::get('/orders/history', [OrderController::class, 'history']);
-    // Web Service: Pickup QR Validation (Student 4 exposes, Vendor module consumes)
+    // Web Service: Pickup QR Validation (Student 3 exposes, Vendor module consumes)
     Route::post('/orders/validate-pickup', [OrderController::class, 'validatePickupQr']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder']);
-    // Web Service: Order Status (Student 4 exposes, Student 5 consumes)
+    // Web Service: Order Status (Student 3 exposes, Student 4 consumes)
     Route::get('/orders/{order}/status', [OrderController::class, 'status']);
 
-    // Notifications (Student 5)
+    // Notifications (Student 4 - Cart, Checkout & Notifications Module)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/dropdown', [NotificationController::class, 'dropdown']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
-    // Web Service: Send Notification (Student 5 exposes, Students 1,4 consume)
+    // Web Service: Send Notification (Student 4 exposes, Students 1,3,5 consume)
     Route::post('/notifications/send', [NotificationController::class, 'send']);
 
-    // Web Service: Cart Summary (Student 3 exposes, Student 2 consumes)
+    // Web Service: Cart Summary (Student 4 exposes, Student 2 consumes)
     Route::get('/cart/summary', [CartController::class, 'summary']);
 
     // Web Service: Validate Voucher (Student 5 exposes, Student 4 consumes)

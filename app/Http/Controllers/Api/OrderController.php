@@ -53,6 +53,16 @@ class OrderController extends Controller
     {
         $user = $request->user();
         
+        // Web Service: Consume Student 1's Validate Token API to verify user authentication
+        // This ensures the user session is still valid before processing the order
+        $authController = app(\App\Http\Controllers\Api\AuthController::class);
+        $tokenValidation = $authController->validateToken($request);
+        $validationData = json_decode($tokenValidation->getContent(), true);
+        
+        if (!($validationData['data']['valid'] ?? false)) {
+            return $this->unauthorizedResponse('Session expired. Please login again.');
+        }
+        
         $cartItems = CartItem::where('user_id', $user->id)
             ->with('menuItem.vendor')
             ->get();
@@ -211,8 +221,8 @@ class OrderController extends Controller
     }
 
     /**
-     * Web Service: Expose - Get Order Status
-     * Student 5 (Notifications) consumes this to get order details
+     * Web Service: Expose - Get Order Status API
+     * Student 3 exposes, Student 4 (Notifications) consumes to get order details
      */
     public function status(Request $request, Order $order): JsonResponse
     {

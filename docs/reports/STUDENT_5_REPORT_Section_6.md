@@ -185,14 +185,18 @@ public function validate(Request $request): JsonResponse
 #### 6.1.10 Frontend Consumption Example
 
 ```javascript
-// resources/views/cart/index.blade.php
-// Validate voucher using Student 5's API before applying
+// resources/views/cart/index.blade.php (line 341-389)
+// applyVoucher() function validates voucher using Student 5's API
 
 function applyVoucher() {
-    const code = document.getElementById('voucher-code-input').value.trim();
-    const subtotal = parseFloat(document.querySelector('.subtotal-value')?.textContent?.replace('RM ', '') || 0);
+    const input = document.getElementById('voucher-code-input');
+    const btn = document.getElementById('apply-voucher-btn');
+    const errorDiv = document.getElementById('voucher-error');
+    const code = input.value.trim().toUpperCase();
     
     // First validate voucher using Student 5's API
+    const subtotal = parseFloat(document.querySelector('.subtotal-value')?.textContent?.replace('RM ', '') || 0);
+    
     fetch('/api/vouchers/validate', {
         method: 'POST',
         headers: {
@@ -205,16 +209,15 @@ function applyVoucher() {
     .then(res => res.json())
     .then(validateData => {
         if (!validateData.success) {
-            showError(validateData.message || 'Invalid voucher code.');
-            return;
+            errorDiv.textContent = validateData.message || 'Invalid voucher code.';
+            errorDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = 'Apply';
+            return Promise.reject('validation_failed');
         }
-        
-        // Voucher validated, now apply it
-        applyValidatedVoucher(code, validateData.data);
+        // Voucher validated via Student 5 API, now apply it
+        return fetch('/vouchers/apply', { /* apply voucher */ });
     })
-    .catch(err => {
-        showError('Error validating voucher');
-    });
 }
 ```
 
@@ -222,9 +225,8 @@ function applyVoucher() {
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart & Checkout | Student 3 | Validate voucher before applying to cart |
-| Order & Pickup | Student 4 | Validate voucher during order creation |
-| Cart Page | Frontend | Real-time voucher validation |
+| Cart, Checkout & Notifications | Student 4 | Validate voucher before applying to cart |
+| Cart Page | Frontend | Real-time voucher validation on cart/index.blade.php |
 | Checkout Page | Frontend | Final voucher validation before payment |
 
 ---
@@ -240,7 +242,7 @@ function applyVoucher() {
 | Source Module | Vendor Management (Student 5) |
 | Target Module | Cart, Checkout & Notifications (Student 4), Order & Pickup (Student 3), Menu & Catalog (Student 2) |
 | URL | http://127.0.0.1:8000/api/vendors/{vendor}/availability |
-| Function Name | checkAvailability() |
+| Function Name | vendorAvailability() |
 | HTTP Method | GET |
 | Authentication | Not Required (Public API) |
 
@@ -342,29 +344,29 @@ Accept: application/json
 #### 6.2.8 Frontend Consumption Example
 
 ```javascript
-// resources/views/cart/checkout.blade.php
-// Cart module consumes Vendor Availability API before checkout
+// resources/views/cart/checkout.blade.php (line 528-545)
+// Checkout page consumes Vendor Availability API before processing payment
 
-async function validateVendorAvailability(vendorId) {
-    const response = await fetch(`/api/vendors/${vendorId}/availability`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
+// Inside processPayment() function:
+// Validate vendor availability using Student 5's API before processing
+@if(isset($vendor) && $vendor)
+const vendorAvailability = await fetch('/api/vendors/{{ $vendor->id }}/availability', {
+    headers: { 'Accept': 'application/json' }
+}).then(r => r.json());
+
+if (!vendorAvailability.success || !vendorAvailability.data?.is_currently_open) {
+    const closedReason = vendorAvailability.data?.closed_reason || 'Vendor is currently closed';
+    Swal.fire({ 
+        title: 'Vendor Closed', 
+        text: `${vendorAvailability.data?.store_name || 'The vendor'} is currently unavailable. ${closedReason}`, 
+        icon: 'warning', 
+        confirmButtonColor: '#FF6B35' 
     });
-    
-    const data = await response.json();
-    
-    if (!data.success) {
-        showError('Unable to verify vendor availability');
-        return false;
-    }
-    
-    if (!data.data.is_currently_open) {
-        showError(`${data.data.store_name} is currently closed. ${data.data.closed_reason || ''}`);
-        return false;
-    }
-    
-    return true;
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Pay RM {{ number_format($summary["total"], 2) }}';
+    return;
 }
+@endif
 ```
 
 #### 6.2.10 Modules That Consume This API
@@ -445,7 +447,7 @@ Accept: application/json
 // routes/api.php
 
 // Public Vendor Routes (Student 5)
-Route::get('/vendors/{vendor}/availability', [VendorController::class, 'checkAvailability']);
+Route::get('/vendors/{vendor}/availability', [MenuController::class, 'vendorAvailability']);
 
 // Voucher Validation (Student 5 exposes, Cart/Order modules consume)
 Route::middleware('auth:sanctum')->group(function () {
@@ -473,7 +475,7 @@ The following API endpoints are implemented in the Vendor Management module:
 | Method | Endpoint | Function | Type | Description |
 |--------|----------|----------|------|-------------|
 | POST | /api/vouchers/validate | validate() | **EXPOSED** | Validate voucher code |
-| GET | /api/vendors/{vendor}/availability | checkAvailability() | **EXPOSED** | Check vendor availability status |
+| GET | /api/vendors/{vendor}/availability | vendorAvailability() | **EXPOSED** | Check vendor availability status |
 | GET | /api/vendor/dashboard | dashboard() | Vendor | Vendor dashboard stats |
 | GET | /api/vendor/vouchers | index() | Vendor | List vendor's vouchers |
 | POST | /api/vendor/vouchers | store() | Vendor | Create new voucher |

@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Notification Controller - Student 5
+ * Notification Controller - Student 4 (Cart, Checkout & Notifications Module)
  * 
  * Design Pattern: Observer Pattern (notifications triggered by events)
  * Security: Cryptographically Secure Codes, Audit Logging

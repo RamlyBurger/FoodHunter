@@ -525,7 +525,27 @@ async function processPayment() {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validating...';
     
     try {
-        // Validate cart using Student 3's API before processing
+        // Validate vendor availability using Student 5's API before processing
+        @if(isset($vendor) && $vendor)
+        const vendorAvailability = await fetch('/api/vendors/{{ $vendor->id }}/availability', {
+            headers: { 'Accept': 'application/json' }
+        }).then(r => r.json());
+        
+        if (!vendorAvailability.success || !vendorAvailability.data?.is_currently_open) {
+            const closedReason = vendorAvailability.data?.closed_reason || 'Vendor is currently closed';
+            Swal.fire({ 
+                title: 'Vendor Closed', 
+                text: `${vendorAvailability.data?.store_name || 'The vendor'} is currently unavailable. ${closedReason}`, 
+                icon: 'warning', 
+                confirmButtonColor: '#FF6B35' 
+            });
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Pay RM {{ number_format($summary["total"], 2) }}';
+            return;
+        }
+        @endif
+        
+        // Validate cart using Student 4's Cart Validation API before processing
         const cartValidation = await fetch('/api/cart/validate', {
             headers: {
                 'Accept': 'application/json',

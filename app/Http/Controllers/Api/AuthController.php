@@ -79,20 +79,30 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $user = $request->user();
-        
-        // Handle token-based auth (Sanctum)
-        if ($user && method_exists($user, 'currentAccessToken') && $user->currentAccessToken()) {
-            $user->currentAccessToken()->delete();
-        }
-        
-        // Handle session-based auth
-        if ($request->hasSession()) {
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
+        try {
+            $user = $request->user();
+            
+            // Handle token-based auth (Sanctum PersonalAccessToken only)
+            // TransientToken (session-based) does not have delete() method
+            if ($user && method_exists($user, 'currentAccessToken')) {
+                $token = $user->currentAccessToken();
+                // Only delete if it's a PersonalAccessToken (has delete method)
+                if ($token && $token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+                    $token->delete();
+                }
+            }
+            
+            // Handle session-based auth
+            if ($request->hasSession() && $request->session()->isStarted()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
 
-        return $this->successResponse(null, 'Logged out successfully');
+            return $this->successResponse(null, 'Logged out successfully');
+        } catch (\Exception $e) {
+            // Even if there's an error, consider logout successful
+            return $this->successResponse(null, 'Logged out successfully');
+        }
     }
 
     public function user(Request $request): JsonResponse

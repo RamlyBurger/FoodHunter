@@ -95,8 +95,8 @@ class CartController extends Controller
     }
 
     /**
-     * Web Service: Expose - Cart Summary
-     * Student 2 (Menu) can consume this to show recommendations
+     * Web Service: Expose - Cart Summary API
+     * Student 4 exposes, Student 2 (Menu) consumes to show cart badge
      */
     public function summary(Request $request): JsonResponse
     {

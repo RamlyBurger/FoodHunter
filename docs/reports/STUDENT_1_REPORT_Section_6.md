@@ -108,19 +108,27 @@ public function validateToken(Request $request): JsonResponse
 }
 ```
 
-#### 6.1.8 Frontend Consumption Example
+#### 6.1.8 Backend Consumption Example (Student 3 - Order Module)
 
-```javascript
-// Used by auth middleware across all modules
-async function validateToken(token) {
-    const response = await fetch('/api/auth/validate-token', {
-        method: 'POST',
-        headers: {
-            'Authorization': 'Bearer ' + token,
-            'Accept': 'application/json'
-        }
-    });
-    return await response.json();
+```php
+// app/Http/Controllers/Api/OrderController.php (line 56-64)
+// Student 3's Order module consumes Student 1's Validate Token API before creating orders
+
+public function store(CreateOrderRequest $request): JsonResponse
+{
+    $user = $request->user();
+    
+    // Web Service: Consume Student 1's Validate Token API to verify user authentication
+    // This ensures the user session is still valid before processing the order
+    $authController = app(\App\Http\Controllers\Api\AuthController::class);
+    $tokenValidation = $authController->validateToken($request);
+    $validationData = json_decode($tokenValidation->getContent(), true);
+    
+    if (!($validationData['data']['valid'] ?? false)) {
+        return $this->unauthorizedResponse('Session expired. Please login again.');
+    }
+    
+    // ... proceed with order creation
 }
 ```
 
@@ -255,8 +263,9 @@ public function userStats(Request $request): JsonResponse
 #### 6.2.8 Frontend Consumption Example
 
 ```javascript
-// resources/views/profile/index.blade.php
-// Load user stats using Student 1's API
+// resources/views/profile/index.blade.php (line 933-959)
+// Load user stats using Student 1's API on profile page
+
 function loadUserStats() {
     fetch('/api/auth/user-stats', {
         headers: {
@@ -268,7 +277,7 @@ function loadUserStats() {
     .then(response => {
         const data = response.data || response;
         if (data.total_orders !== undefined) {
-            // Update stats display
+            // Update stats display on profile page
             document.querySelectorAll('.stat-card-mini').forEach((card, index) => {
                 const valueEl = card.querySelector('.value');
                 if (index === 0 && valueEl) valueEl.textContent = data.total_orders;
@@ -416,37 +425,7 @@ The following API endpoints are implemented in the User & Authentication module:
 
 ---
 
-### 6.6 Design Pattern: Strategy Pattern
-
-The Authentication module implements the **Strategy Pattern** for flexible authentication methods:
-
-```php
-// app/Services/AuthService.php
-class AuthService
-{
-    private AuthContext $authContext;
-
-    public function __construct()
-    {
-        // Default to password authentication strategy
-        $this->authContext = new AuthContext(new PasswordAuthStrategy());
-    }
-
-    public function attemptLogin(string $email, string $password, ?string $ip = null): array
-    {
-        // Uses Strategy Pattern via AuthContext
-        return $this->authContext->authenticate([
-            'email' => $email,
-            'password' => $password,
-            'ip' => $ip,
-        ]);
-    }
-}
-```
-
----
-
-### 6.7 Security Features
+### 6.6 Security Features
 
 | Feature | Implementation | OWASP Reference |
 |---------|---------------|-----------------|
@@ -458,7 +437,7 @@ class AuthService
 
 ---
 
-### 6.8 Implementation Files
+### 6.7 Implementation Files
 
 | File | Purpose |
 |------|---------|

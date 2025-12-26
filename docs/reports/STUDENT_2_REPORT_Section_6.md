@@ -112,26 +112,34 @@ public function checkAvailability(MenuItem $menuItem): JsonResponse
 #### 6.1.8 Frontend Consumption Example
 
 ```javascript
-// resources/views/layouts/app.blade.php
-// Used by addToCart() function to validate item before adding
+// resources/views/layouts/app.blade.php (line 1320-1340)
+// addToCart() function validates item availability before adding to cart
 
-async function addToCart(itemId, quantity = 1) {
+function addToCart(itemId, quantity = 1, btn = null) {
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    }
+    
     // First check item availability using Student 2's API
     fetch('/api/menu/' + itemId + '/availability', {
         headers: { 'Accept': 'application/json' }
     })
     .then(res => res.json())
-    .then(data => {
-        if (data.success && data.data.available) {
-            // Item is available, proceed to add to cart
-            performAddToCart(itemId, quantity);
-        } else {
-            showToast('This item is currently unavailable', 'warning');
+    .then(availData => {
+        const data = availData.data || availData;
+        if (!data.available || !data.is_available) {
+            showToast('Sorry, this item is currently unavailable', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cart3"></i>';
+            }
+            return Promise.reject('unavailable');
         }
+        
+        // Item is available, proceed to add to cart
+        return fetch('{{ route("cart.add") }}', { /* add to cart */ });
     })
-    .catch(err => {
-        console.error('Availability check failed:', err);
-    });
 }
 ```
 
@@ -318,10 +326,12 @@ public function popularItems(Request $request): JsonResponse
 #### 6.2.8 Frontend Consumption Example
 
 ```javascript
-// resources/views/home.blade.php
-// Load popular items using Student 2's API
+// resources/views/home.blade.php (line 597-656)
+// Load and render popular items using Student 2's API
 
 function loadPopularItems() {
+    const container = document.getElementById('popular-items-container');
+    
     fetch('/api/menu/popular?limit=6', {
         headers: { 'Accept': 'application/json' }
     })
@@ -329,15 +339,31 @@ function loadPopularItems() {
     .then(response => {
         const data = response.data || response;
         if (data.items && data.items.length > 0) {
-            console.log('Popular items loaded via Student 2 API:', data.items.length);
-            // Render popular items in the UI
-            renderPopularItems(data.items);
+            // Render popular items from Student 2's API
+            container.innerHTML = data.items.map(item => {
+                const price = parseFloat(item.price).toFixed(2);
+                const vendorName = item.vendor?.store_name || 'Vendor';
+                const totalSold = item.total_sold || 0;
+                
+                return `
+                <div class="col-md-4 col-lg-2">
+                    <a href="/menu/${item.id}" class="text-decoration-none">
+                        <div class="card h-100">
+                            <img src="${item.image}" alt="${item.name}" class="card-img-top">
+                            <span class="badge bg-danger">${totalSold} sold</span>
+                            <div class="card-body">
+                                <h6>${item.name}</h6>
+                                <small>${vendorName}</small>
+                                <span class="fw-bold">RM ${price}</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>`;
+            }).join('');
         }
-    })
-    .catch(err => console.log('Popular items API:', err));
+    });
 }
 
-// Load on page ready
 document.addEventListener('DOMContentLoaded', loadPopularItems);
 ```
 
@@ -455,26 +481,28 @@ Accept: application/json
 #### 6.4.2 Implementation
 
 ```javascript
-// resources/views/menu/index.blade.php
-// Menu page consumes Cart Summary to show cart status
+// resources/views/layouts/app.blade.php (line 1483-1525)
+// Navigation bar consumes Cart dropdown API which includes summary data
 
-async function loadCartSummary() {
-    try {
-        const response = await fetch('/api/cart/summary', {
-            headers: {
-                'Accept': 'application/json',
-                'Authorization': 'Bearer ' + getToken()
-            }
-        });
-        const data = await response.json();
+function loadCartDropdown() {
+    fetch('/api/cart/dropdown', { headers: { 'Accept': 'application/json' } })
+    .then(res => res.json())
+    .then(response => {
+        const data = response.data || response;
+        const countEl = document.getElementById('cart-count');
+        const totalEl = document.getElementById('cart-total-header');
         
-        if (data.success) {
-            updateCartBadge(data.data.item_count);
-            updateCartTotal(data.data.total);
+        // Update cart badge in navigation (consumed by Menu module's navigation)
+        countEl.textContent = data.count || 0;
+        totalEl.textContent = 'RM ' + (data.total || 0).toFixed(2);
+        
+        // Display cart items in dropdown
+        if (!data.items || data.items.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">Your cart is empty</div>';
+            return;
         }
-    } catch (err) {
-        console.log('Cart summary not available');
-    }
+        // ... render cart items
+    });
 }
 ```
 
@@ -522,49 +550,7 @@ The following API endpoints are implemented in the Menu & Catalog module:
 
 ---
 
-### 6.7 Design Pattern: Repository Pattern
-
-The Menu module implements the **Repository Pattern** for data access abstraction:
-
-```php
-// app/Repositories/MenuItemRepository.php
-class MenuItemRepository
-{
-    public function findById(int $id): ?MenuItem
-    {
-        return MenuItem::with(['category', 'vendor'])->find($id);
-    }
-    
-    public function getAvailable(): Collection
-    {
-        return MenuItem::where('is_available', true)
-            ->with(['category', 'vendor'])
-            ->get();
-    }
-    
-    public function getPopular(int $limit = 10): Collection
-    {
-        return MenuItem::where('is_available', true)
-            ->orderBy('total_sold', 'desc')
-            ->limit($limit)
-            ->get();
-    }
-    
-    public function search(string $query): Collection
-    {
-        return MenuItem::where('is_available', true)
-            ->where(function($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%");
-            })
-            ->get();
-    }
-}
-```
-
----
-
-### 6.8 Security Features
+### 6.7 Security Features
 
 | Feature | Implementation | OWASP Reference |
 |---------|---------------|-----------------|
@@ -575,7 +561,7 @@ class MenuItemRepository
 
 ---
 
-### 6.9 Implementation Files
+### 6.8 Implementation Files
 
 | File | Purpose |
 |------|---------|

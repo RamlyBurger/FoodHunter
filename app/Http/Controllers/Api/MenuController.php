@@ -251,4 +251,65 @@ class MenuController extends Controller
 
         return $data;
     }
+
+    /**
+     * Web Service: Expose - Vendor Availability API
+     * Student 5 (Vendor Management) exposes this
+     * Used by Cart, Order, Menu modules to check vendor open/closed status
+     * 
+     * @param Vendor $vendor
+     * @return JsonResponse
+     */
+    public function vendorAvailability(Vendor $vendor): JsonResponse
+    {
+        // Get today's operating hours
+        $dayOfWeek = now()->dayOfWeek;
+        $todayHours = $vendor->operatingHours()
+            ->where('day_of_week', $dayOfWeek)
+            ->first();
+
+        $todayHoursData = null;
+        $closedReason = null;
+
+        if ($todayHours) {
+            $todayHoursData = [
+                'day' => now()->format('l'),
+                'open_time' => $todayHours->is_closed ? null : $todayHours->open_time,
+                'close_time' => $todayHours->is_closed ? null : $todayHours->close_time,
+                'is_closed' => $todayHours->is_closed,
+            ];
+
+            if ($todayHours->is_closed) {
+                $closedReason = 'Closed today';
+            }
+        }
+
+        $isCurrentlyOpen = $vendor->isCurrentlyOpen();
+        
+        if (!$isCurrentlyOpen && !$closedReason) {
+            if (!$vendor->is_open) {
+                $closedReason = 'Vendor is currently closed';
+            } elseif (!$vendor->is_active) {
+                $closedReason = 'Vendor is inactive';
+            } else {
+                $closedReason = 'Outside operating hours';
+            }
+        }
+
+        $response = [
+            'vendor_id' => $vendor->id,
+            'store_name' => $vendor->store_name,
+            'is_open' => $vendor->is_open,
+            'is_currently_open' => $isCurrentlyOpen,
+            'today_hours' => $todayHoursData,
+            'avg_prep_time' => $vendor->avg_prep_time,
+            'min_order_amount' => $vendor->min_order_amount ? (float) $vendor->min_order_amount : null,
+        ];
+
+        if (!$isCurrentlyOpen && $closedReason) {
+            $response['closed_reason'] = $closedReason;
+        }
+
+        return $this->successResponse($response, 'Vendor availability retrieved');
+    }
 }

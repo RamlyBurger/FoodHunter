@@ -539,18 +539,22 @@
             cart: [
                 { method: 'GET', path: '/api/cart', name: 'Get Cart', auth: true },
                 { method: 'POST', path: '/api/cart', name: 'Add to Cart', auth: true, params: { menu_item_id: 1, quantity: 2, special_instructions: 'No onions' } },
-                { method: 'GET', path: '/api/cart/summary', name: '⭐ Cart Summary (Student 3 API #1)', auth: true },
+                { method: 'PUT', path: '/api/cart/1', name: 'Update Cart Item', auth: true, pathParam: true, params: { quantity: 3 } },
+                { method: 'DELETE', path: '/api/cart/1', name: 'Remove Cart Item', auth: true, pathParam: true },
+                { method: 'GET', path: '/api/cart/summary', name: '⭐ Cart Summary (Student 4 API #1)', auth: true },
                 { method: 'GET', path: '/api/cart/count', name: 'Cart Item Count', auth: true },
-                { method: 'GET', path: '/api/cart/validate', name: '⭐ Validate Cart (Student 3 API #2)', auth: true },
+                { method: 'GET', path: '/api/cart/validate', name: 'Validate Cart', auth: true },
+                { method: 'GET', path: '/api/cart/recommendations', name: 'Cart Recommendations', auth: true },
                 { method: 'DELETE', path: '/api/cart', name: 'Clear Cart', auth: true }
             ],
             orders: [
                 { method: 'GET', path: '/api/orders', name: 'List Orders', auth: true },
                 { method: 'POST', path: '/api/orders', name: 'Create Order', auth: true, params: { payment_method: 'cash', notes: 'Please deliver fast' } },
                 { method: 'GET', path: '/api/orders/active', name: 'Active Orders', auth: true },
+                { method: 'GET', path: '/api/orders/history', name: 'Order History', auth: true },
                 { method: 'GET', path: '/api/orders/1', name: 'Get Order', auth: true, pathParam: true },
-                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Order Status (Student 4 API #1)', auth: true, pathParam: true },
-                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Validate Pickup QR (Student 4 API #2)', auth: true, params: { qr_code: 'PU-20251222-ABC123' } },
+                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Order Status (Student 3 API #1)', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Validate Pickup QR (Student 3 API #2)', auth: true, params: { qr_code: 'PU-20251222-ABC123' } },
                 { method: 'POST', path: '/api/orders/1/reorder', name: 'Reorder', auth: true, pathParam: true },
                 { method: 'POST', path: '/api/orders/1/cancel', name: 'Cancel Order', auth: true, pathParam: true }
             ],
@@ -560,37 +564,51 @@
                 { method: 'GET', path: '/api/notifications/unread-count', name: 'Unread Count', auth: true },
                 { method: 'POST', path: '/api/notifications/1/read', name: 'Mark As Read', auth: true, pathParam: true },
                 { method: 'POST', path: '/api/notifications/read-all', name: 'Mark All Read', auth: true },
-                { method: 'POST', path: '/api/notifications/send', name: '⭐ Send Notification (Student 5 API #2)', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification message', data: { order_id: 123 } } },
+                { method: 'POST', path: '/api/notifications/send', name: '⭐ Send Notification (Student 4 API #2)', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification message', data: { order_id: 123 } } },
                 { method: 'DELETE', path: '/api/notifications/1', name: 'Delete Notification', auth: true, pathParam: true }
             ],
             vouchers: [
-                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Validate Voucher (Student 5 API #1)', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } }
+                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Validate Voucher (Student 5 API #1)', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } },
+                { method: 'GET', path: '/api/vendors/1/availability', name: '⭐ Vendor Availability (Student 5 API #2)', auth: false, pathParam: true }
             ],
             vendor: [
                 { method: 'GET', path: '/api/vendor/dashboard', name: 'Dashboard', auth: true },
+                { method: 'POST', path: '/api/vendor/toggle-open', name: 'Toggle Store Open/Closed', auth: true },
                 { method: 'GET', path: '/api/vendor/dashboard/top-items', name: 'Top Selling Items', auth: true },
                 { method: 'GET', path: '/api/vendor/dashboard/recent-orders', name: 'Recent Orders', auth: true },
                 { method: 'GET', path: '/api/vendor/reports/revenue?period=week', name: 'Revenue Report', auth: true },
                 { method: 'GET', path: '/api/vendor/menu', name: 'Menu Items', auth: true },
                 { method: 'GET', path: '/api/vendor/menu/1', name: 'Get Menu Item', auth: true, pathParam: true },
                 { method: 'POST', path: '/api/vendor/menu', name: 'Create Menu Item', auth: true, params: { name: 'New Item', price: 10.00, category_id: 1, description: 'Delicious item' } },
+                { method: 'PUT', path: '/api/vendor/menu/1', name: 'Update Menu Item', auth: true, pathParam: true, params: { name: 'Updated Item', price: 12.00 } },
+                { method: 'DELETE', path: '/api/vendor/menu/1', name: 'Delete Menu Item', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/vendor/menu/1/toggle', name: 'Toggle Item Availability', auth: true, pathParam: true },
+                { method: 'GET', path: '/api/vendor/categories', name: 'Menu Categories', auth: true },
                 { method: 'GET', path: '/api/vendor/orders', name: 'Orders', auth: true },
+                { method: 'GET', path: '/api/vendor/orders/pending', name: 'Pending Orders', auth: true },
                 { method: 'GET', path: '/api/vendor/orders/1', name: 'Get Order Details', auth: true, pathParam: true },
-                { method: 'POST', path: '/api/vendor/orders/1/status', name: 'Update Order Status', auth: true, pathParam: true, params: { status: 'preparing' } },
+                { method: 'PUT', path: '/api/vendor/orders/1/status', name: 'Update Order Status', auth: true, pathParam: true, params: { status: 'preparing' } },
                 { method: 'GET', path: '/api/vendor/vouchers', name: 'Vouchers', auth: true },
-                { method: 'POST', path: '/api/vendor/vouchers', name: 'Create Voucher', auth: true, params: { code: 'TEST20', name: 'Test Voucher', type: 'percentage', value: 20, min_order: 30 } }
+                { method: 'POST', path: '/api/vendor/vouchers', name: 'Create Voucher', auth: true, params: { code: 'TEST20', name: 'Test Voucher', type: 'percentage', value: 20, min_order: 30 } },
+                { method: 'PUT', path: '/api/vendor/vouchers/1', name: 'Update Voucher', auth: true, pathParam: true, params: { name: 'Updated Voucher', value: 25 } },
+                { method: 'DELETE', path: '/api/vendor/vouchers/1', name: 'Delete Voucher', auth: true, pathParam: true }
             ],
             student: [
-                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Student 1: Validate Token API', auth: true },
-                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ Student 1: User Stats API', auth: true },
-                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Student 2: Check Availability API', auth: false, pathParam: true },
-                { method: 'GET', path: '/api/menu/popular', name: '⭐ Student 2: Popular Items API', auth: false, params: { category_id: '', vendor_id: '', limit: 10 } },
-                { method: 'GET', path: '/api/cart/summary', name: '⭐ Student 3: Cart Summary API', auth: true },
-                { method: 'GET', path: '/api/cart/validate', name: '⭐ Student 3: Validate Cart API', auth: true },
-                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Student 4: Order Status API', auth: true, pathParam: true },
-                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Student 4: Validate Pickup QR API', auth: true, params: { qr_code: 'PU-20251222-ABC123' } },
-                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Student 5: Validate Voucher API', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } },
-                { method: 'POST', path: '/api/notifications/send', name: '⭐ Student 5: Send Notification API', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification', data: { order_id: 123 } } }
+                // Student 1: User & Authentication Module
+                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Student 1: Validate Token API', auth: true, description: 'Validates API token and returns user info' },
+                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ Student 1: User Stats API', auth: true, description: 'Returns user statistics (orders, spending)' },
+                // Student 2: Menu & Catalog Module
+                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Student 2: Item Availability API', auth: false, pathParam: true, description: 'Checks if menu item is available' },
+                { method: 'GET', path: '/api/menu/popular', name: '⭐ Student 2: Popular Items API', auth: false, params: { category_id: '', vendor_id: '', limit: 10 }, description: 'Returns popular items by sales' },
+                // Student 3: Order & Pickup Module
+                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Student 3: Order Status API', auth: true, pathParam: true, description: 'Returns real-time order status and pickup info' },
+                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Student 3: Pickup QR Validation API', auth: true, params: { qr_code: 'PU-20251222-ABC123' }, description: 'Validates pickup QR code for order collection' },
+                // Student 4: Cart, Checkout & Notifications Module
+                { method: 'GET', path: '/api/cart/summary', name: '⭐ Student 4: Cart Summary API', auth: true, description: 'Returns cart totals and item count' },
+                { method: 'POST', path: '/api/notifications/send', name: '⭐ Student 4: Send Notification API', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification', data: { order_id: 123 } }, description: 'Sends in-app notification to user' },
+                // Student 5: Vendor Management Module
+                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Student 5: Voucher Validation API', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 }, description: 'Validates voucher and calculates discount' },
+                { method: 'GET', path: '/api/vendors/1/availability', name: '⭐ Student 5: Vendor Availability API', auth: false, pathParam: true, description: 'Returns vendor open/closed status and hours' }
             ],
             custom: []
         };
@@ -813,7 +831,9 @@
             const userInfoEl = document.getElementById('userInfo');
             
             if (authenticated) {
-                statusEl.innerHTML = '<span class="status-badge status-authenticated">✓ Authenticated (Session)</span>';
+                // Show different status for token vs session auth
+                const authType = authToken ? 'Token' : 'Session';
+                statusEl.innerHTML = `<span class="status-badge status-authenticated">✓ Authenticated (${authType})</span>`;
                 
                 if (user) {
                     userInfoEl.style.display = 'block';
@@ -939,6 +959,22 @@
                 
                 const response = await fetch(`${baseUrl}${endpoint.path}`, options);
                 const data = await response.json();
+                
+                // Handle login response - store token and update auth status
+                if (endpoint.path === '/api/auth/login' && data.success && data.data?.token) {
+                    authToken = data.data.token;
+                    localStorage.setItem('foodhunter_token', authToken);
+                    sessionUser = data.data.user;
+                    updateAuthStatus(true, data.data.user);
+                }
+                
+                // Handle logout response - clear token and auth status
+                if (endpoint.path === '/api/auth/logout' && data.success) {
+                    authToken = null;
+                    sessionUser = null;
+                    localStorage.removeItem('foodhunter_token');
+                    updateAuthStatus(false);
+                }
                 
                 showResponse(data, response.status);
             } catch (error) {

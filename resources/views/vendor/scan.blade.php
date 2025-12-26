@@ -105,11 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const cameraPreview = document.getElementById('cameraPreview');
     let stream = null;
 
-    // AJAX form submission - Uses Student 4's validatePickupQr API
+    // AJAX form submission - Uses Student 3's validatePickupQr API
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        // First validate QR using Student 4's API
+        // Validate QR using Student 3's API (Order & Pickup module)
         fetch('/api/orders/validate-pickup', {
             method: 'POST',
             headers: {
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(res => res.json())
         .then(response => {
-            // Handle Student 4's API response format
+            // Handle Student 3's API response format
             const data = response.data || response;
             if (response.success && data.valid) {
                 Swal.fire({

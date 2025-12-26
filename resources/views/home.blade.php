@@ -291,6 +291,22 @@
         </div>
     </section>
 
+    <!-- Popular Items (Loaded via Student 2's API) -->
+    <section class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-fire me-2" style="color: #ff6b35;"></i>Most Popular</h3>
+            <a href="{{ url('/menu?sort=popular') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+        </div>
+        <div class="row g-4" id="popular-items-container">
+            <div class="col-12 text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Loading popular items...</p>
+            </div>
+        </div>
+    </section>
+
     <!-- Vendors -->
     <section class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -580,6 +596,8 @@
 
     // Load popular items using Student 2's API
     function loadPopularItems() {
+        const container = document.getElementById('popular-items-container');
+        
         fetch('/api/menu/popular?limit=6', {
             headers: { 'Accept': 'application/json' }
         })
@@ -587,10 +605,54 @@
         .then(response => {
             const data = response.data || response;
             if (data.items && data.items.length > 0) {
-                console.log('Popular items loaded via Student 2 API:', data.items.length);
+                // Render popular items from Student 2's API
+                container.innerHTML = data.items.map(item => {
+                    const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200`;
+                    const price = parseFloat(item.price).toFixed(2);
+                    const vendorName = item.vendor?.store_name || item.vendor_name || 'Vendor';
+                    const totalSold = item.total_sold || 0;
+                    
+                    return `
+                    <div class="col-md-4 col-lg-2">
+                        <a href="/menu/${item.id}" class="text-decoration-none">
+                            <div class="card h-100" style="border-radius: 12px; overflow: hidden;">
+                                <div class="position-relative">
+                                    <img src="${item.image || fallback}" 
+                                         alt="${item.name}" 
+                                         class="card-img-top" 
+                                         style="height: 120px; object-fit: cover;"
+                                         onerror="this.src='${fallback}'">
+                                    <span class="badge bg-danger position-absolute top-0 end-0 m-2" style="font-size: 0.7rem;">
+                                        <i class="bi bi-fire"></i> ${totalSold} sold
+                                    </span>
+                                </div>
+                                <div class="card-body p-2">
+                                    <h6 class="card-title mb-1 text-dark" style="font-size: 0.85rem; font-weight: 600;">${item.name}</h6>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">${vendorName}</small>
+                                    <div class="mt-2">
+                                        <span class="fw-bold" style="color: var(--primary-color);">RM ${price}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>`;
+                }).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <i class="bi bi-fire text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No popular items yet</p>
+                    </div>`;
             }
         })
-        .catch(err => console.log('Popular items API:', err));
+        .catch(err => {
+            console.log('Popular items API error:', err);
+            container.innerHTML = `
+                <div class="col-12 text-center py-4">
+                    <i class="bi bi-exclamation-circle text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">Unable to load popular items</p>
+                </div>`;
+        });
     }
     
     // Load on page ready

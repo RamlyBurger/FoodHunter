@@ -87,23 +87,38 @@ Accept: application/json
 #### 6.1.7 Frontend Consumption Example
 
 ```javascript
-// resources/views/orders/show.blade.php
-// Poll order status for live tracking
+// resources/views/orders/show.blade.php (line 521-570)
+// Real-time order status polling for live tracking
 
-async function pollOrderStatus(orderId) {
-    const response = await fetch(`/api/orders/${orderId}/status`, {
+function checkOrderStatus() {
+    // Only poll for active orders (not completed or cancelled)
+    if (['completed', 'cancelled'].includes(currentStatus)) {
+        return;
+    }
+    
+    fetch('/api/orders/' + orderId + '/status', {
         headers: {
             'Accept': 'application/json',
-            'Authorization': 'Bearer ' + getToken()
+            'Authorization': 'Bearer ' + (document.querySelector('meta[name="api-token"]')?.content || '')
+        }
+    })
+    .then(res => res.json())
+    .then(response => {
+        const data = response.data || response;
+        if (data.status && data.status !== currentStatus) {
+            // Status changed - update UI dynamically
+            const statusBadge = document.querySelector('.order-status-badge');
+            if (statusBadge) {
+                statusBadge.innerHTML = `<i class="bi bi-${config.icon} me-1"></i>${data.status}`;
+            }
+            currentStatus = data.status;
+            showToast('Order status updated to: ' + data.status, 'info');
         }
     });
-    const data = await response.json();
-    
-    if (data.success) {
-        updateStatusDisplay(data.data.status);
-        updatePickupInfo(data.data.pickup);
-    }
 }
+
+// Start polling every 15 seconds for active orders (line 573-576)
+statusCheckInterval = setInterval(checkOrderStatus, 15000);
 ```
 
 #### 6.1.8 Modules That Consume This API
@@ -221,29 +236,45 @@ Accept: application/json
 #### 6.2.8 Frontend Consumption Example
 
 ```javascript
-// resources/views/vendor/orders.blade.php
-// Vendor scans customer's QR code to validate pickup
+// resources/views/vendor/scan.blade.php (line 108-159)
+// Vendor QR scanner page - validates pickup QR code using Student 3's API
 
-async function validatePickupQR(qrCode) {
-    const response = await fetch('/api/orders/validate-pickup', {
+// AJAX form submission - Uses Student 3's validatePickupQr API
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validate QR using Student 3's API
+    fetch('/api/orders/validate-pickup', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json',
-            'Authorization': 'Bearer ' + getToken()
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (document.querySelector('meta[name="api-token"]')?.content || '')
         },
-        body: JSON.stringify({ qr_code: qrCode })
+        body: JSON.stringify({ qr_code: input.value })
+    })
+    .then(res => res.json())
+    .then(response => {
+        const data = response.data || response;
+        if (response.success && data.valid) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Order Found!',
+                html: `<p><strong>Order:</strong> #${data.order_number}</p>
+                       <p><strong>Customer:</strong> ${data.customer_name}</p>
+                       <p><strong>Queue:</strong> #${data.queue_number}</p>`,
+                confirmButtonText: 'Complete Pickup'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    completePickupAjax(data.order_id);
+                }
+            });
+        } else {
+            showToast(data.message, 'error');
+        }
     });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-        showSuccess(`Order ${data.data.order_number} collected by ${data.data.customer_name}`);
-        refreshOrderList();
-    } else {
-        showError(data.message);
-    }
-}
+});
 ```
 
 #### 6.2.9 Modules That Consume This API
@@ -255,9 +286,49 @@ async function validatePickupQR(qrCode) {
 
 ---
 
-### 6.3 Web Service Consumed: Item Availability API (Student 2)
+### 6.3 Web Service Consumed: Token Validation API (Student 1)
 
 #### 6.3.1 Webservice Mechanism
+
+| Description | Value |
+|-------------|-------|
+| Protocol | RESTful |
+| Function Description | Validates user authentication token before processing order creation. Ensures the user session is still valid and prevents orders from expired sessions. |
+| Source Module | User & Authentication (Student 1) |
+| Target Module | Order & Pickup (Student 3) |
+| URL | http://127.0.0.1:8000/api/auth/validate-token |
+| Function Name | validateToken() |
+| HTTP Method | POST |
+
+#### 6.3.2 Implementation in Order Module
+
+```php
+// app/Http/Controllers/Api/OrderController.php (line 56-64)
+// Consumes Student 1's Validate Token API before creating orders
+
+public function store(CreateOrderRequest $request): JsonResponse
+{
+    $user = $request->user();
+    
+    // Web Service: Consume Student 1's Validate Token API to verify user authentication
+    // This ensures the user session is still valid before processing the order
+    $authController = app(\App\Http\Controllers\Api\AuthController::class);
+    $tokenValidation = $authController->validateToken($request);
+    $validationData = json_decode($tokenValidation->getContent(), true);
+    
+    if (!($validationData['data']['valid'] ?? false)) {
+        return $this->unauthorizedResponse('Session expired. Please login again.');
+    }
+    
+    // ... proceed with order creation
+}
+```
+
+---
+
+### 6.4 Web Service Consumed: Item Availability API (Student 2)
+
+#### 6.4.1 Webservice Mechanism
 
 | Description | Value |
 |-------------|-------|
@@ -269,13 +340,13 @@ async function validatePickupQR(qrCode) {
 | Function Name | checkAvailability() |
 | HTTP Method | GET |
 
-#### 6.3.2 Request Parameters
+#### 6.4.2 Request Parameters
 
 | Field Name | Field Type | Mandatory/Optional | Description | Format | Example |
 |------------|------------|-------------------|-------------|--------|---------|
 | menuItem | Integer | Mandatory | Menu item ID | Path parameter | 5 |
 
-#### 6.3.3 Example Request Sent
+#### 6.4.3 Example Request Sent
 
 ```http
 GET /api/menu/5/availability HTTP/1.1
@@ -284,7 +355,7 @@ Content-Type: application/json
 Accept: application/json
 ```
 
-#### 6.3.5 Expected Response
+#### 6.4.4 Expected Response
 
 ```json
 {
@@ -333,7 +404,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 ---
 
-### 6.6 Complete API Endpoints Summary
+### 6.5 API Route Configuration
 
 The following API endpoints are implemented in the Order & Pickup module:
 
@@ -362,7 +433,7 @@ The following API endpoints are implemented in the Order & Pickup module:
 
 ---
 
-### 6.9 Implementation Files
+### 6.8 Implementation Files
 
 | File | Purpose |
 |------|---------|
