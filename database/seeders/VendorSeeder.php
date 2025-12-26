@@ -24,7 +24,7 @@ class VendorSeeder extends Seeder
                 ],
             ],
             [
-                'user' => ['name' => 'Western Delight', 'email' => 'western@foodhunter.com'],
+                'user' => ['name' => 'Western Delight', 'email' => 'leekh-jm22@student.tarc.edu.my'],
                 'vendor' => [
                     'store_name' => 'Western Delight', 
                     'slug' => 'western-delight', 
@@ -34,7 +34,7 @@ class VendorSeeder extends Seeder
                 ],
             ],
             [
-                'user' => ['name' => 'Bubble Tea Corner', 'email' => 'bubble@foodhunter.com'],
+                'user' => ['name' => 'Bubble Tea Corner', 'email' => 'leesy-jm22@student.tarc.edu.my'],
                 'vendor' => [
                     'store_name' => 'Bubble Tea Corner', 
                     'slug' => 'bubble-tea-corner', 

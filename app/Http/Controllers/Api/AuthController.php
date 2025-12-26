@@ -79,7 +79,18 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        
+        // Handle token-based auth (Sanctum)
+        if ($user && method_exists($user, 'currentAccessToken') && $user->currentAccessToken()) {
+            $user->currentAccessToken()->delete();
+        }
+        
+        // Handle session-based auth
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return $this->successResponse(null, 'Logged out successfully');
     }
@@ -94,27 +105,42 @@ class AuthController extends Controller
     /**
      * Web Service: Expose - Validate Token API
      * Other modules consume this to validate user tokens
+     * Supports both Bearer token and session-based auth
      */
     public function validateToken(Request $request): JsonResponse
     {
         $token = $request->bearerToken();
         
-        if (!$token) {
-            return $this->unauthorizedResponse('No token provided');
+        // Try Bearer token auth first
+        if ($token) {
+            $user = $this->authService->validateToken($token);
+
+            if (!$user) {
+                return $this->unauthorizedResponse('Invalid or expired token');
+            }
+
+            return $this->successResponse([
+                'valid' => true,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+                'auth_type' => 'token',
+            ]);
+        }
+        
+        // Fallback to session auth
+        $user = $request->user();
+        if ($user) {
+            return $this->successResponse([
+                'valid' => true,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+                'auth_type' => 'session',
+            ]);
         }
 
-        $user = $this->authService->validateToken($token);
-
-        if (!$user) {
-            return $this->unauthorizedResponse('Invalid or expired token');
-        }
-
-        return $this->successResponse([
-            'valid' => true,
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'role' => $user->role,
-        ]);
+        return $this->unauthorizedResponse('No token provided');
     }
 
     /**

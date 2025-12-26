@@ -57,6 +57,13 @@ class AuthController extends Controller
         );
 
         if (!$result['success']) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                    'errors' => ['email' => [$result['message']]]
+                ], 422);
+            }
             return back()->withErrors([
                 'email' => $result['message'],
             ]);
@@ -84,6 +91,20 @@ class AuthController extends Controller
         
         // OWASP [66-67]: Session regeneration to prevent session fixation
         $request->session()->regenerate();
+        
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'redirect' => '/',
+                'user' => [
+                    'id' => $result['user']->id,
+                    'name' => $result['user']->name,
+                    'email' => $result['user']->email,
+                    'role' => $result['user']->role,
+                ]
+            ]);
+        }
         
         return redirect()->intended('/');
     }
@@ -247,6 +268,13 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully'
+            ]);
+        }
 
         return redirect('/login')->with('success', 'Logged out successfully.');
     }

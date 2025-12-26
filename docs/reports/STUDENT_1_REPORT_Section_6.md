@@ -129,9 +129,9 @@ async function validateToken(token) {
 | Module | Student | Usage Context |
 |--------|---------|---------------|
 | Menu & Catalog | Student 2 | Wishlist operations authentication |
-| Cart & Checkout | Student 3 | Cart operations authentication |
-| Order & Pickup | Student 4 | Order management authentication |
-| Voucher & Notification | Student 5 | Notification delivery authentication |
+| Order & Pickup | Student 3 | Order management authentication |
+| Cart, Checkout & Notifications | Student 4 | Cart operations and notification authentication |
+| Vendor Management | Student 5 | Vendor operations authentication |
 
 ---
 
@@ -144,7 +144,7 @@ async function validateToken(token) {
 | Protocol | RESTful |
 | Function Description | Returns comprehensive user statistics including total orders, completed orders, total spent, and active vouchers. Used by other modules to display user activity data and personalize recommendations. |
 | Source Module | User & Authentication (Student 1) |
-| Target Module | Order & Pickup (Student 4), Menu & Catalog (Student 2) |
+| Target Module | Order & Pickup (Student 3), Menu & Catalog (Student 2) |
 | URL | http://127.0.0.1:8000/api/auth/user-stats |
 | Function Name | userStats() |
 | HTTP Method | GET |
@@ -287,13 +287,13 @@ document.addEventListener('DOMContentLoaded', loadUserStats);
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Order & Pickup | Student 4 | Order history() method displays user statistics |
+| Order & Pickup | Student 3 | Order history() method displays user statistics |
 | Menu & Catalog | Student 2 | Personalized recommendations based on order history |
 | Profile Page | Frontend | Displays user statistics on profile dashboard |
 
 ---
 
-### 6.3 Web Service Consumed: Notification Service (Student 5)
+### 6.3 Web Service Consumed: Notification Service (Student 4)
 
 #### 6.3.1 Webservice Mechanism
 
@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', loadUserStats);
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Sends a welcome notification to newly registered users. Consumed after successful user registration to provide a personalized onboarding experience. |
-| Source Module | Voucher & Notification (Student 5) |
+| Source Module | Cart, Checkout & Notifications (Student 4) |
 | Target Module | User & Authentication (Student 1) |
 | URL | http://127.0.0.1:8000/api/notifications/send |
 | Function Name | send() |
@@ -327,7 +327,7 @@ public function register(RegisterRequest $request): JsonResponse
 
     $token = $user->createToken('auth-token')->plainTextToken;
 
-    // Web Service: Consume Notification Service (Student 5)
+    // Web Service: Consume Notification Service (Student 4)
     $this->notificationService->send(
         $user->id,
         'welcome',

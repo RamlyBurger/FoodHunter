@@ -6,7 +6,7 @@
 php artisan serve
 
 # Start on specific port
-php artisan serve --port=3008
+php artisan serve --port=8000
 ```
 
 ## Database Commands
@@ -72,17 +72,17 @@ php artisan config:show app
 | Vendor (Bubble Tea Corner) | bubble@foodhunter.com | password123 |
 
 ## Common URLs
-- Home: http://localhost:3008
-- Login: http://localhost:3008/login
-- Menu: http://localhost:3008/menu
-- Cart: http://localhost:3008/cart
-- Orders: http://localhost:3008/orders
-- Wishlist: http://localhost:3008/wishlist
-- Rewards: http://localhost:3008/rewards
-- Contact: http://localhost:3008/contact
-- Vendor Dashboard: http://localhost:3008/vendor/dashboard
-- Vendor Reports: http://localhost:3008/vendor/reports
-- **API Tester**: http://localhost:3008/api-tester.html ⭐
+- Home: http://localhost:8000
+- Login: http://localhost:8000/login
+- Menu: http://localhost:8000/menu
+- Cart: http://localhost:8000/cart
+- Orders: http://localhost:8000/orders
+- Wishlist: http://localhost:8000/wishlist
+- Rewards: http://localhost:8000/rewards
+- Contact: http://localhost:8000/contact
+- Vendor Dashboard: http://localhost:8000/vendor/dashboard
+- Vendor Reports: http://localhost:8000/vendor/reports
+- **API Tester**: http://localhost:8000/api-tester.html ⭐
 
 ## One-Liner Reset & Start
 ```powershell
@@ -104,7 +104,7 @@ Authenticates user credentials and returns an access token.
 ```json
 {
     "email": "john@example.com",
-    "password": "SecurePass123!"
+    "password": "password123"
 }
 ```
 
@@ -131,8 +131,8 @@ Authenticates user credentials and returns an access token.
 {
     "name": "John Doe",
     "email": "john@example.com",
-    "password": "SecurePass123!",
-    "password_confirmation": "SecurePass123!",
+    "password": "password123",
+    "password_confirmation": "password123",
     "phone": "+60123456789"
 }
 ```

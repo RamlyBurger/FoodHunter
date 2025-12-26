@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>FoodHunter API Tester</title>
     <style>
         * {
@@ -412,21 +413,38 @@
             <div class="auth-panel">
                 <h2>🔐 Authentication</h2>
                 
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" placeholder="john@example.com">
-                </div>
+                <!-- Session Auth Form -->
+                <form id="loginForm" onsubmit="login(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" placeholder="john@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" placeholder="password123" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Login (Session)</button>
+                </form>
                 
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" placeholder="password123">
-                </div>
-                
-                <button class="btn btn-primary" onclick="login()">Login</button>
                 <button class="btn btn-danger" onclick="logout()" style="margin-top: 5px;">Logout</button>
+                
+                <!-- Google Login -->
+                <a href="{{ route('auth.google') }}" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; background: #fff; border: 2px solid #e0e0e0; color: #333; text-decoration: none;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+                    <span>Sign in with Google</span>
+                </a>
                 
                 <div id="authStatus">
                     <span class="status-badge status-unauthenticated">Not Authenticated</span>
+                </div>
+                
+                <div id="userInfo" style="display: none; margin-top: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px;">
+                    <div style="font-weight: 600; color: #2e7d32;">👤 Logged In User</div>
+                    <div id="userName" style="margin-top: 5px; font-size: 14px;"></div>
+                    <div id="userEmail" style="font-size: 13px; color: #666;"></div>
+                    <div id="userRole" style="font-size: 12px; color: #888; margin-top: 3px;"></div>
                 </div>
                 
                 <div id="tokenDisplay" style="display: none;">
@@ -445,14 +463,15 @@
                 <h2>📡 API Endpoints</h2>
                 
                 <div class="api-tabs">
-                    <button class="tab-btn active" onclick="showTab('auth')">Auth</button>
-                    <button class="tab-btn" onclick="showTab('menu')">Menu</button>
-                    <button class="tab-btn" onclick="showTab('cart')">Cart</button>
-                    <button class="tab-btn" onclick="showTab('orders')">Orders</button>
-                    <button class="tab-btn" onclick="showTab('notifications')">Notifications</button>
-                    <button class="tab-btn" onclick="showTab('vouchers')">Vouchers</button>
-                    <button class="tab-btn" onclick="showTab('vendor')">Vendor</button>
-                    <button class="tab-btn" onclick="showTab('custom')">Custom</button>
+                    <button class="tab-btn" onclick="showTab('student', this)" style="background: #fbbf24; color: #92400e; border-color: #fbbf24;">⭐ Student APIs</button>
+                    <button class="tab-btn active" id="authTabBtn" onclick="showTab('auth', this)">Auth</button>
+                    <button class="tab-btn" onclick="showTab('menu', this)">Menu</button>
+                    <button class="tab-btn" onclick="showTab('cart', this)">Cart</button>
+                    <button class="tab-btn" onclick="showTab('orders', this)">Orders</button>
+                    <button class="tab-btn" onclick="showTab('notifications', this)">Notifications</button>
+                    <button class="tab-btn" onclick="showTab('vouchers', this)">Vouchers</button>
+                    <button class="tab-btn" onclick="showTab('vendor', this)">Vendor</button>
+                    <button class="tab-btn" onclick="showTab('custom', this)">Custom</button>
                 </div>
                 
                 <div id="endpointsContainer"></div>
@@ -484,6 +503,17 @@
 
     <script>
         let authToken = localStorage.getItem('foodhunter_token') || null;
+        let csrfToken = '{{ csrf_token() }}';
+        @if(auth()->check())
+        let sessionUser = {
+            id: {{ auth()->user()->id }},
+            name: "{{ auth()->user()->name }}",
+            email: "{{ auth()->user()->email }}",
+            role: "{{ auth()->user()->role }}"
+        };
+        @else
+        let sessionUser = null;
+        @endif
         const baseUrl = window.location.origin;
         let currentEndpoint = null;
         
@@ -493,7 +523,8 @@
                 { method: 'POST', path: '/api/auth/register', name: 'Register', auth: false, params: { name: 'John Doe', email: 'test@example.com', password: 'password123', password_confirmation: 'password123', phone: '0123456789' } },
                 { method: 'GET', path: '/api/auth/user', name: 'Get User', auth: true },
                 { method: 'POST', path: '/api/auth/logout', name: 'Logout', auth: true },
-                { method: 'POST', path: '/api/auth/validate-token', name: 'Validate Token', auth: true }
+                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Validate Token (Student 1 API #1)', auth: true },
+                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ User Stats (Student 1 API #2)', auth: true }
             ],
             menu: [
                 { method: 'GET', path: '/api/categories', name: 'List Categories', auth: false },
@@ -501,14 +532,16 @@
                 { method: 'GET', path: '/api/menu/featured', name: 'Featured Items', auth: false },
                 { method: 'GET', path: '/api/menu/search?q=nasi', name: 'Search Menu', auth: false },
                 { method: 'GET', path: '/api/menu/1', name: 'Get Menu Item', auth: false, pathParam: true },
-                { method: 'GET', path: '/api/menu/1/availability', name: 'Check Availability', auth: false, pathParam: true },
-                { method: 'GET', path: '/api/menu/1/related', name: 'Related Items', auth: false, pathParam: true }
+                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Check Availability (Student 2 API #1)', auth: false, pathParam: true },
+                { method: 'GET', path: '/api/menu/1/related', name: 'Related Items', auth: false, pathParam: true },
+                { method: 'GET', path: '/api/menu/popular', name: '⭐ Popular Items (Student 2 API #2)', auth: false, params: { category_id: '', vendor_id: '', limit: 10 } }
             ],
             cart: [
                 { method: 'GET', path: '/api/cart', name: 'Get Cart', auth: true },
                 { method: 'POST', path: '/api/cart', name: 'Add to Cart', auth: true, params: { menu_item_id: 1, quantity: 2, special_instructions: 'No onions' } },
-                { method: 'GET', path: '/api/cart/summary', name: 'Cart Summary', auth: true },
+                { method: 'GET', path: '/api/cart/summary', name: '⭐ Cart Summary (Student 3 API #1)', auth: true },
                 { method: 'GET', path: '/api/cart/count', name: 'Cart Item Count', auth: true },
+                { method: 'GET', path: '/api/cart/validate', name: '⭐ Validate Cart (Student 3 API #2)', auth: true },
                 { method: 'DELETE', path: '/api/cart', name: 'Clear Cart', auth: true }
             ],
             orders: [
@@ -516,16 +549,22 @@
                 { method: 'POST', path: '/api/orders', name: 'Create Order', auth: true, params: { payment_method: 'cash', notes: 'Please deliver fast' } },
                 { method: 'GET', path: '/api/orders/active', name: 'Active Orders', auth: true },
                 { method: 'GET', path: '/api/orders/1', name: 'Get Order', auth: true, pathParam: true },
-                { method: 'GET', path: '/api/orders/1/status', name: 'Order Status', auth: true, pathParam: true },
-                { method: 'POST', path: '/api/orders/1/reorder', name: 'Reorder', auth: true, pathParam: true }
+                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Order Status (Student 4 API #1)', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Validate Pickup QR (Student 4 API #2)', auth: true, params: { qr_code: 'PU-20251222-ABC123' } },
+                { method: 'POST', path: '/api/orders/1/reorder', name: 'Reorder', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/orders/1/cancel', name: 'Cancel Order', auth: true, pathParam: true }
             ],
             notifications: [
                 { method: 'GET', path: '/api/notifications', name: 'List Notifications', auth: true },
+                { method: 'GET', path: '/api/notifications/dropdown', name: 'Dropdown Notifications', auth: true },
                 { method: 'GET', path: '/api/notifications/unread-count', name: 'Unread Count', auth: true },
-                { method: 'POST', path: '/api/notifications/read-all', name: 'Mark All Read', auth: true }
+                { method: 'POST', path: '/api/notifications/1/read', name: 'Mark As Read', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/notifications/read-all', name: 'Mark All Read', auth: true },
+                { method: 'POST', path: '/api/notifications/send', name: '⭐ Send Notification (Student 5 API #2)', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification message', data: { order_id: 123 } } },
+                { method: 'DELETE', path: '/api/notifications/1', name: 'Delete Notification', auth: true, pathParam: true }
             ],
             vouchers: [
-                { method: 'POST', path: '/api/vouchers/validate', name: 'Validate Voucher', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } }
+                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Validate Voucher (Student 5 API #1)', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } }
             ],
             vendor: [
                 { method: 'GET', path: '/api/vendor/dashboard', name: 'Dashboard', auth: true },
@@ -534,22 +573,45 @@
                 { method: 'GET', path: '/api/vendor/reports/revenue?period=week', name: 'Revenue Report', auth: true },
                 { method: 'GET', path: '/api/vendor/menu', name: 'Menu Items', auth: true },
                 { method: 'GET', path: '/api/vendor/menu/1', name: 'Get Menu Item', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/vendor/menu', name: 'Create Menu Item', auth: true, params: { name: 'New Item', price: 10.00, category_id: 1, description: 'Delicious item' } },
                 { method: 'GET', path: '/api/vendor/orders', name: 'Orders', auth: true },
                 { method: 'GET', path: '/api/vendor/orders/1', name: 'Get Order Details', auth: true, pathParam: true },
-                { method: 'GET', path: '/api/vendor/vouchers', name: 'Vouchers', auth: true }
+                { method: 'POST', path: '/api/vendor/orders/1/status', name: 'Update Order Status', auth: true, pathParam: true, params: { status: 'preparing' } },
+                { method: 'GET', path: '/api/vendor/vouchers', name: 'Vouchers', auth: true },
+                { method: 'POST', path: '/api/vendor/vouchers', name: 'Create Voucher', auth: true, params: { code: 'TEST20', name: 'Test Voucher', type: 'percentage', value: 20, min_order: 30 } }
+            ],
+            student: [
+                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Student 1: Validate Token API', auth: true },
+                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ Student 1: User Stats API', auth: true },
+                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Student 2: Check Availability API', auth: false, pathParam: true },
+                { method: 'GET', path: '/api/menu/popular', name: '⭐ Student 2: Popular Items API', auth: false, params: { category_id: '', vendor_id: '', limit: 10 } },
+                { method: 'GET', path: '/api/cart/summary', name: '⭐ Student 3: Cart Summary API', auth: true },
+                { method: 'GET', path: '/api/cart/validate', name: '⭐ Student 3: Validate Cart API', auth: true },
+                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Student 4: Order Status API', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Student 4: Validate Pickup QR API', auth: true, params: { qr_code: 'PU-20251222-ABC123' } },
+                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Student 5: Validate Voucher API', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } },
+                { method: 'POST', path: '/api/notifications/send', name: '⭐ Student 5: Send Notification API', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification', data: { order_id: 123 } } }
             ],
             custom: []
         };
         
-        // Initialize
-        if (authToken) {
-            updateAuthStatus(true);
-        }
-        showTab('auth');
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in via session
+            if (sessionUser) {
+                updateAuthStatus(true, sessionUser);
+            } else if (authToken) {
+                updateAuthStatus(true);
+            }
+            // Show default tab
+            showTab('auth', document.getElementById('authTabBtn'));
+        });
         
-        function showTab(tab) {
+        function showTab(tab, btnElement) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
             
             const container = document.getElementById('endpointsContainer');
             container.innerHTML = '';
@@ -572,11 +634,13 @@
             tabEndpoints.forEach(endpoint => {
                 const item = document.createElement('div');
                 item.className = 'endpoint-item';
+                const isStudentApi = endpoint.name.includes('⭐');
                 item.innerHTML = `
                     <div class="endpoint-header">
-                        <div>
+                        <div style="flex: 1;">
                             <span class="method-badge method-${endpoint.method.toLowerCase()}">${endpoint.method}</span>
                             <span class="endpoint-path">${endpoint.path}</span>
+                            <div style="margin-top: 5px; font-size: 13px; color: ${isStudentApi ? '#d97706' : '#6b7280'}; font-weight: ${isStudentApi ? '600' : '400'};">${endpoint.name}</div>
                         </div>
                         <button class="test-btn" onclick='testEndpoint(${JSON.stringify(endpoint)})'>Test</button>
                     </div>
@@ -641,17 +705,22 @@
                 const options = {
                     method: method,
                     headers: {
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
                 };
                 
                 if (useAuth && authToken) {
                     options.headers['Authorization'] = `Bearer ${authToken}`;
                 }
                 
-                if (bodyText && (method === 'POST' || method === 'PUT')) {
+                if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
                     options.headers['Content-Type'] = 'application/json';
-                    options.body = bodyText;
+                    if (bodyText) {
+                        options.body = bodyText;
+                    }
                 }
                 
                 const response = await fetch(url, options);
@@ -663,7 +732,9 @@
             }
         }
         
-        async function login() {
+        async function login(event) {
+            if (event) event.preventDefault();
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
@@ -673,24 +744,30 @@
             }
             
             try {
-                const response = await fetch(`${baseUrl}/api/auth/login`, {
+                // Use session-based web login with CSRF token
+                const response = await fetch(`${baseUrl}/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ email, password })
                 });
                 
                 const data = await response.json();
                 
-                if (data.success && data.data.token) {
-                    authToken = data.data.token;
-                    localStorage.setItem('foodhunter_token', authToken);
-                    updateAuthStatus(true);
-                    showResponse(data);
+                if (response.ok && (data.success || data.redirect)) {
+                    sessionUser = data.user;
+                    updateAuthStatus(true, data.user);
+                    showResponse({ success: true, message: 'Logged in successfully', user: data.user });
+                    
+                    // Reload page to get fresh CSRF token
+                    setTimeout(() => window.location.reload(), 500);
                 } else {
-                    alert(data.message || 'Login failed');
+                    alert(data.message || data.errors?.email?.[0] || 'Login failed');
                     showResponse(data);
                 }
             } catch (error) {
@@ -701,32 +778,67 @@
         function quickLogin(email, password) {
             document.getElementById('email').value = email;
             document.getElementById('password').value = password;
-            login();
+            login(null);
         }
         
-        function logout() {
+        async function logout() {
+            // Logout from session
+            try {
+                await fetch(`${baseUrl}/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
+                });
+            } catch (e) {
+                console.error('Logout error:', e);
+            }
+            
             authToken = null;
+            sessionUser = null;
             localStorage.removeItem('foodhunter_token');
             updateAuthStatus(false);
             document.getElementById('responsePanel').classList.remove('show');
+            
+            // Reload page to get fresh state
+            window.location.reload();
         }
         
-        function updateAuthStatus(authenticated) {
+        function updateAuthStatus(authenticated, user = null) {
             const statusEl = document.getElementById('authStatus');
             const tokenEl = document.getElementById('tokenDisplay');
+            const userInfoEl = document.getElementById('userInfo');
             
             if (authenticated) {
-                statusEl.innerHTML = '<span class="status-badge status-authenticated">✓ Authenticated</span>';
-                tokenEl.style.display = 'block';
-                tokenEl.querySelector('.token-display').textContent = authToken.substring(0, 50) + '...';
+                statusEl.innerHTML = '<span class="status-badge status-authenticated">✓ Authenticated (Session)</span>';
+                
+                if (user) {
+                    userInfoEl.style.display = 'block';
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userEmail').textContent = user.email;
+                    document.getElementById('userRole').textContent = 'Role: ' + (user.role || 'customer');
+                } else {
+                    userInfoEl.style.display = 'none';
+                }
+                
+                if (authToken) {
+                    tokenEl.style.display = 'block';
+                    tokenEl.querySelector('.token-display').textContent = 'API Token: ' + authToken.substring(0, 50) + '...';
+                } else {
+                    tokenEl.style.display = 'none';
+                }
             } else {
                 statusEl.innerHTML = '<span class="status-badge status-unauthenticated">Not Authenticated</span>';
                 tokenEl.style.display = 'none';
+                userInfoEl.style.display = 'none';
             }
         }
         
         async function testEndpoint(endpoint) {
-            if (endpoint.auth && !authToken) {
+            if (endpoint.auth && !authToken && !sessionUser) {
                 alert('Please login first to test this endpoint');
                 return;
             }
@@ -807,17 +919,22 @@
                 const options = {
                     method: endpoint.method,
                     headers: {
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
                 };
                 
                 if (endpoint.auth && authToken) {
                     options.headers['Authorization'] = `Bearer ${authToken}`;
                 }
                 
-                if (endpoint.params && (endpoint.method === 'POST' || endpoint.method === 'PUT')) {
+                if (endpoint.method === 'POST' || endpoint.method === 'PUT' || endpoint.method === 'DELETE') {
                     options.headers['Content-Type'] = 'application/json';
-                    options.body = JSON.stringify(endpoint.params);
+                    if (endpoint.params) {
+                        options.body = JSON.stringify(endpoint.params);
+                    }
                 }
                 
                 const response = await fetch(`${baseUrl}${endpoint.path}`, options);

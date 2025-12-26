@@ -8,8 +8,8 @@
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates a voucher code and calculates the discount amount based on the cart subtotal. Used by Cart and Order modules during checkout to apply voucher discounts. Implements the Factory Pattern for flexible discount calculation strategies. |
-| Source Module | Voucher & Notification (Student 5) |
-| Target Module | Cart & Checkout (Student 3), Order & Pickup (Student 4) |
+| Source Module | Vendor Management (Student 5) |
+| Target Module | Cart, Checkout & Notifications (Student 4), Order & Pickup (Student 3) |
 | URL | http://127.0.0.1:8000/api/vouchers/validate |
 | Function Name | validate() |
 | HTTP Method | POST |
@@ -229,34 +229,179 @@ function applyVoucher() {
 
 ---
 
-### 6.2 Web Service Exposed #2: Send Notification API
+### 6.2 Web Service Exposed #2: Vendor Availability API
 
 #### 6.2.1 Webservice Mechanism
 
 | Description | Value |
 |-------------|-------|
 | Protocol | RESTful |
-| Function Description | Sends notifications to users for various events (order updates, promotions, welcome messages). Used by all modules to communicate with users. Implements the Observer Pattern for notification dispatch. |
-| Source Module | Voucher & Notification (Student 5) |
-| Target Module | User & Auth (Student 1), Cart & Checkout (Student 3), Order & Pickup (Student 4) |
-| URL | http://127.0.0.1:8000/api/notifications/send |
-| Function Name | send() |
-| HTTP Method | POST |
-| Authentication | Bearer Token Required (Admin/System) |
-| Design Pattern | Observer Pattern |
+| Function Description | Returns vendor availability status including whether the vendor is currently open, their operating hours for the day, and estimated preparation time. Used by Cart and Order modules to validate vendor availability before placing orders. |
+| Source Module | Vendor Management (Student 5) |
+| Target Module | Cart, Checkout & Notifications (Student 4), Order & Pickup (Student 3), Menu & Catalog (Student 2) |
+| URL | http://127.0.0.1:8000/api/vendors/{vendor}/availability |
+| Function Name | checkAvailability() |
+| HTTP Method | GET |
+| Authentication | Not Required (Public API) |
 
 #### 6.2.2 Request Parameters
 
 | Field Name | Field Type | Mandatory/Optional | Description | Format | Example |
 |------------|------------|-------------------|-------------|--------|---------|
-| Authorization | String | Mandatory | Bearer token | Header | Bearer 1\|abc123xyz789 |
-| user_id | Integer | Mandatory | Target user ID | Numeric | 1 |
-| type | String | Mandatory | Notification type | welcome/order/promo/system | order |
-| title | String | Mandatory | Notification title | Text (max 100) | Order Ready! |
-| message | String | Mandatory | Notification body | Text (max 500) | Your order #FH-123 is ready |
-| data | Object | Optional | Additional metadata | JSON object | {"order_id": 123} |
+| vendor | Integer | Mandatory | Vendor ID | Path parameter | 1 |
 
 #### 6.2.3 Example Request
+
+```http
+GET /api/vendors/1/availability HTTP/1.1
+Host: 127.0.0.1:8000
+Accept: application/json
+```
+
+#### 6.2.4 Response Parameters (Success)
+
+| Field Name | Field Type | Mandatory/Optional | Description | Format | Example |
+|------------|------------|-------------------|-------------|--------|---------|
+| success | Boolean | Mandatory | Request success status | true/false | true |
+| status | Integer | Mandatory | HTTP status code | 200 | 200 |
+| message | String | Mandatory | Response message | Text | "Vendor availability retrieved" |
+| request_id | String | Mandatory | Unique request identifier | UUID | a1b2c3d4-e5f6-7890 |
+| timestamp | String | Mandatory | Response timestamp | ISO 8601 | 2025-12-22T13:30:00+08:00 |
+| data.vendor_id | Integer | Mandatory | Vendor ID | Numeric | 1 |
+| data.store_name | String | Mandatory | Vendor store name | Text | Mak Cik Corner |
+| data.is_open | Boolean | Mandatory | Manual open/close status | true/false | true |
+| data.is_currently_open | Boolean | Mandatory | Real-time availability based on hours | true/false | true |
+| data.today_hours | Object | Optional | Today's operating hours | Object | {"open": "08:00", "close": "18:00"} |
+| data.avg_prep_time | Integer | Mandatory | Average preparation time in minutes | Numeric | 15 |
+| data.min_order_amount | Decimal | Optional | Minimum order requirement | Numeric | 10.00 |
+
+#### 6.2.5 Example Response (Success - Vendor Open)
+
+```json
+{
+    "success": true,
+    "status": 200,
+    "message": "Vendor availability retrieved",
+    "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "timestamp": "2025-12-22T13:30:00+08:00",
+    "data": {
+        "vendor_id": 1,
+        "store_name": "Mak Cik Corner",
+        "is_open": true,
+        "is_currently_open": true,
+        "today_hours": {
+            "day": "Monday",
+            "open_time": "08:00",
+            "close_time": "18:00",
+            "is_closed": false
+        },
+        "avg_prep_time": 15,
+        "min_order_amount": 10.00
+    }
+}
+```
+
+#### 6.2.6 Example Response (Success - Vendor Closed)
+
+```json
+{
+    "success": true,
+    "status": 200,
+    "message": "Vendor availability retrieved",
+    "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "timestamp": "2025-12-22T13:30:00+08:00",
+    "data": {
+        "vendor_id": 1,
+        "store_name": "Mak Cik Corner",
+        "is_open": false,
+        "is_currently_open": false,
+        "today_hours": {
+            "day": "Sunday",
+            "is_closed": true
+        },
+        "avg_prep_time": 15,
+        "min_order_amount": 10.00,
+        "closed_reason": "Outside operating hours"
+    }
+}
+```
+
+#### 6.2.7 Example Response (Error - Vendor Not Found)
+
+```json
+{
+    "success": false,
+    "status": 404,
+    "message": "Vendor not found",
+    "error": "NOT_FOUND",
+    "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "timestamp": "2025-12-22T13:30:00+08:00"
+}
+```
+
+#### 6.2.8 Frontend Consumption Example
+
+```javascript
+// resources/views/cart/checkout.blade.php
+// Cart module consumes Vendor Availability API before checkout
+
+async function validateVendorAvailability(vendorId) {
+    const response = await fetch(`/api/vendors/${vendorId}/availability`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+        showError('Unable to verify vendor availability');
+        return false;
+    }
+    
+    if (!data.data.is_currently_open) {
+        showError(`${data.data.store_name} is currently closed. ${data.data.closed_reason || ''}`);
+        return false;
+    }
+    
+    return true;
+}
+```
+
+#### 6.2.10 Modules That Consume This API
+
+| Module | Student | Usage Context |
+|--------|---------|---------------|
+| Cart, Checkout & Notifications | Student 4 | Validate vendor is open before checkout |
+| Order & Pickup | Student 3 | Verify vendor availability before order creation |
+| Menu & Catalog | Student 2 | Display vendor open/closed status on menu pages |
+
+---
+
+### 6.3 Web Service Consumed: Send Notification API (Student 4)
+
+#### 6.3.1 Webservice Mechanism
+
+| Description | Value |
+|-------------|-------|
+| Protocol | RESTful |
+| Function Description | Sends notifications to vendors when new orders are received. Consumed by Vendor Management module to notify vendors of incoming orders and important updates. |
+| Source Module | Cart, Checkout & Notifications (Student 4) |
+| Target Module | Vendor Management (Student 5) |
+| URL | http://127.0.0.1:8000/api/notifications/send |
+| Function Name | send() |
+| HTTP Method | POST |
+
+#### 6.3.2 Request Parameters
+
+| Field Name | Field Type | Mandatory/Optional | Description | Format | Example |
+|------------|------------|-------------------|-------------|--------|---------|
+| Authorization | String | Mandatory | Bearer token | Header | Bearer 1\|abc123xyz789 |
+| user_id | Integer | Mandatory | Target vendor user ID | Numeric | 5 |
+| type | String | Mandatory | Notification type | order | order |
+| title | String | Mandatory | Notification title | Text | New Order Received! |
+| message | String | Mandatory | Notification body | Text | New order #FH-123 from customer |
+
+#### 6.3.3 Example Request Sent
 
 ```http
 POST /api/notifications/send HTTP/1.1
@@ -266,32 +411,15 @@ Content-Type: application/json
 Accept: application/json
 
 {
-    "user_id": 1,
+    "user_id": 5,
     "type": "order",
-    "title": "Order Ready for Pickup!",
-    "message": "Your order #FH-20251222-A1B2 is ready. Please collect at Counter 3.",
-    "data": {
-        "order_id": 123,
-        "queue_number": 105
-    }
+    "title": "New Order Received!",
+    "message": "New order #FH-20251222-A1B2 from John Doe worth RM45.00",
+    "data": {"order_id": 123, "customer_name": "John Doe", "total": 45.00}
 }
 ```
 
-#### 6.2.4 Response Parameters (Success)
-
-| Field Name | Field Type | Mandatory/Optional | Description | Format | Example |
-|------------|------------|-------------------|-------------|--------|---------|
-| success | Boolean | Mandatory | Request success status | true/false | true |
-| status | Integer | Mandatory | HTTP status code | 201 | 201 |
-| message | String | Mandatory | Response message | Text | "Notification sent successfully" |
-| request_id | String | Mandatory | Unique request identifier | UUID | a1b2c3d4-e5f6-7890 |
-| timestamp | String | Mandatory | Response timestamp | ISO 8601 | 2025-12-22T13:30:00+08:00 |
-| data.notification_id | Integer | Mandatory | Created notification ID | Numeric | 1 |
-| data.type | String | Mandatory | Notification type | Text | order |
-| data.title | String | Mandatory | Notification title | Text | Order Ready! |
-| data.created_at | String | Mandatory | Creation timestamp | ISO 8601 | 2025-12-22T13:30:00+08:00 |
-
-#### 6.2.5 Example Response (Success - 201 Created)
+#### 6.3.4 Expected Response
 
 ```json
 {
@@ -299,252 +427,12 @@ Accept: application/json
     "status": 201,
     "message": "Notification sent successfully",
     "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "timestamp": "2025-12-22T13:30:00+08:00",
+    "timestamp": "2025-12-22T14:30:00+08:00",
     "data": {
         "notification_id": 1,
         "type": "order",
-        "title": "Order Ready for Pickup!",
-        "created_at": "2025-12-22T13:30:00+08:00"
-    }
-}
-```
-
-#### 6.2.6 Example Response (Error - User Not Found)
-
-```json
-{
-    "success": false,
-    "status": 404,
-    "message": "User not found",
-    "error": "USER_NOT_FOUND",
-    "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "timestamp": "2025-12-22T13:30:00+08:00"
-}
-```
-
-#### 6.2.7 Implementation Code
-
-```php
-// app/Services/NotificationService.php
-
-/**
- * Web Service: Expose - Send Notification API
- * Other modules consume this via the service to send notifications
- * Uses Observer Pattern for notification dispatch
- */
-class NotificationService
-{
-    /**
-     * Send a notification to a user
-     */
-    public function send(
-        int $userId,
-        string $type,
-        string $title,
-        string $message,
-        array $data = []
-    ): Notification {
-        $user = User::find($userId);
-        
-        if (!$user) {
-            throw new \Exception('User not found');
-        }
-
-        return Notification::create([
-            'user_id' => $userId,
-            'type' => $type,
-            'title' => $title,
-            'message' => $message,
-            'data' => $data,
-            'is_read' => false,
-        ]);
-    }
-
-    /**
-     * Notify customer when order status changes
-     */
-    public function notifyOrderStatusChange(int $userId, int $orderId, string $status): void
-    {
-        $messages = [
-            'confirmed' => 'Your order has been confirmed and is being prepared.',
-            'preparing' => 'Your order is now being prepared.',
-            'ready' => 'Your order is ready for pickup!',
-            'completed' => 'Your order has been completed. Thank you!',
-            'cancelled' => 'Your order has been cancelled.',
-        ];
-
-        $this->send(
-            $userId,
-            'order',
-            "Order {$status}",
-            $messages[$status] ?? "Order status updated to {$status}",
-            ['order_id' => $orderId, 'status' => $status]
-        );
-    }
-
-    /**
-     * Notify vendor of new order
-     */
-    public function notifyVendorNewOrder(int $vendorUserId, int $orderId, string $customerName, float $total): void
-    {
-        $this->send(
-            $vendorUserId,
-            'order',
-            'New Order Received!',
-            "New order from {$customerName} worth RM" . number_format($total, 2),
-            ['order_id' => $orderId, 'customer_name' => $customerName, 'total' => $total]
-        );
-    }
-}
-```
-
-#### 6.2.8 Backend Consumption Example
-
-```php
-// app/Http/Controllers/Api/AuthController.php
-// Student 1 consumes Student 5's Notification Service
-
-public function register(RegisterRequest $request): JsonResponse
-{
-    $user = $this->authService->register($request->validated());
-    $token = $user->createToken('auth-token')->plainTextToken;
-
-    // Web Service: Consume Notification Service (Student 5)
-    $this->notificationService->send(
-        $user->id,
-        'welcome',
-        'Welcome to FoodHunter!',
-        'Thank you for joining FoodHunter. Start exploring delicious food now!',
-        ['registration_date' => now()->toDateString()]
-    );
-
-    return $this->createdResponse([
-        'user' => $this->formatUser($user),
-        'token' => $token,
-    ], 'Registration successful');
-}
-```
-
-```php
-// app/Http/Controllers/Web/CartController.php
-// Student 3 consumes Student 5's Notification Service
-
-public function processCheckout(Request $request)
-{
-    // ... order creation logic ...
-
-    // Send notifications to vendors for each order
-    $notificationService = app(NotificationService::class);
-    $customerName = Auth::user()->name;
-    
-    foreach ($orders as $order) {
-        // Notify vendor of new order
-        if ($order->vendor && $order->vendor->user) {
-            $notificationService->notifyVendorNewOrder(
-                $order->vendor->user->id,
-                $order->id,
-                $customerName,
-                $order->total
-            );
-        }
-        
-        // Notify customer of order placed
-        $notificationService->notifyOrderCreated(Auth::id(), $order->id);
-    }
-
-    // ... return response ...
-}
-```
-
-#### 6.2.9 Modules That Consume This API
-
-| Module | Student | Usage Context |
-|--------|---------|---------------|
-| User & Authentication | Student 1 | Welcome notification on registration |
-| Cart & Checkout | Student 3 | Order confirmation notifications |
-| Order & Pickup | Student 4 | Order status change notifications |
-| Vendor Module | Vendor | New order notifications |
-
----
-
-### 6.3 Web Service Consumed: Order Status API (Student 4)
-
-#### 6.3.1 Webservice Mechanism
-
-| Description | Value |
-|-------------|-------|
-| Protocol | RESTful |
-| Function Description | Gets order status information to generate order-related notifications. Consumed when vendor updates order status to notify customers with accurate order details. |
-| Source Module | Order & Pickup (Student 4) |
-| Target Module | Voucher & Notification (Student 5) |
-| URL | http://127.0.0.1:8000/api/orders/{order}/status |
-| Function Name | status() |
-| HTTP Method | GET |
-
-#### 6.3.2 Request Parameters
-
-| Field Name | Field Type | Mandatory/Optional | Description | Format | Example |
-|------------|------------|-------------------|-------------|--------|---------|
-| Authorization | String | Mandatory | Bearer token | Header | Bearer 1\|abc123xyz789 |
-| order | Integer | Mandatory | Order ID | Path parameter | 123 |
-
-#### 6.3.3 Implementation
-
-```php
-// app/Http/Controllers/Api/Vendor/OrderController.php
-// When order status is updated, NotificationService gets order details
-
-public function updateStatus(Request $request, Order $order): JsonResponse
-{
-    $result = $this->orderService->updateStatusWithLocking(
-        $order->id,
-        $request->status,
-        $request->reason ?? 'Cancelled by vendor'
-    );
-
-    if ($result['success']) {
-        // NotificationService consumes Student 4's Order Status API internally
-        // to get order_number, queue_number for notification messages
-        $this->notificationService->notifyOrderStatusChange(
-            $order->user_id,
-            $order->id,
-            $result['new_status']
-        );
-    }
-
-    return $this->successResponse(['status' => $result['new_status']], 'Order status updated');
-}
-```
-
-#### 6.3.4 Example Request Sent
-
-```http
-GET /api/orders/123/status HTTP/1.1
-Host: 127.0.0.1:8000
-Authorization: Bearer 1|abc123xyz789...
-Content-Type: application/json
-Accept: application/json
-```
-
-#### 6.3.5 Expected Response
-
-```json
-{
-    "success": true,
-    "status": 200,
-    "message": "Success",
-    "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "timestamp": "2025-12-22T14:30:00+08:00",
-    "data": {
-        "order_id": 123,
-        "order_number": "FH-20251222-A1B2",
-        "status": "ready",
-        "total": 45.00,
-        "pickup": {
-            "queue_number": 105,
-            "status": "ready"
-        },
-        "updated_at": "2025-12-22T14:30:00+08:00"
+        "title": "New Order Received!",
+        "created_at": "2025-12-22T14:30:00+08:00"
     }
 }
 ```
@@ -556,31 +444,23 @@ Accept: application/json
 ```php
 // routes/api.php
 
-// Notifications (Student 5)
+// Public Vendor Routes (Student 5)
+Route::get('/vendors/{vendor}/availability', [VendorController::class, 'checkAvailability']);
+
+// Voucher Validation (Student 5 exposes, Cart/Order modules consume)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::get('/notifications/dropdown', [NotificationController::class, 'dropdown']);
-    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
-    
-    // Web Service: Send Notification (Student 5 exposes, all modules consume)
-    Route::post('/notifications/send', [NotificationController::class, 'send']);
+    Route::post('/vouchers/validate', [VendorVoucherController::class, 'validate']);
 });
 
-// Vouchers (Student 5)
-Route::middleware('auth:sanctum')->group(function () {
-    // Web Service: Voucher Validation (Student 5 exposes, Cart/Order modules consume)
-    Route::post('/vouchers/validate', [VoucherController::class, 'validate']);
-});
-
-// Vendor Voucher Management
+// Vendor Management Routes (Student 5)
 Route::middleware(['auth:sanctum', 'vendor'])->prefix('vendor')->group(function () {
+    Route::get('/dashboard', [VendorDashboardController::class, 'index']);
     Route::get('/vouchers', [VendorVoucherController::class, 'index']);
     Route::post('/vouchers', [VendorVoucherController::class, 'store']);
     Route::put('/vouchers/{voucher}', [VendorVoucherController::class, 'update']);
     Route::delete('/vouchers/{voucher}', [VendorVoucherController::class, 'destroy']);
+    Route::get('/orders', [VendorOrderController::class, 'index']);
+    Route::put('/orders/{order}/status', [VendorOrderController::class, 'updateStatus']);
 });
 ```
 
@@ -588,122 +468,20 @@ Route::middleware(['auth:sanctum', 'vendor'])->prefix('vendor')->group(function 
 
 ### 6.5 Complete API Endpoints Summary
 
-The following API endpoints are implemented in the Voucher & Notification module:
+The following API endpoints are implemented in the Vendor Management module:
 
 | Method | Endpoint | Function | Type | Description |
 |--------|----------|----------|------|-------------|
-| GET | /api/notifications | index() | Protected | List user's notifications |
-| GET | /api/notifications/dropdown | dropdown() | Protected | Get notifications for dropdown |
-| GET | /api/notifications/unread-count | unreadCount() | Protected | Get unread notification count |
-| POST | /api/notifications/{id}/read | markAsRead() | Protected | Mark notification as read |
-| POST | /api/notifications/read-all | markAllAsRead() | Protected | Mark all notifications as read |
-| DELETE | /api/notifications/{id} | destroy() | Protected | Delete a notification |
-| POST | /api/notifications/send | send() | **EXPOSED** | Send notification to user |
 | POST | /api/vouchers/validate | validate() | **EXPOSED** | Validate voucher code |
+| GET | /api/vendors/{vendor}/availability | checkAvailability() | **EXPOSED** | Check vendor availability status |
+| GET | /api/vendor/dashboard | dashboard() | Vendor | Vendor dashboard stats |
 | GET | /api/vendor/vouchers | index() | Vendor | List vendor's vouchers |
 | POST | /api/vendor/vouchers | store() | Vendor | Create new voucher |
 | PUT | /api/vendor/vouchers/{voucher} | update() | Vendor | Update voucher |
 | DELETE | /api/vendor/vouchers/{voucher} | destroy() | Vendor | Delete voucher |
+| GET | /api/vendor/orders | orders() | Vendor | List vendor's orders |
+| PUT | /api/vendor/orders/{order}/status | updateStatus() | Vendor | Update order status |
 
----
-
-### 6.6 Design Pattern: Factory Pattern
-
-The Voucher module implements the **Factory Pattern** for flexible discount calculation:
-
-```php
-// app/Patterns/Factory/VoucherFactory.php
-class VoucherFactory
-{
-    /**
-     * Calculate discount based on voucher type
-     * Factory Pattern: Creates appropriate discount strategy
-     */
-    public static function calculateDiscount(Voucher $voucher, float $subtotal): float
-    {
-        $discount = match($voucher->type) {
-            'percentage' => $subtotal * ($voucher->value / 100),
-            'fixed' => $voucher->value,
-            default => 0,
-        };
-
-        // Apply maximum discount cap if set
-        if ($voucher->max_discount && $discount > $voucher->max_discount) {
-            $discount = $voucher->max_discount;
-        }
-
-        // Ensure discount doesn't exceed subtotal
-        return min($discount, $subtotal);
-    }
-
-    /**
-     * Create voucher with validation
-     */
-    public static function create(array $data): Voucher
-    {
-        return Voucher::create([
-            'vendor_id' => $data['vendor_id'],
-            'code' => strtoupper($data['code']),
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'type' => $data['type'],
-            'value' => $data['value'],
-            'min_order' => $data['min_order'] ?? null,
-            'max_discount' => $data['max_discount'] ?? null,
-            'is_active' => $data['is_active'] ?? true,
-            'expires_at' => $data['expires_at'] ?? null,
-        ]);
-    }
-}
-```
-
----
-
-### 6.7 Design Pattern: Observer Pattern
-
-The Notification module implements the **Observer Pattern** for event-driven notifications:
-
-```php
-// app/Services/NotificationService.php
-// Observer Pattern: Listens to system events and dispatches notifications
-
-class NotificationService
-{
-    // Notification type constants
-    const TYPE_WELCOME = 'welcome';
-    const TYPE_ORDER = 'order';
-    const TYPE_PROMO = 'promo';
-    const TYPE_SYSTEM = 'system';
-
-    /**
-     * Observer: Handle order created event
-     */
-    public function notifyOrderCreated(int $userId, int $orderId): void
-    {
-        $this->send(
-            $userId,
-            self::TYPE_ORDER,
-            'Order Placed Successfully!',
-            'Your order has been placed and is being processed.',
-            ['order_id' => $orderId]
-        );
-    }
-
-    /**
-     * Observer: Handle user registration event
-     */
-    public function notifyWelcome(int $userId): void
-    {
-        $this->send(
-            $userId,
-            self::TYPE_WELCOME,
-            'Welcome to FoodHunter!',
-            'Start exploring delicious food from various vendors.',
-            ['registration_date' => now()->toDateString()]
-        );
-    }
-}
-```
 
 ---
 
@@ -723,11 +501,12 @@ class NotificationService
 
 | File | Purpose |
 |------|---------|
-| `app/Http/Controllers/Api/NotificationController.php` | Notification API controller |
 | `app/Http/Controllers/Api/VoucherController.php` | Voucher validation API controller |
 | `app/Http/Controllers/Api/Vendor/VoucherController.php` | Vendor voucher management |
-| `app/Services/NotificationService.php` | Notification business logic (Observer Pattern) |
+| `app/Http/Controllers/Api/Vendor/MenuController.php` | Vendor menu management |
+| `app/Http/Controllers/Api/Vendor/DashboardController.php` | Vendor dashboard |
 | `app/Patterns/Factory/VoucherFactory.php` | Voucher discount calculation (Factory Pattern) |
-| `app/Models/Notification.php` | Notification Eloquent model |
+| `app/Models/Vendor.php` | Vendor Eloquent model |
+| `app/Models/VendorHour.php` | Vendor hours Eloquent model |
 | `app/Models/Voucher.php` | Voucher Eloquent model |
 | `app/Traits/ApiResponse.php` | Standardized API response format |

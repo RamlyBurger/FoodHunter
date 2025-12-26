@@ -1,19 +1,20 @@
 ## 6. Web Services
 
-### 6.1 Web Service Exposed #1: Cart Summary API
+### 6.1 Web Service Exposed #1: Order Status API
 
 #### 6.1.1 Webservice Mechanism
 
 | Description | Value |
 |-------------|-------|
 | Protocol | RESTful |
-| Function Description | Returns the current user's cart summary including item count, subtotal, service fee, and total. Used by Menu module to show cart status in navigation bar and for calculating checkout totals. |
-| Source Module | Cart & Checkout (Student 3) |
-| Target Module | Menu & Catalog (Student 2), Order & Pickup (Student 4) |
-| URL | http://127.0.0.1:8000/api/cart/summary |
-| Function Name | summary() |
+| Function Description | Returns real-time order status and pickup information. Used by Notification module to get order details for status update notifications and by frontend for live order tracking. Implements State Pattern for order status transitions. |
+| Source Module | Order & Pickup (Student 3) |
+| Target Module | Cart, Checkout & Notifications (Student 4), Frontend |
+| URL | http://127.0.0.1:8000/api/orders/{order}/status |
+| Function Name | status() |
 | HTTP Method | GET |
 | Authentication | Bearer Token Required |
+| Design Pattern | State Pattern |
 
 #### 6.1.2 Request Parameters
 
@@ -24,7 +25,7 @@
 #### 6.1.3 Example Request
 
 ```http
-GET /api/cart/summary HTTP/1.1
+GET /api/orders/123/status HTTP/1.1
 Host: 127.0.0.1:8000
 Authorization: Bearer 1|abc123xyz789...
 Content-Type: application/json
@@ -40,11 +41,12 @@ Accept: application/json
 | message | String | Mandatory | Response message | Text | "Success" |
 | request_id | String | Mandatory | Unique request identifier | UUID | a1b2c3d4-e5f6-7890 |
 | timestamp | String | Mandatory | Response timestamp | ISO 8601 | 2025-12-22T13:30:00+08:00 |
-| data.item_count | Integer | Mandatory | Total items in cart | Numeric | 3 |
-| data.subtotal | Float | Mandatory | Cart subtotal before fees | Decimal | 25.50 |
-| data.service_fee | Float | Mandatory | Platform service fee | Decimal | 2.00 |
-| data.discount | Float | Mandatory | Applied voucher discount | Decimal | 5.00 |
-| data.total | Float | Mandatory | Grand total after fees/discount | Decimal | 22.50 |
+| data.order_id | Integer | Mandatory | Order ID | Numeric | 123 |
+| data.order_number | String | Mandatory | Order reference number | Text | FH-20251222-A1B2 |
+| data.status | String | Mandatory | Current order status | Text | preparing |
+| data.total | Float | Mandatory | Order total | Decimal | 45.00 |
+| data.pickup | Object | Optional | Pickup information | Object | {...} |
+| data.updated_at | String | Mandatory | Last status update time | ISO 8601 | 2025-12-22T13:30:00+08:00 |
 
 #### 6.1.5 Example Response (Success - 200 OK)
 
@@ -56,11 +58,15 @@ Accept: application/json
     "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "timestamp": "2025-12-22T13:30:00+08:00",
     "data": {
-        "item_count": 3,
-        "subtotal": 25.50,
-        "service_fee": 2.00,
-        "discount": 0.00,
-        "total": 27.50
+        "order_id": 123,
+        "order_number": "FH-20251222-A1B2",
+        "status": "preparing",
+        "total": 45.00,
+        "pickup": {
+            "queue_number": 105,
+            "status": "pending"
+        },
+        "updated_at": "2025-12-22T13:30:00+08:00"
     }
 }
 ```
@@ -78,93 +84,51 @@ Accept: application/json
 }
 ```
 
-#### 6.1.7 Implementation Code
-
-```php
-// app/Http/Controllers/Api/CartController.php
-
-/**
- * Web Service: Expose - Cart Summary API
- * Student 2 (Menu) consumes this for cart status display
- * 
- * @param Request $request
- * @return JsonResponse
- */
-public function summary(Request $request): JsonResponse
-{
-    $cartItems = CartItem::where('user_id', $request->user()->id)
-        ->with('menuItem')
-        ->get();
-
-    return $this->successResponse($this->calculateSummary($cartItems));
-}
-
-private function calculateSummary($cartItems): array
-{
-    $subtotal = $cartItems->sum(fn($item) => $item->getSubtotal());
-    $serviceFee = 2.00;
-    $total = $subtotal + $serviceFee;
-
-    return [
-        'item_count' => $cartItems->sum('quantity'),
-        'subtotal' => (float) $subtotal,
-        'service_fee' => $serviceFee,
-        'discount' => 0.00,
-        'total' => (float) $total,
-    ];
-}
-```
-
-#### 6.1.8 Frontend Consumption Example
+#### 6.1.7 Frontend Consumption Example
 
 ```javascript
-// resources/views/layouts/app.blade.php
-// Load cart summary for navigation badge
+// resources/views/orders/show.blade.php
+// Poll order status for live tracking
 
-async function loadCartSummary() {
-    try {
-        const response = await fetch('/api/cart/summary', {
-            headers: {
-                'Accept': 'application/json',
-                'Authorization': 'Bearer ' + getToken()
-            }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-            // Update cart badge in navigation
-            document.querySelector('.cart-badge').textContent = data.data.item_count;
-            document.querySelector('.cart-total').textContent = 'RM ' + data.data.total.toFixed(2);
+async function pollOrderStatus(orderId) {
+    const response = await fetch(`/api/orders/${orderId}/status`, {
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + getToken()
         }
-    } catch (err) {
-        console.log('Cart summary not available');
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+        updateStatusDisplay(data.data.status);
+        updatePickupInfo(data.data.pickup);
     }
 }
 ```
 
-#### 6.1.9 Modules That Consume This API
+#### 6.1.8 Modules That Consume This API
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Menu & Catalog | Student 2 | Display cart badge in navigation |
-| Order & Pickup | Student 4 | Calculate order totals |
-| Checkout Page | Frontend | Display payment summary |
+| Cart, Checkout & Notifications | Student 4 | Get order details for notification content |
+| Vendor Management | Student 5 | Display order status to vendor |
+| Frontend | - | Live order tracking for customers |
 
 ---
 
-### 6.2 Web Service Exposed #2: Cart Validation API
+### 6.2 Web Service Exposed #2: Pickup QR Validation API
 
 #### 6.2.1 Webservice Mechanism
 
 | Description | Value |
 |-------------|-------|
 | Protocol | RESTful |
-| Function Description | Validates all items in the user's cart before checkout. Checks item availability, vendor status, and identifies any issues that would prevent order placement. Critical for ensuring a smooth checkout process. |
-| Source Module | Cart & Checkout (Student 3) |
-| Target Module | Order & Pickup (Student 4), Checkout Page |
-| URL | http://127.0.0.1:8000/api/cart/validate |
-| Function Name | validateCart() |
-| HTTP Method | GET |
+| Function Description | Validates a pickup QR code to verify order authenticity and mark order as collected. Used by vendors to confirm customer pickup and complete the order fulfillment process. Implements digital signature verification for QR code security. |
+| Source Module | Order & Pickup (Student 3) |
+| Target Module | Vendor Management (Student 5), Frontend |
+| URL | http://127.0.0.1:8000/api/orders/validate-pickup |
+| Function Name | validatePickupQr() |
+| HTTP Method | POST |
 | Authentication | Bearer Token Required |
 
 #### 6.2.2 Request Parameters
@@ -172,15 +136,20 @@ async function loadCartSummary() {
 | Field Name | Field Type | Mandatory/Optional | Description | Format | Example |
 |------------|------------|-------------------|-------------|--------|---------|
 | Authorization | String | Mandatory | Bearer token | Header | Bearer 1\|abc123xyz789 |
+| qr_code | String | Mandatory | QR code data from customer's order | Text | FH-20251222-A1B2-HMAC123 |
 
 #### 6.2.3 Example Request
 
 ```http
-GET /api/cart/validate HTTP/1.1
+POST /api/orders/validate-pickup HTTP/1.1
 Host: 127.0.0.1:8000
 Authorization: Bearer 1|abc123xyz789...
 Content-Type: application/json
 Accept: application/json
+
+{
+    "qr_code": "FH-20251222-A1B2-HMAC123ABC456"
+}
 ```
 
 #### 6.2.4 Response Parameters (Success)
@@ -189,207 +158,100 @@ Accept: application/json
 |------------|------------|-------------------|-------------|--------|---------|
 | success | Boolean | Mandatory | Request success status | true/false | true |
 | status | Integer | Mandatory | HTTP status code | 200 | 200 |
-| message | String | Mandatory | Response message | Text | "Success" |
+| message | String | Mandatory | Response message | Text | "Pickup validated successfully" |
 | request_id | String | Mandatory | Unique request identifier | UUID | a1b2c3d4-e5f6-7890 |
 | timestamp | String | Mandatory | Response timestamp | ISO 8601 | 2025-12-22T13:30:00+08:00 |
-| data.valid | Boolean | Mandatory | Overall cart validity | true/false | true |
-| data.issues | Array | Mandatory | List of validation issues | Array of objects | [] |
-| data.issues[].type | String | Optional | Issue type code | ITEM_UNAVAILABLE/VENDOR_CLOSED | ITEM_UNAVAILABLE |
-| data.issues[].item_id | Integer | Optional | Affected menu item ID | Numeric | 5 |
-| data.issues[].item_name | String | Optional | Affected item name | Text | Nasi Lemak |
-| data.issues[].vendor_name | String | Optional | Affected vendor name | Text | Warung Kak |
-| data.valid_items_count | Integer | Mandatory | Number of valid items | Numeric | 2 |
-| data.total_items_count | Integer | Mandatory | Total items in cart | Numeric | 3 |
-| data.summary | Object | Mandatory | Cart summary for valid items | Object | {...} |
+| data.valid | Boolean | Mandatory | QR code validity | true/false | true |
+| data.order_id | Integer | Mandatory | Order ID | Numeric | 123 |
+| data.order_number | String | Mandatory | Order reference number | Text | FH-20251222-A1B2 |
+| data.customer_name | String | Mandatory | Customer name | Text | John Doe |
+| data.queue_number | Integer | Mandatory | Pickup queue number | Numeric | 105 |
+| data.status | String | Mandatory | Updated order status | Text | completed |
 
-#### 6.2.5 Example Response (Success - All Valid)
+#### 6.2.5 Example Response (Success - Valid QR)
 
 ```json
 {
     "success": true,
     "status": 200,
-    "message": "Success",
+    "message": "Pickup validated successfully",
     "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "timestamp": "2025-12-22T13:30:00+08:00",
     "data": {
         "valid": true,
-        "issues": [],
-        "valid_items_count": 3,
-        "total_items_count": 3,
-        "summary": {
-            "item_count": 3,
-            "subtotal": 25.50,
-            "service_fee": 2.00,
-            "discount": 0.00,
-            "total": 27.50
-        }
+        "order_id": 123,
+        "order_number": "FH-20251222-A1B2",
+        "customer_name": "John Doe",
+        "queue_number": 105,
+        "status": "completed",
+        "collected_at": "2025-12-22T13:30:00+08:00"
     }
 }
 ```
 
-#### 6.2.6 Example Response (Success - With Issues)
-
-```json
-{
-    "success": true,
-    "status": 200,
-    "message": "Success",
-    "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "timestamp": "2025-12-22T13:30:00+08:00",
-    "data": {
-        "valid": false,
-        "issues": [
-            {
-                "type": "ITEM_UNAVAILABLE",
-                "item_id": 5,
-                "item_name": "Nasi Lemak Special"
-            },
-            {
-                "type": "VENDOR_CLOSED",
-                "item_id": 12,
-                "item_name": "Mee Goreng",
-                "vendor_name": "Restoran Mamak"
-            }
-        ],
-        "valid_items_count": 1,
-        "total_items_count": 3,
-        "summary": {
-            "item_count": 1,
-            "subtotal": 8.00,
-            "service_fee": 2.00,
-            "discount": 0.00,
-            "total": 10.00
-        }
-    }
-}
-```
-
-#### 6.2.7 Example Response (Error - Empty Cart)
+#### 6.2.6 Example Response (Error - Invalid QR)
 
 ```json
 {
     "success": false,
     "status": 400,
-    "message": "Cart is empty",
-    "error": "EMPTY_CART",
+    "message": "Invalid QR code",
+    "error": "INVALID_QR_CODE",
     "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "timestamp": "2025-12-22T13:30:00+08:00"
 }
 ```
 
-#### 6.2.8 Implementation Code
+#### 6.2.7 Example Response (Error - Order Not Ready)
 
-```php
-// app/Http/Controllers/Api/CartController.php
-
-/**
- * Web Service: Expose - Cart Validation API
- * Other modules (Checkout, Order) consume this to validate cart before processing
- * Checks item availability, vendor status, and minimum order requirements
- * 
- * @param Request $request
- * @return JsonResponse
- */
-public function validateCart(Request $request): JsonResponse
+```json
 {
-    $cartItems = CartItem::where('user_id', $request->user()->id)
-        ->with(['menuItem.vendor'])
-        ->get();
-
-    if ($cartItems->isEmpty()) {
-        return $this->errorResponse('Cart is empty', 400, 'EMPTY_CART');
+    "success": false,
+    "status": 400,
+    "message": "Order is not ready for pickup",
+    "error": "ORDER_NOT_READY",
+    "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "timestamp": "2025-12-22T13:30:00+08:00",
+    "data": {
+        "current_status": "preparing"
     }
-
-    $issues = [];
-    $validItems = [];
-    
-    foreach ($cartItems as $item) {
-        if (!$item->menuItem) {
-            $issues[] = ['type' => 'ITEM_NOT_FOUND', 'item_id' => $item->menu_item_id];
-            continue;
-        }
-        
-        if (!$item->menuItem->is_available) {
-            $issues[] = [
-                'type' => 'ITEM_UNAVAILABLE',
-                'item_id' => $item->menu_item_id,
-                'item_name' => $item->menuItem->name,
-            ];
-            continue;
-        }
-        
-        if (!$item->menuItem->vendor || !$item->menuItem->vendor->is_open) {
-            $issues[] = [
-                'type' => 'VENDOR_CLOSED',
-                'item_id' => $item->menu_item_id,
-                'item_name' => $item->menuItem->name,
-                'vendor_name' => $item->menuItem->vendor?->store_name,
-            ];
-            continue;
-        }
-        
-        $validItems[] = $item;
-    }
-
-    $summary = $this->calculateSummary(collect($validItems));
-    
-    return $this->successResponse([
-        'valid' => empty($issues),
-        'issues' => $issues,
-        'valid_items_count' => count($validItems),
-        'total_items_count' => $cartItems->count(),
-        'summary' => $summary,
-    ]);
 }
 ```
 
-#### 6.2.9 Frontend Consumption Example
+#### 6.2.8 Frontend Consumption Example
 
 ```javascript
-// resources/views/cart/checkout.blade.php
-// Validate cart before processing payment
+// resources/views/vendor/orders.blade.php
+// Vendor scans customer's QR code to validate pickup
 
-async function processPayment() {
-    const submitBtn = document.getElementById('submit-btn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validating...';
+async function validatePickupQR(qrCode) {
+    const response = await fetch('/api/orders/validate-pickup', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + getToken()
+        },
+        body: JSON.stringify({ qr_code: qrCode })
+    });
     
-    try {
-        // Validate cart using Student 3's API before processing
-        const cartValidation = await fetch('/api/cart/validate', {
-            headers: {
-                'Accept': 'application/json',
-                'Authorization': 'Bearer ' + getToken()
-            }
-        }).then(r => r.json());
-        
-        if (!cartValidation.success || !cartValidation.data?.valid) {
-            const issues = cartValidation.data?.issues || [];
-            let issueMsg = 'Some items in your cart are no longer available.';
-            if (issues.length > 0) {
-                issueMsg = issues.map(i => i.item_name + ': ' + i.type.replace('_', ' ')).join(', ');
-            }
-            Swal.fire({ title: 'Cart Issue', text: issueMsg, icon: 'warning' });
-            submitBtn.disabled = false;
-            return;
-        }
-        
-        // Cart is valid, proceed with payment...
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-        // ... payment logic
-    } catch (err) {
-        console.error('Cart validation failed:', err);
+    const data = await response.json();
+    
+    if (data.success) {
+        showSuccess(`Order ${data.data.order_number} collected by ${data.data.customer_name}`);
+        refreshOrderList();
+    } else {
+        showError(data.message);
     }
 }
 ```
 
-#### 6.2.10 Modules That Consume This API
+#### 6.2.9 Modules That Consume This API
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Order & Pickup | Student 4 | Validate before order creation |
-| Checkout Page | Frontend | Pre-payment validation |
-| Cart Page | Frontend | Real-time cart status check |
+| Vendor Management | Student 5 | Verify pickup and complete order |
+| Frontend | - | Vendor dashboard QR scanner |
 
 ---
 
@@ -400,9 +262,9 @@ async function processPayment() {
 | Description | Value |
 |-------------|-------|
 | Protocol | RESTful |
-| Function Description | Validates menu items are available before adding to cart. Consumed when user clicks "Add to Cart" to ensure items are in stock and vendor is open. |
+| Function Description | Validates menu items are available before creating an order. Consumed during order creation to ensure all items are in stock and vendors are open. |
 | Source Module | Menu & Catalog (Student 2) |
-| Target Module | Cart & Checkout (Student 3) |
+| Target Module | Order & Pickup (Student 3) |
 | URL | http://127.0.0.1:8000/api/menu/{menuItem}/availability |
 | Function Name | checkAvailability() |
 | HTTP Method | GET |
@@ -413,40 +275,7 @@ async function processPayment() {
 |------------|------------|-------------------|-------------|--------|---------|
 | menuItem | Integer | Mandatory | Menu item ID | Path parameter | 5 |
 
-#### 6.3.3 Implementation
-
-```php
-// app/Http/Controllers/Api/CartController.php
-// Before adding to cart, validate item is available
-
-public function add(AddToCartRequest $request): JsonResponse
-{
-    $menuItem = MenuItem::findOrFail($request->menu_item_id);
-
-    // Validate item availability using Student 2's Menu API logic
-    if (!$menuItem->is_available) {
-        return $this->errorResponse('Item is not available', 400, 'ITEM_UNAVAILABLE');
-    }
-
-    $cartItem = CartItem::updateOrCreate(
-        [
-            'user_id' => $request->user()->id,
-            'menu_item_id' => $request->menu_item_id,
-        ],
-        [
-            'quantity' => $request->quantity,
-            'special_instructions' => $request->special_instructions,
-        ]
-    );
-
-    return $this->successResponse(
-        $this->formatCartItem($cartItem->load('menuItem')),
-        'Item added to cart'
-    );
-}
-```
-
-#### 6.3.4 Example Request Sent
+#### 6.3.3 Example Request Sent
 
 ```http
 GET /api/menu/5/availability HTTP/1.1
@@ -476,85 +305,26 @@ Accept: application/json
 
 ---
 
-### 6.4 Web Service Consumed: Popular Items API (Student 2)
-
-#### 6.4.1 Webservice Mechanism
-
-| Description | Value |
-|-------------|-------|
-| Protocol | RESTful |
-| Function Description | Gets popular menu items for cart recommendations. Consumed to suggest additional items based on what's trending or related to cart contents. |
-| Source Module | Menu & Catalog (Student 2) |
-| Target Module | Cart & Checkout (Student 3) |
-| URL | http://127.0.0.1:8000/api/menu/popular |
-| Function Name | popularItems() |
-| HTTP Method | GET |
-
-#### 6.4.2 Implementation
-
-```php
-// app/Http/Controllers/Api/CartController.php
-
-/**
- * Get cart recommendations
- * Web Service: Consumes Student 2's Popular Items API for recommendations
- * 
- * @param Request $request
- * @return JsonResponse
- */
-public function recommendations(Request $request): JsonResponse
-{
-    $cartItems = CartItem::where('user_id', $request->user()->id)
-        ->with('menuItem')
-        ->get();
-
-    // Get category IDs from cart items for targeted recommendations
-    $categoryIds = $cartItems->pluck('menuItem.category_id')->unique()->filter()->values();
-    
-    // Consume Student 2's Popular Items API internally
-    $popularItems = MenuItem::where('is_available', true)
-        ->when($categoryIds->isNotEmpty(), fn($q) => $q->whereIn('category_id', $categoryIds))
-        ->whereNotIn('id', $cartItems->pluck('menu_item_id'))
-        ->with(['category:id,name', 'vendor:id,store_name'])
-        ->orderBy('total_sold', 'desc')
-        ->limit(6)
-        ->get();
-
-    return $this->successResponse([
-        'recommendations' => $popularItems->map(fn($item) => [
-            'id' => $item->id,
-            'name' => $item->name,
-            'price' => (float) $item->price,
-            'image' => ImageHelper::menuItem($item->image),
-            'total_sold' => $item->total_sold,
-            'category' => $item->category?->name,
-            'vendor' => $item->vendor?->store_name,
-        ]),
-    ]);
-}
-```
-
----
-
-### 6.5 API Route Configuration
+### 6.4 API Route Configuration
 
 ```php
 // routes/api.php
 
 Route::middleware('auth:sanctum')->group(function () {
-    // Cart (Student 3)
-    Route::get('/cart', [CartController::class, 'index']);
-    Route::post('/cart', [CartController::class, 'add']);
-    Route::put('/cart/{cartItem}', [CartController::class, 'update']);
-    Route::delete('/cart/{cartItem}', [CartController::class, 'remove']);
-    Route::delete('/cart', [CartController::class, 'clear']);
-    Route::get('/cart/count', [CartController::class, 'count']);
+    // Orders (Student 3 - Order & Pickup Module)
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/active', [OrderController::class, 'active']);
+    Route::get('/orders/history', [OrderController::class, 'history']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+    Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder']);
     
-    // Web Service: Cart Summary (Student 3 exposes, Student 2 consumes)
-    Route::get('/cart/summary', [CartController::class, 'summary']);
+    // Web Service: Order Status (Student 3 exposes, Student 4 consumes)
+    Route::get('/orders/{order}/status', [OrderController::class, 'status']);
     
-    // Web Service: Cart Validation (Student 3 exposes, Checkout/Order modules consume)
-    Route::get('/cart/validate', [CartController::class, 'validateCart']);
+    // Web Service: Pickup QR Validation (Student 3 exposes, Vendor module consumes)
+    Route::post('/orders/validate-pickup', [OrderController::class, 'validatePickupQr']);
     
     // Web Service: Cart Recommendations (Student 3 consumes Student 2's Popular Items)
     Route::get('/cart/recommendations', [CartController::class, 'recommendations']);
@@ -565,19 +335,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
 ### 6.6 Complete API Endpoints Summary
 
-The following API endpoints are implemented in the Cart & Checkout module:
+The following API endpoints are implemented in the Order & Pickup module:
 
 | Method | Endpoint | Function | Type | Description |
 |--------|----------|----------|------|-------------|
-| GET | /api/cart | index() | Protected | Get cart items with full details |
-| POST | /api/cart | add() | Protected | Add item to cart |
-| PUT | /api/cart/{cartItem} | update() | Protected | Update cart item quantity |
-| DELETE | /api/cart/{cartItem} | remove() | Protected | Remove item from cart |
-| DELETE | /api/cart | clear() | Protected | Clear entire cart |
-| GET | /api/cart/count | count() | Protected | Get cart item count |
-| GET | /api/cart/summary | summary() | **EXPOSED** | Get cart summary totals |
-| GET | /api/cart/validate | validateCart() | **EXPOSED** | Validate cart before checkout |
-| GET | /api/cart/recommendations | recommendations() | Protected | Get item recommendations |
+| GET | /api/orders | index() | Protected | List user's orders with pagination |
+| POST | /api/orders | store() | Protected | Create new order from cart |
+| GET | /api/orders/active | active() | Protected | Get active orders |
+| GET | /api/orders/history | history() | Protected | Get order history with stats |
+| POST | /api/orders/validate-pickup | validatePickupQr() | **EXPOSED** | Validate pickup QR code |
+| GET | /api/orders/{order} | show() | Protected | Get single order details |
+| POST | /api/orders/{order}/cancel | cancel() | Protected | Cancel an order |
+| POST | /api/orders/{order}/reorder | reorder() | Protected | Add order items back to cart |
+| GET | /api/orders/{order}/status | status() | **EXPOSED** | Get order status |
 
 ---
 
@@ -585,20 +355,22 @@ The following API endpoints are implemented in the Cart & Checkout module:
 
 | Feature | Implementation | OWASP Reference |
 |---------|---------------|-----------------|
+| IDOR Prevention | Order ownership verified before access | OWASP [4] |
 | Authentication | Sanctum token-based auth required | OWASP [66-67] |
-| Authorization | User can only access own cart items | OWASP [4] |
-| Input Validation | Request validation for quantities | OWASP [5] |
-| IDOR Prevention | Cart items verified against user_id | OWASP [4] |
+| Input Validation | QR code format validation | OWASP [5] |
+| State Validation | Order status transitions controlled | OWASP [8] |
 
 ---
 
-### 6.8 Implementation Files
+### 6.9 Implementation Files
 
 | File | Purpose |
 |------|---------|
-| `app/Http/Controllers/Api/CartController.php` | API controller with exposed web services |
-| `app/Http/Controllers/Web/CartController.php` | Web controller for checkout process |
-| `app/Models/CartItem.php` | Cart item Eloquent model |
-| `app/Http/Requests/Cart/AddToCartRequest.php` | Add to cart validation request |
-| `app/Helpers/ImageHelper.php` | Centralized image URL handling |
+| `app/Http/Controllers/Api/OrderController.php` | API controller with exposed web services |
+| `app/Http/Controllers/Web/OrderController.php` | Web controller for order views |
+| `app/Models/Order.php` | Order Eloquent model |
+| `app/Models/Pickup.php` | Pickup Eloquent model |
+| `app/Patterns/State/OrderContext.php` | State Pattern context |
+| `app/Patterns/State/OrderState.php` | State Pattern interface |
+| `app/Services/OrderService.php` | Order business logic service |
 | `app/Traits/ApiResponse.php` | Standardized API response format |

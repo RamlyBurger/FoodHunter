@@ -212,6 +212,11 @@ Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'timestamp' => now()]);
 });
 
+// API Tester page
+Route::get('/api-tester', function () {
+    return view('api-tester');
+})->name('api-tester');
+
 // Security Testing Routes (Development Only)
 Route::prefix('security-test')->group(function () {
     Route::get('/', [SecurityTestController::class, 'index'])->name('security.test');

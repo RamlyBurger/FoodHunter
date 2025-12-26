@@ -9,7 +9,7 @@
 | Protocol | RESTful |
 | Function Description | Checks if a menu item is available and in stock. Used by Cart module to validate items before adding to cart or during checkout. This ensures customers cannot order unavailable items. |
 | Source Module | Menu & Catalog (Student 2) |
-| Target Module | Cart & Checkout (Student 3) |
+| Target Module | Order & Pickup (Student 3), Cart, Checkout & Notifications (Student 4) |
 | URL | http://127.0.0.1:8000/api/menu/{menuItem}/availability |
 | Function Name | checkAvailability() |
 | HTTP Method | GET |
@@ -139,9 +139,9 @@ async function addToCart(itemId, quantity = 1) {
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart & Checkout | Student 3 | Validates items before adding to cart |
-| Checkout Page | Student 3 | Re-validates items during checkout |
-| Order Module | Student 4 | Validates items during order creation |
+| Order & Pickup | Student 3 | Validates items during order creation |
+| Cart, Checkout & Notifications | Student 4 | Validates items before adding to cart |
+| Checkout Page | Student 4 | Re-validates items during checkout |
 
 ---
 
@@ -154,7 +154,7 @@ async function addToCart(itemId, quantity = 1) {
 | Protocol | RESTful |
 | Function Description | Returns a list of popular menu items based on total sales (total_sold). Used by Cart module to provide personalized recommendations and by Home page to display trending items. |
 | Source Module | Menu & Catalog (Student 2) |
-| Target Module | Cart & Checkout (Student 3), Home Page |
+| Target Module | Order & Pickup (Student 3), Cart, Checkout & Notifications (Student 4), Home Page |
 | URL | http://127.0.0.1:8000/api/menu/popular |
 | Function Name | popularItems() |
 | HTTP Method | GET |
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', loadPopularItems);
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart & Checkout | Student 3 | recommendations() method for cart suggestions |
+| Cart, Checkout & Notifications | Student 4 | recommendations() method for cart suggestions |
 | Home Page | Frontend | Displays trending/popular items section |
 | Menu Page | Frontend | Shows popular items in category |
 
@@ -438,7 +438,7 @@ Accept: application/json
 
 ---
 
-### 6.4 Web Service Consumed: Cart Summary API (Student 3)
+### 6.4 Web Service Consumed: Cart Summary API (Student 4)
 
 #### 6.4.1 Webservice Mechanism
 
@@ -446,7 +446,7 @@ Accept: application/json
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Gets current cart summary to display cart status on menu pages. Consumed to show cart item count and total in the navigation bar. |
-| Source Module | Cart & Checkout (Student 3) |
+| Source Module | Cart, Checkout & Notifications (Student 4) |
 | Target Module | Menu & Catalog (Student 2) |
 | URL | http://127.0.0.1:8000/api/cart/summary |
 | Function Name | summary() |
