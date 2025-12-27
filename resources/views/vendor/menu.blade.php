@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await res.json();
 
             if (data.success) {
-                const item = data.item;
+                const item = data.data?.item || data.item;
                 const placeholderImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&size=400&background=6366f1&color=fff&font-size=0.35`;
                 const imageUrl = item.image || placeholderImg;
                 

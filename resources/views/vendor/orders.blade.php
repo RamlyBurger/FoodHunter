@@ -73,43 +73,41 @@
     <!-- Orders Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
-            <form method="GET" action="{{ route('vendor.orders') }}">
-                <div class="row align-items-center g-2 mb-3">
-                    <div class="col-md-3">
-                        <input type="text" name="search" class="form-control" placeholder="Search order #, customer..." value="{{ request('search') }}">
-                    </div>
-                    <div class="col-md-2">
-                        <select name="status" class="form-select">
-                            <option value="">All Status</option>
-                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                            <option value="preparing" {{ request('status') === 'preparing' ? 'selected' : '' }}>Preparing</option>
-                            <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Ready</option>
-                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="date" name="date" class="form-control" value="{{ request('date') }}" placeholder="Filter by date">
-                    </div>
-                    <div class="col-md-2">
-                        <select name="per_page" class="form-select">
-                            <option value="10" {{ request('per_page', 15) == 10 ? 'selected' : '' }}>10 per page</option>
-                            <option value="15" {{ request('per_page', 15) == 15 ? 'selected' : '' }}>15 per page</option>
-                            <option value="25" {{ request('per_page', 15) == 25 ? 'selected' : '' }}>25 per page</option>
-                            <option value="50" {{ request('per_page', 15) == 50 ? 'selected' : '' }}>50 per page</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 text-end">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> Filter
-                        </button>
-                        <a href="{{ route('vendor.orders') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-circle"></i> Clear
-                        </a>
-                    </div>
+            <div class="row align-items-center g-2 mb-3">
+                <div class="col-md-3">
+                    <input type="text" id="filter-search" class="form-control" placeholder="Search order #, customer..." value="{{ request('search') }}">
                 </div>
-            </form>
+                <div class="col-md-2">
+                    <select id="filter-status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                        <option value="preparing" {{ request('status') === 'preparing' ? 'selected' : '' }}>Preparing</option>
+                        <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Ready</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" id="filter-date" class="form-control" value="{{ request('date') }}" placeholder="Filter by date">
+                </div>
+                <div class="col-md-2">
+                    <select id="filter-per-page" class="form-select">
+                        <option value="10" {{ request('per_page', 15) == 10 ? 'selected' : '' }}>10 per page</option>
+                        <option value="15" {{ request('per_page', 15) == 15 ? 'selected' : '' }}>15 per page</option>
+                        <option value="25" {{ request('per_page', 15) == 25 ? 'selected' : '' }}>25 per page</option>
+                        <option value="50" {{ request('per_page', 15) == 50 ? 'selected' : '' }}>50 per page</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button type="button" class="btn btn-primary" onclick="loadOrders(1)">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="card-body p-0">
@@ -126,138 +124,28 @@
                             <th class="text-end px-4">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse($orders as $order)
-                        @php
-                            $firstItem = $order->items->first();
-                            $remainingCount = $order->items->count() - 1;
-                            $firstItemImage = ($firstItem && $firstItem->menuItem) 
-                                ? \App\Helpers\ImageHelper::menuItem($firstItem->menuItem->image) 
-                                : null;
-                        @endphp
-                        <tr class="order-row" id="order-row-{{ $order->id }}" data-order-id="{{ $order->id }}">
-                            <td class="px-4">
-                                <div class="d-flex align-items-center">
-                                    @if($firstItemImage)
-                                    <img src="{{ $firstItemImage }}" class="me-3 rounded" width="48" height="48" style="object-fit: cover;" 
-                                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($firstItem->item_name ?? 'O') }}&background=667eea&color=fff&size=100';">
-                                    @else
-                                    <div class="me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="bi bi-receipt text-white"></i>
-                                    </div>
-                                    @endif
-                                    <div>
-                                        <span class="fw-bold">{{ $order->order_number }}</span>
-                                        @if($order->pickup)
-                                        <br><small class="text-muted"><i class="bi bi-hash"></i>Queue: {{ $order->pickup->queue_number }}</small>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="{{ \App\Helpers\ImageHelper::avatar($order->user->avatar ?? null, $order->user->name ?? 'Customer') }}" 
-                                         alt="{{ $order->user->name ?? 'Customer' }}" 
-                                         class="rounded-circle me-2" 
-                                         width="38" height="38" 
-                                         style="object-fit: cover; border: 2px solid #e5e7eb;"
-                                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($order->user->name ?? 'U') }}&background=6c757d&color=fff&size=100'">
-                                    <div>
-                                        <div class="fw-semibold">{{ $order->user->name ?? 'Unknown' }}</div>
-                                        <small class="text-muted">{{ Str::limit($order->user->email ?? '', 20) }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                @if($firstItem)
-                                    <div class="fw-medium">{{ $firstItem->quantity }}x {{ Str::limit($firstItem->item_name, 18) }}</div>
-                                    @if($remainingCount > 0)
-                                        <small class="text-muted">+{{ $remainingCount }} more item{{ $remainingCount > 1 ? 's' : '' }}</small>
-                                    @endif
-                                @endif
-                            </td>
-                            <td>
-                                <span class="fw-bold" style="color: #FF9500;">RM {{ number_format($order->total, 2) }}</span>
-                            </td>
-                            <td>
-                                @php
-                                    $statusConfig = [
-                                        'pending' => ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'hourglass-split'],
-                                        'confirmed' => ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'check-circle'],
-                                        'preparing' => ['bg' => '#dbeafe', 'color' => '#2563eb', 'icon' => 'fire'],
-                                        'ready' => ['bg' => '#ede9fe', 'color' => '#7c3aed', 'icon' => 'bell'],
-                                        'completed' => ['bg' => '#f3f4f6', 'color' => '#374151', 'icon' => 'check-circle-fill'],
-                                        'cancelled' => ['bg' => '#fee2e2', 'color' => '#dc2626', 'icon' => 'x-circle'],
-                                    ];
-                                    $config = $statusConfig[$order->status] ?? $statusConfig['pending'];
-                                @endphp
-                                <span class="status-badge" style="background: {{ $config['bg'] }}; color: {{ $config['color'] }};">
-                                    <i class="bi bi-{{ $config['icon'] }} me-1"></i>{{ ucfirst($order->status) }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="fw-medium">{{ $order->created_at->diffForHumans() }}</div>
-                                <small class="text-muted">{{ $order->created_at->format('M d, h:i A') }}</small>
-                            </td>
-                            <td class="text-end px-4">
-                                <div class="btn-group btn-group-sm">
-                                    @if($order->status === 'pending')
-                                        <button type="button" class="btn btn-action-sm" style="background: #22c55e; color: white;" title="Accept Order"
-                                                onclick="updateOrderStatus({{ $order->id }}, 'confirmed', 'Accept Order')">
-                                            <i class="bi bi-check-lg"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-action-sm" style="background: #ef4444; color: white;" title="Reject Order"
-                                                onclick="rejectOrder({{ $order->id }}, '{{ $order->order_number }}')">
-                                            <i class="bi bi-x-lg"></i>
-                                        </button>
-                                    @elseif($order->status === 'confirmed')
-                                        <button type="button" class="btn btn-action-sm" style="background: #3b82f6; color: white;" title="Start Preparing"
-                                                onclick="updateOrderStatus({{ $order->id }}, 'preparing', 'Start Preparing')">
-                                            <i class="bi bi-play-fill"></i>
-                                        </button>
-                                    @elseif($order->status === 'preparing')
-                                        <button type="button" class="btn btn-action-sm" style="background: #8b5cf6; color: white;" title="Mark Ready"
-                                                onclick="updateOrderStatus({{ $order->id }}, 'ready', 'Mark as Ready')">
-                                            <i class="bi bi-bell"></i>
-                                        </button>
-                                    @elseif($order->status === 'ready')
-                                        <button type="button" class="btn btn-action-sm" style="background: #22c55e; color: white;" title="Complete with QR"
-                                                onclick="completeWithQR({{ $order->id }}, '{{ $order->order_number }}')">
-                                            <i class="bi bi-qr-code-scan"></i>
-                                        </button>
-                                    @endif
-                                    <button type="button" class="btn btn-action-sm" style="background: #6366f1; color: white;" title="View Receipt"
-                                            onclick="viewOrder({{ $order->id }})">
-                                        <i class="bi bi-receipt"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
+                    <tbody id="orders-tbody">
+                        <!-- Orders loaded via AJAX -->
+                        <tr id="orders-loading">
                             <td colspan="7" class="text-center py-5">
-                                <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                                </div>
-                                <h6 class="text-muted mb-1">No orders found</h6>
-                                <p class="text-muted small mb-0">Orders will appear here when customers place them</p>
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="text-muted mt-2 mb-0">Loading orders...</p>
                             </td>
                         </tr>
-                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-        @if($orders->hasPages())
-        <div class="card-footer bg-white">
+        <div class="card-footer bg-white" id="pagination-container" style="display: none;">
             <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">
-                    Showing {{ $orders->firstItem() ?? 0 }} to {{ $orders->lastItem() ?? 0 }} of {{ $orders->total() }} orders
+                <small class="text-muted" id="pagination-info">
+                    Showing 0 to 0 of 0 orders
                 </small>
-                {{ $orders->withQueryString()->links() }}
+                <nav id="pagination-nav">
+                    <!-- Pagination rendered via JS -->
+                </nav>
             </div>
         </div>
-        @endif
     </div>
 </div>
 
@@ -267,6 +155,12 @@
 @keyframes fadeOut {
     0% { opacity: 1; transform: translateX(0); }
     100% { opacity: 0; transform: translateX(-20px); }
+}
+
+@keyframes flashHighlight {
+    0% { background-color: rgba(34, 197, 94, 0.3); }
+    50% { background-color: rgba(34, 197, 94, 0.15); }
+    100% { background-color: transparent; }
 }
 
 .border-4 {
@@ -949,6 +843,281 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentQROrderId = null;
     let html5QrCode = null;
     let qrScanning = false;
+    let currentPage = 1;
+
+    // Status configuration for rendering
+    const statusConfig = {
+        'pending': { bg: '#fef3c7', color: '#d97706', icon: 'hourglass-split' },
+        'confirmed': { bg: '#dcfce7', color: '#16a34a', icon: 'check-circle' },
+        'preparing': { bg: '#dbeafe', color: '#2563eb', icon: 'fire' },
+        'ready': { bg: '#ede9fe', color: '#7c3aed', icon: 'bell' },
+        'completed': { bg: '#f3f4f6', color: '#374151', icon: 'check-circle-fill' },
+        'cancelled': { bg: '#fee2e2', color: '#dc2626', icon: 'x-circle' }
+    };
+
+    // Load orders via AJAX
+    window.loadOrders = async function(page = 1) {
+        currentPage = page;
+        const tbody = document.getElementById('orders-tbody');
+        const paginationContainer = document.getElementById('pagination-container');
+        
+        // Show loading state
+        tbody.innerHTML = `<tr id="orders-loading">
+            <td colspan="7" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2 mb-0">Loading orders...</p>
+            </td>
+        </tr>`;
+
+        // Build query params
+        const params = new URLSearchParams();
+        params.append('page', page);
+        
+        const search = document.getElementById('filter-search').value.trim();
+        const status = document.getElementById('filter-status').value;
+        const date = document.getElementById('filter-date').value;
+        const perPage = document.getElementById('filter-per-page').value;
+        
+        if (search) params.append('search', search);
+        if (status) params.append('status', status);
+        if (date) params.append('date', date);
+        if (perPage) params.append('per_page', perPage);
+
+        try {
+            const res = await fetch(`/vendor/orders?${params.toString()}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const response = await res.json();
+
+            if (response.success) {
+                const data = response.data || response;
+                renderOrders(data.orders || []);
+                renderPagination(data.pagination || {});
+                updateStats(data.stats || {});
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Failed to load orders</td></tr>`;
+            }
+        } catch (e) {
+            console.error('Error loading orders:', e);
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">An error occurred while loading orders</td></tr>`;
+        }
+    };
+
+    // Render orders to table
+    function renderOrders(orders) {
+        const tbody = document.getElementById('orders-tbody');
+        
+        if (!orders || orders.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="7" class="text-center py-5">
+                    <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                    </div>
+                    <h6 class="text-muted mb-1">No orders found</h6>
+                    <p class="text-muted small mb-0">Orders will appear here when customers place them</p>
+                </td>
+            </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = orders.map(order => renderOrderRow(order)).join('');
+    }
+
+    // Render single order row
+    function renderOrderRow(order) {
+        const config = statusConfig[order.status] || statusConfig['pending'];
+        const firstItem = order.first_item;
+        const fallbackImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstItem?.name || 'O')}&background=667eea&color=fff&size=100`;
+        const customerFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(order.customer?.name || 'U')}&background=6c757d&color=fff&size=100`;
+        
+        // Build action buttons based on status
+        let actionButtons = '';
+        if (order.status === 'pending') {
+            actionButtons = `
+                <button type="button" class="btn btn-action-sm" style="background: #22c55e; color: white;" title="Accept Order"
+                        onclick="updateOrderStatus(${order.id}, 'confirmed', 'Accept Order')">
+                    <i class="bi bi-check-lg"></i>
+                </button>
+                <button type="button" class="btn btn-action-sm" style="background: #ef4444; color: white;" title="Reject Order"
+                        onclick="rejectOrder(${order.id}, '${order.order_number}')">
+                    <i class="bi bi-x-lg"></i>
+                </button>`;
+        } else if (order.status === 'confirmed') {
+            actionButtons = `
+                <button type="button" class="btn btn-action-sm" style="background: #3b82f6; color: white;" title="Start Preparing"
+                        onclick="updateOrderStatus(${order.id}, 'preparing', 'Start Preparing')">
+                    <i class="bi bi-play-fill"></i>
+                </button>`;
+        } else if (order.status === 'preparing') {
+            actionButtons = `
+                <button type="button" class="btn btn-action-sm" style="background: #8b5cf6; color: white;" title="Mark Ready"
+                        onclick="updateOrderStatus(${order.id}, 'ready', 'Mark as Ready')">
+                    <i class="bi bi-bell"></i>
+                </button>`;
+        } else if (order.status === 'ready') {
+            actionButtons = `
+                <button type="button" class="btn btn-action-sm" style="background: #22c55e; color: white;" title="Complete with QR"
+                        onclick="completeWithQR(${order.id}, '${order.order_number}')">
+                    <i class="bi bi-qr-code-scan"></i>
+                </button>`;
+        }
+
+        const itemImage = firstItem?.image 
+            ? `<img src="${firstItem.image}" class="me-3 rounded" width="48" height="48" style="object-fit: cover;" onerror="this.src='${fallbackImg}'">`
+            : `<div class="me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="bi bi-receipt text-white"></i></div>`;
+
+        return `
+        <tr class="order-row" id="order-row-${order.id}" data-order-id="${order.id}">
+            <td class="px-4">
+                <div class="d-flex align-items-center">
+                    ${itemImage}
+                    <div>
+                        <span class="fw-bold">${order.order_number}</span>
+                        ${order.pickup?.queue_number ? `<br><small class="text-muted"><i class="bi bi-hash"></i>Queue: ${order.pickup.queue_number}</small>` : ''}
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <img src="${order.customer?.avatar || customerFallback}" 
+                         alt="${order.customer?.name || 'Customer'}" 
+                         class="rounded-circle me-2" 
+                         width="38" height="38" 
+                         style="object-fit: cover; border: 2px solid #e5e7eb;"
+                         onerror="this.src='${customerFallback}'">
+                    <div>
+                        <div class="fw-semibold">${order.customer?.name || 'Unknown'}</div>
+                        <small class="text-muted">${(order.customer?.email || '').substring(0, 20)}</small>
+                    </div>
+                </div>
+            </td>
+            <td>
+                ${firstItem ? `
+                    <div class="fw-medium">${firstItem.quantity}x ${(firstItem.name || '').substring(0, 18)}</div>
+                    ${order.remaining_items > 0 ? `<small class="text-muted">+${order.remaining_items} more item${order.remaining_items > 1 ? 's' : ''}</small>` : ''}
+                ` : ''}
+            </td>
+            <td>
+                <span class="fw-bold" style="color: #FF9500;">RM ${parseFloat(order.total).toFixed(2)}</span>
+            </td>
+            <td>
+                <span class="status-badge" style="background: ${config.bg}; color: ${config.color};">
+                    <i class="bi bi-${config.icon} me-1"></i>${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                </span>
+            </td>
+            <td>
+                <div class="fw-medium">${order.created_at_human}</div>
+                <small class="text-muted">${order.created_at}</small>
+            </td>
+            <td class="text-end px-4">
+                <div class="btn-group btn-group-sm">
+                    ${actionButtons}
+                    <button type="button" class="btn btn-action-sm" style="background: #6366f1; color: white;" title="View Receipt"
+                            onclick="viewOrder(${order.id})">
+                        <i class="bi bi-receipt"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    // Render pagination
+    function renderPagination(pagination) {
+        const container = document.getElementById('pagination-container');
+        const info = document.getElementById('pagination-info');
+        const nav = document.getElementById('pagination-nav');
+
+        if (!pagination || pagination.total === 0 || pagination.last_page <= 1) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        info.textContent = `Showing ${pagination.from || 0} to ${pagination.to || 0} of ${pagination.total} orders`;
+
+        let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
+        
+        // Previous button
+        paginationHtml += `<li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault(); loadOrders(${pagination.current_page - 1})">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>`;
+
+        // Page numbers
+        const startPage = Math.max(1, pagination.current_page - 2);
+        const endPage = Math.min(pagination.last_page, pagination.current_page + 2);
+
+        if (startPage > 1) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); loadOrders(1)">1</a></li>`;
+            if (startPage > 2) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `<li class="page-item ${i === pagination.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="event.preventDefault(); loadOrders(${i})">${i}</a>
+            </li>`;
+        }
+
+        if (endPage < pagination.last_page) {
+            if (endPage < pagination.last_page - 1) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); loadOrders(${pagination.last_page})">${pagination.last_page}</a></li>`;
+        }
+
+        // Next button
+        paginationHtml += `<li class="page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault(); loadOrders(${pagination.current_page + 1})">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>`;
+
+        paginationHtml += '</ul>';
+        nav.innerHTML = paginationHtml;
+    }
+
+    // Update stats cards
+    function updateStats(stats) {
+        if (!stats) return;
+        
+        const statElements = {
+            'pending': document.querySelector('.border-warning h3'),
+            'preparing': document.querySelector('.border-info h3'),
+            'ready': document.querySelector('.border-primary h3'),
+            'completed': document.querySelector('.border-dark h3')
+        };
+
+        if (statElements.pending && stats.pending !== undefined) statElements.pending.textContent = stats.pending;
+        if (statElements.preparing && stats.preparing !== undefined) statElements.preparing.textContent = stats.preparing;
+        if (statElements.ready && stats.ready !== undefined) statElements.ready.textContent = stats.ready;
+        if (statElements.completed && stats.completed !== undefined) statElements.completed.textContent = stats.completed;
+    }
+
+    // Clear filters
+    window.clearFilters = function() {
+        document.getElementById('filter-search').value = '';
+        document.getElementById('filter-status').value = '';
+        document.getElementById('filter-date').value = '';
+        document.getElementById('filter-per-page').value = '15';
+        loadOrders(1);
+    };
+
+    // Load orders on page load
+    loadOrders(1);
+
+    // Update order row in place after status change
+    function updateOrderRow(order) {
+        const row = document.getElementById('order-row-' + order.id);
+        if (row) {
+            // Replace the row with new content
+            row.outerHTML = renderOrderRow(order);
+            
+            // Flash animation for the updated row
+            const newRow = document.getElementById('order-row-' + order.id);
+            if (newRow) {
+                newRow.style.animation = 'flashHighlight 1s ease';
+            }
+        }
+    }
 
     // View Order Modal - Receipt Style
     window.viewOrder = async function(orderId) {
@@ -962,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await res.json();
 
             if (data.success) {
-                const order = data.order;
+                const order = data.data?.order || data.order;
                 const statusColors = {
                     'pending': 'background: #fbbf24; color: #1f2937;',
                     'confirmed': 'background: #22c55e; color: white;',
@@ -1111,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('orderViewModal').classList.remove('show');
     };
 
-    // Update order status with SweetAlert
+    // Update order status with SweetAlert - updates row in place
     window.updateOrderStatus = function(orderId, newStatus, statusLabel) {
         Swal.fire({
             title: `${statusLabel}?`,
@@ -1141,26 +1310,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }).then((result) => {
-            if (result.isConfirmed) {
-                // Remove row from current view since it moved to different status tab
-                const row = document.getElementById('order-row-' + orderId);
-                if (row) {
-                    row.style.animation = 'fadeOut 0.3s ease';
-                    setTimeout(() => {
-                        row.remove();
-                        // Check if table is empty
-                        const tbody = document.querySelector('.orders-table tbody');
-                        if (tbody && tbody.querySelectorAll('.order-row').length === 0) {
-                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5">
-                                <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                                </div>
-                                <h6 class="text-muted mb-1">No orders found</h6>
-                                <p class="text-muted small mb-0">Orders will appear here when customers place them</p>
-                            </td></tr>`;
-                        }
-                    }, 300);
+            if (result.isConfirmed && result.value) {
+                const responseData = result.value.data || result.value;
+                const order = responseData.order;
+                const stats = responseData.stats;
+                
+                if (order) {
+                    // Update the row in place with new status and buttons
+                    updateOrderRow(order);
                 }
+                
+                if (stats) {
+                    // Update the stats cards
+                    updateStats(stats);
+                }
+                
                 showToast(`Order status changed to ${statusLabel}`, 'success');
             }
         });
@@ -1336,23 +1500,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.success) {
                 closeQRModal();
-                // Remove row from current view
-                const row = document.getElementById('order-row-' + currentQROrderId);
-                if (row) {
-                    row.style.animation = 'fadeOut 0.3s ease';
-                    setTimeout(() => {
-                        row.remove();
-                        const tbody = document.querySelector('.orders-table tbody');
-                        if (tbody && tbody.querySelectorAll('.order-row').length === 0) {
-                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5">
-                                <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                                </div>
-                                <h6 class="text-muted mb-1">No orders found</h6>
-                            </td></tr>`;
-                        }
-                    }, 300);
+                const responseData = data.data || data;
+                const order = responseData.order;
+                const stats = responseData.stats;
+                
+                if (order) {
+                    // Update the row in place with new status (completed)
+                    updateOrderRow(order);
                 }
+                
+                if (stats) {
+                    // Update the stats cards
+                    updateStats(stats);
+                }
+                
                 showToast('Order completed successfully!', 'success');
             } else {
                 showQRError(data.message || 'Invalid QR code');

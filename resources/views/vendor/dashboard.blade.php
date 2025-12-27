@@ -414,8 +414,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                const stats = data.data || data;
                 // Check if there are new orders
-                if (data.todayOrders > lastOrderCount || data.pendingOrders > lastPendingCount) {
+                if (stats.todayOrders > lastOrderCount || stats.pendingOrders > lastPendingCount) {
                     // Show notification with action button
                     Swal.fire({
                         icon: 'info',
@@ -435,13 +436,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Update stats cards
                     const todayOrdersEl = document.querySelector('.col-sm-6.col-md-3:nth-child(1) h3');
-                    if (todayOrdersEl) todayOrdersEl.textContent = data.todayOrders;
+                    if (todayOrdersEl) todayOrdersEl.textContent = stats.todayOrders;
                     
                     const pendingBadge = document.querySelector('.badge.bg-warning');
-                    if (pendingBadge) pendingBadge.textContent = data.pendingOrders + ' Pending';
+                    if (pendingBadge) pendingBadge.textContent = stats.pendingOrders + ' Pending';
                 }
-                lastOrderCount = data.todayOrders;
-                lastPendingCount = data.pendingOrders;
+                lastOrderCount = stats.todayOrders;
+                lastPendingCount = stats.pendingOrders;
             }
         })
         .catch(() => {});
@@ -462,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await res.json();
 
             if (data.success) {
-                const order = data.order;
+                const order = data.data?.order || data.order;
                 const statusColors = {
                     'pending': 'background: #fbbf24; color: #1f2937;',
                     'confirmed': 'background: #22c55e; color: white;',

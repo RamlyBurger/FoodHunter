@@ -116,18 +116,26 @@ class VendorController extends Controller
         if ($request->ajax() || $request->wantsJson()) {
             return $this->successResponse([
                 'orders' => $orders->map(function ($order) {
+                    $firstItem = $order->items->first();
                     return [
                         'id' => $order->id,
                         'order_number' => $order->order_number,
                         'status' => $order->status,
                         'total' => (float) $order->total,
-                        'created_at' => $order->created_at->format('M d, Y H:i'),
+                        'created_at' => $order->created_at->format('M d, h:i A'),
                         'created_at_human' => $order->created_at->diffForHumans(),
                         'customer' => [
                             'name' => $order->user->name ?? 'Unknown',
                             'email' => $order->user->email ?? '',
+                            'avatar' => ImageHelper::avatar($order->user->avatar ?? null, $order->user->name ?? 'Customer'),
                         ],
+                        'first_item' => $firstItem ? [
+                            'name' => $firstItem->item_name,
+                            'quantity' => $firstItem->quantity,
+                            'image' => $firstItem->menuItem ? ImageHelper::menuItem($firstItem->menuItem->image) : null,
+                        ] : null,
                         'items_count' => $order->items->count(),
+                        'remaining_items' => max(0, $order->items->count() - 1),
                         'pickup' => $order->pickup ? [
                             'queue_number' => $order->pickup->queue_number,
                         ] : null,
@@ -241,7 +249,43 @@ class VendorController extends Controller
             );
             
             if ($request->ajax() || $request->wantsJson()) {
-                return $this->successResponse(null, 'Order status updated to ' . ucfirst($newStatus));
+                // Reload order with relationships for frontend update
+                $order->load(['user', 'items.menuItem', 'pickup']);
+                $firstItem = $order->items->first();
+                
+                return $this->successResponse([
+                    'order' => [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'total' => (float) $order->total,
+                        'created_at' => $order->created_at->format('M d, Y H:i'),
+                        'created_at_human' => $order->created_at->diffForHumans(),
+                        'customer' => [
+                            'name' => $order->user->name ?? 'Unknown',
+                            'email' => $order->user->email ?? '',
+                            'avatar' => ImageHelper::avatar($order->user->avatar ?? null, $order->user->name ?? 'Customer'),
+                        ],
+                        'first_item' => $firstItem ? [
+                            'name' => $firstItem->item_name,
+                            'quantity' => $firstItem->quantity,
+                            'image' => $firstItem->menuItem ? ImageHelper::menuItem($firstItem->menuItem->image) : null,
+                        ] : null,
+                        'items_count' => $order->items->count(),
+                        'remaining_items' => max(0, $order->items->count() - 1),
+                        'pickup' => $order->pickup ? [
+                            'queue_number' => $order->pickup->queue_number,
+                        ] : null,
+                    ],
+                    'stats' => [
+                        'pending' => Order::where('vendor_id', $vendor->id)->where('status', 'pending')->count(),
+                        'confirmed' => Order::where('vendor_id', $vendor->id)->where('status', 'confirmed')->count(),
+                        'preparing' => Order::where('vendor_id', $vendor->id)->where('status', 'preparing')->count(),
+                        'ready' => Order::where('vendor_id', $vendor->id)->where('status', 'ready')->count(),
+                        'completed' => Order::where('vendor_id', $vendor->id)->where('status', 'completed')->count(),
+                        'cancelled' => Order::where('vendor_id', $vendor->id)->where('status', 'cancelled')->count(),
+                    ],
+                ], 'Order status updated to ' . ucfirst($newStatus));
             }
             return back()->with('success', 'Order status updated to ' . ucfirst($newStatus));
         }
@@ -734,7 +778,43 @@ class VendorController extends Controller
                     ]);
                 }
 
-                return $this->successResponse(null, 'Order completed successfully');
+                // Reload order with relationships for frontend update
+                $order->load(['user', 'items.menuItem', 'pickup']);
+                $firstItem = $order->items->first();
+                
+                return $this->successResponse([
+                    'order' => [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'total' => (float) $order->total,
+                        'created_at' => $order->created_at->format('M d, h:i A'),
+                        'created_at_human' => $order->created_at->diffForHumans(),
+                        'customer' => [
+                            'name' => $order->user->name ?? 'Unknown',
+                            'email' => $order->user->email ?? '',
+                            'avatar' => ImageHelper::avatar($order->user->avatar ?? null, $order->user->name ?? 'Customer'),
+                        ],
+                        'first_item' => $firstItem ? [
+                            'name' => $firstItem->item_name,
+                            'quantity' => $firstItem->quantity,
+                            'image' => $firstItem->menuItem ? ImageHelper::menuItem($firstItem->menuItem->image) : null,
+                        ] : null,
+                        'items_count' => $order->items->count(),
+                        'remaining_items' => max(0, $order->items->count() - 1),
+                        'pickup' => $order->pickup ? [
+                            'queue_number' => $order->pickup->queue_number,
+                        ] : null,
+                    ],
+                    'stats' => [
+                        'pending' => Order::where('vendor_id', $vendor->id)->where('status', 'pending')->count(),
+                        'confirmed' => Order::where('vendor_id', $vendor->id)->where('status', 'confirmed')->count(),
+                        'preparing' => Order::where('vendor_id', $vendor->id)->where('status', 'preparing')->count(),
+                        'ready' => Order::where('vendor_id', $vendor->id)->where('status', 'ready')->count(),
+                        'completed' => Order::where('vendor_id', $vendor->id)->where('status', 'completed')->count(),
+                        'cancelled' => Order::where('vendor_id', $vendor->id)->where('status', 'cancelled')->count(),
+                    ],
+                ], 'Order completed successfully');
             }
 
             return $this->errorResponse('Failed to complete order. Please try again.', 500);
