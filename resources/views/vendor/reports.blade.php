@@ -34,15 +34,13 @@
                 <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
                     <i class="bi bi-printer me-1"></i> Print
                 </button>
-                <form method="GET" action="{{ route('vendor.reports') }}" id="periodForm">
-                    <select class="form-select form-select-sm" name="period" onchange="this.form.submit()" style="min-width: 150px;">
-                        <option value="7days" {{ $period === '7days' ? 'selected' : '' }}>Last 7 Days</option>
-                        <option value="30days" {{ $period === '30days' ? 'selected' : '' }}>Last 30 Days</option>
-                        <option value="this_month" {{ $period === 'this_month' ? 'selected' : '' }}>This Month</option>
-                        <option value="last_month" {{ $period === 'last_month' ? 'selected' : '' }}>Last Month</option>
-                        <option value="this_year" {{ $period === 'this_year' ? 'selected' : '' }}>This Year</option>
-                    </select>
-                </form>
+                <select class="form-select form-select-sm" id="period-select" onchange="loadReports()" style="min-width: 150px;">
+                    <option value="7days" {{ $period === '7days' ? 'selected' : '' }}>Last 7 Days</option>
+                    <option value="30days" {{ $period === '30days' ? 'selected' : '' }}>Last 30 Days</option>
+                    <option value="this_month" {{ $period === 'this_month' ? 'selected' : '' }}>This Month</option>
+                    <option value="last_month" {{ $period === 'last_month' ? 'selected' : '' }}>Last Month</option>
+                    <option value="this_year" {{ $period === 'this_year' ? 'selected' : '' }}>This Year</option>
+                </select>
             </div>
         </div>
     </div>
@@ -257,9 +255,203 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const salesData = @json($salesChartData);
+let salesData = @json($salesChartData);
 let currentChart = null;
 let currentView = 'revenue';
+let isLoading = false;
+
+// Load reports via AJAX
+window.loadReports = async function() {
+    if (isLoading) return;
+    isLoading = true;
+    
+    const period = document.getElementById('period-select').value;
+    
+    // Show loading state
+    showLoadingState();
+    
+    try {
+        const res = await fetch(`/vendor/reports?period=${period}`, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const response = await res.json();
+
+        if (response.success) {
+            const data = response.data || response;
+            updateRevenueStats(data.revenueStats);
+            updateOrderStats(data.orderStats);
+            updateOrderStatusDistribution(data.orderStatusDistribution);
+            updateTopSellingItems(data.topSellingItems);
+            updateSalesChart(data.salesChartData);
+            salesData = data.salesChartData;
+        }
+    } catch (e) {
+        console.error('Error loading reports:', e);
+    } finally {
+        isLoading = false;
+    }
+};
+
+function showLoadingState() {
+    // Add subtle loading indicator to stats cards
+    document.querySelectorAll('.row.g-4.mb-4 .card-body h3').forEach(el => {
+        el.style.opacity = '0.5';
+    });
+}
+
+function updateRevenueStats(stats) {
+    if (!stats) return;
+    const card = document.querySelector('.col-md-3:nth-child(1) .card-body');
+    if (card) {
+        const h3 = card.querySelector('h3');
+        if (h3) {
+            h3.textContent = `RM ${parseFloat(stats.total).toFixed(2)}`;
+            h3.style.opacity = '1';
+        }
+        
+        // Update growth indicator
+        let growthHtml = '';
+        if (stats.growth != 0) {
+            const isPositive = stats.growth > 0;
+            growthHtml = `<small class="${isPositive ? 'text-success' : 'text-danger'}">
+                <i class="bi bi-${isPositive ? 'arrow-up' : 'arrow-down'}"></i>
+                ${Math.abs(stats.growth)}% vs previous period
+            </small>`;
+        }
+        
+        const existingSmall = card.querySelector('small');
+        if (existingSmall) existingSmall.remove();
+        if (growthHtml) {
+            const div = card.querySelector('div > div:first-child');
+            if (div) div.insertAdjacentHTML('beforeend', growthHtml);
+        }
+    }
+}
+
+function updateOrderStats(stats) {
+    if (!stats) return;
+    
+    // Total Orders card
+    const ordersCard = document.querySelector('.col-md-3:nth-child(2) .card-body');
+    if (ordersCard) {
+        const h3 = ordersCard.querySelector('h3');
+        if (h3) {
+            h3.textContent = stats.total;
+            h3.style.opacity = '1';
+        }
+        
+        let growthHtml = '';
+        if (stats.growth != 0) {
+            const isPositive = stats.growth > 0;
+            growthHtml = `<small class="${isPositive ? 'text-success' : 'text-danger'}">
+                <i class="bi bi-${isPositive ? 'arrow-up' : 'arrow-down'}"></i>
+                ${Math.abs(stats.growth)}% vs previous period
+            </small>`;
+        }
+        
+        const existingSmall = ordersCard.querySelector('small');
+        if (existingSmall) existingSmall.remove();
+        if (growthHtml) {
+            const div = ordersCard.querySelector('div > div:first-child');
+            if (div) div.insertAdjacentHTML('beforeend', growthHtml);
+        }
+    }
+    
+    // Avg Order Value card
+    const avgCard = document.querySelector('.col-md-3:nth-child(3) .card-body');
+    if (avgCard) {
+        const h3 = avgCard.querySelector('h3');
+        if (h3) {
+            h3.textContent = `RM ${parseFloat(stats.avg_value || 0).toFixed(2)}`;
+            h3.style.opacity = '1';
+        }
+    }
+    
+    // Completion Rate card
+    const rateCard = document.querySelector('.col-md-3:nth-child(4) .card-body');
+    if (rateCard) {
+        const h3 = rateCard.querySelector('h3');
+        const completionRate = stats.total > 0 ? ((stats.completed / stats.total) * 100).toFixed(1) : 0;
+        if (h3) {
+            h3.textContent = `${completionRate}%`;
+            h3.style.opacity = '1';
+        }
+        
+        const small = rateCard.querySelector('small');
+        if (small) small.textContent = `${stats.completed}/${stats.total} orders`;
+    }
+}
+
+function updateOrderStatusDistribution(distribution) {
+    if (!distribution) return;
+    
+    const statuses = ['completed', 'confirmed', 'preparing', 'ready', 'cancelled'];
+    const colors = { completed: 'success', confirmed: 'primary', preparing: 'info', ready: 'warning', cancelled: 'danger' };
+    
+    statuses.forEach(status => {
+        const data = distribution[status];
+        if (!data) return;
+        
+        // Find the progress bar container by status name
+        const containers = document.querySelectorAll('.col-md-4 .card-body .mb-3, .col-md-4 .card-body > div:last-child');
+        containers.forEach(container => {
+            const label = container.querySelector('.small.fw-medium');
+            if (label && label.textContent.toLowerCase() === status) {
+                const countEl = container.querySelector(`.text-${colors[status]}`);
+                if (countEl) countEl.textContent = data.count;
+                
+                const progressBar = container.querySelector('.progress-bar');
+                if (progressBar) progressBar.style.width = `${data.percentage}%`;
+            }
+        });
+    });
+}
+
+function updateTopSellingItems(items) {
+    const tbody = document.querySelector('.table-responsive tbody');
+    if (!tbody) return;
+    
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+            <p class="mt-3 mb-0">No sales data available for this period</p>
+        </td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = items.map((item, index) => {
+        let rankBadge = '';
+        if (index < 3) {
+            const badgeClass = index === 0 ? 'bg-warning text-dark' : (index === 1 ? 'bg-secondary' : 'bg-danger');
+            rankBadge = `<span class="badge rounded-pill ${badgeClass}" style="width: 28px; height: 28px; line-height: 20px;">${index + 1}</span>`;
+        } else {
+            rankBadge = `<span class="text-muted">${index + 1}</span>`;
+        }
+        
+        return `<tr>
+            <td class="text-center">${rankBadge}</td>
+            <td><strong class="text-dark">${item.name}</strong></td>
+            <td>RM ${parseFloat(item.price).toFixed(2)}</td>
+            <td class="text-center"><span class="badge bg-light text-dark">${item.total_quantity}</span></td>
+            <td class="text-center">${item.order_count}</td>
+            <td class="text-end"><strong style="color: #FF6B35;">RM ${parseFloat(item.total_sales).toFixed(2)}</strong></td>
+        </tr>`;
+    }).join('');
+}
+
+function updateSalesChart(chartData) {
+    if (!currentChart || !chartData) return;
+    
+    currentChart.data.labels = chartData.map(d => d.date);
+    
+    if (currentView === 'revenue') {
+        currentChart.data.datasets[0].data = chartData.map(d => d.revenue);
+    } else {
+        currentChart.data.datasets[0].data = chartData.map(d => d.orders);
+    }
+    
+    currentChart.update();
+}
 
 function initChart() {
     const ctx = document.getElementById('salesChart').getContext('2d');

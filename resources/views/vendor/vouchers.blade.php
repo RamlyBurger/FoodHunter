@@ -72,31 +72,29 @@
     <!-- Vouchers Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
-            <form method="GET" action="{{ route('vendor.vouchers') }}">
-                <div class="row align-items-center g-2">
-                    <div class="col-md-4">
-                        <input type="text" name="search" class="form-control" placeholder="Search vouchers..." value="{{ request('search') }}">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="status" class="form-select">
-                            <option value="">All Status</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                            <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Expired</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search me-1"></i> Search
-                        </button>
-                    </div>
-                    <div class="col-md-2">
-                        <a href="{{ route('vendor.vouchers') }}" class="btn btn-outline-secondary w-100">
-                            <i class="bi bi-x-lg me-1"></i> Clear
-                        </a>
-                    </div>
+            <div class="row align-items-center g-2">
+                <div class="col-md-4">
+                    <input type="text" id="filter-search" class="form-control" placeholder="Search vouchers..." value="{{ request('search') }}">
                 </div>
-            </form>
+                <div class="col-md-3">
+                    <select id="filter-status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Expired</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-primary w-100" onclick="loadVouchers(1)">
+                        <i class="bi bi-search me-1"></i> Search
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="bi bi-x-lg me-1"></i> Clear
+                    </button>
+                </div>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -113,96 +111,28 @@
                             <th class="py-3 text-end pe-4">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse($vouchers as $voucher)
-                        <tr id="voucher-row-{{ $voucher->id }}" data-voucher-id="{{ $voucher->id }}">
-                            <td class="px-4 py-3">
-                                <span class="voucher-code">{{ $voucher->code }}</span>
-                            </td>
-                            <td class="py-3">{{ $voucher->name }}</td>
-                            <td class="py-3">
-                                @if($voucher->type === 'percentage')
-                                    <strong>{{ number_format($voucher->value) }}%</strong>
-                                    @if($voucher->max_discount)
-                                        <br><small class="text-muted">max RM{{ number_format($voucher->max_discount, 2) }}</small>
-                                    @endif
-                                @else
-                                    <strong>RM {{ number_format($voucher->value, 2) }}</strong>
-                                @endif
-                            </td>
-                            <td class="py-3">RM {{ number_format($voucher->min_order ?? 0, 2) }}</td>
-                            <td class="py-3">
-                                {{ $voucher->usage_count }}@if($voucher->usage_limit) / {{ $voucher->usage_limit }}@endif
-                            </td>
-                            <td class="py-3">
-                                @if($voucher->expires_at)
-                                    @if($voucher->expires_at->isPast())
-                                        <span class="text-danger">{{ $voucher->expires_at->format('d M Y') }}</span>
-                                    @else
-                                        {{ $voucher->expires_at->format('d M Y') }}
-                                    @endif
-                                @else
-                                    <span class="text-muted">No expiry</span>
-                                @endif
-                            </td>
-                            <td class="py-3">
-                                @if(!$voucher->is_active)
-                                    <span class="badge bg-secondary">Inactive</span>
-                                @elseif($voucher->expires_at && $voucher->expires_at->isPast())
-                                    <span class="badge bg-danger">Expired</span>
-                                @else
-                                    <span class="badge bg-success">Active</span>
-                                @endif
-                            </td>
-                            <td class="py-3 text-end pe-4">
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-info btn-action-sm"
-                                            data-voucher-id="{{ $voucher->id }}"
-                                            onclick="viewVoucher(this)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-primary btn-action-sm"
-                                            data-voucher='@json($voucher)'
-                                            onclick="editVoucher(this)">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-action-sm {{ $voucher->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}"
-                                            data-voucher-id="{{ $voucher->id }}"
-                                            onclick="toggleVoucher(this)">
-                                        <i class="bi bi-{{ $voucher->is_active ? 'pause' : 'play' }}"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger btn-action-sm"
-                                            data-voucher-id="{{ $voucher->id }}"
-                                            data-voucher-name="{{ $voucher->name }}"
-                                            onclick="deleteVoucher(this)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
+                    <tbody id="vouchers-tbody">
+                        <!-- Vouchers loaded via AJAX -->
+                        <tr id="vouchers-loading">
                             <td colspan="8" class="text-center py-5">
-                                <i class="bi bi-ticket-perforated fs-1 text-muted"></i>
-                                <p class="text-muted mt-2">No vouchers found</p>
-                                <button class="btn btn-primary btn-sm" onclick="showAddModal()">Create Your First Voucher</button>
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="text-muted mt-2 mb-0">Loading vouchers...</p>
                             </td>
                         </tr>
-                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-        @if($vouchers->hasPages())
-        <div class="card-footer bg-white">
+        <div class="card-footer bg-white" id="pagination-container" style="display: none;">
             <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">
-                    Showing {{ $vouchers->firstItem() ?? 0 }} to {{ $vouchers->lastItem() ?? 0 }} of {{ $vouchers->total() }} vouchers
+                <small class="text-muted" id="pagination-info">
+                    Showing 0 to 0 of 0 vouchers
                 </small>
-                {{ $vouchers->links() }}
+                <nav id="pagination-nav">
+                    <!-- Pagination rendered via JS -->
+                </nav>
             </div>
         </div>
-        @endif
     </div>
 </div>
 @endsection
@@ -414,12 +344,215 @@
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     let currentEditId = null;
+    let currentPage = 1;
 
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text || '';
         return div.innerHTML;
     }
+
+    // Load vouchers via AJAX
+    window.loadVouchers = async function(page = 1) {
+        currentPage = page;
+        const tbody = document.getElementById('vouchers-tbody');
+        
+        // Show loading state
+        tbody.innerHTML = `<tr id="vouchers-loading">
+            <td colspan="8" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2 mb-0">Loading vouchers...</p>
+            </td>
+        </tr>`;
+
+        // Build query params
+        const params = new URLSearchParams();
+        params.append('page', page);
+        
+        const search = document.getElementById('filter-search').value.trim();
+        const status = document.getElementById('filter-status').value;
+        
+        if (search) params.append('search', search);
+        if (status) params.append('status', status);
+
+        try {
+            const res = await fetch(`/vendor/vouchers?${params.toString()}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const response = await res.json();
+
+            if (response.success) {
+                const data = response.data || response;
+                renderVouchers(data.vouchers || []);
+                renderPagination(data.pagination || {});
+                updateStats(data.stats || {});
+            } else {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">Failed to load vouchers</td></tr>`;
+            }
+        } catch (e) {
+            console.error('Error loading vouchers:', e);
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">An error occurred while loading vouchers</td></tr>`;
+        }
+    };
+
+    // Render vouchers to table
+    function renderVouchers(vouchers) {
+        const tbody = document.getElementById('vouchers-tbody');
+        
+        if (!vouchers || vouchers.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="8" class="text-center py-5">
+                    <i class="bi bi-ticket-perforated fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No vouchers found</p>
+                    <button class="btn btn-primary btn-sm" onclick="showAddModal()">Create Your First Voucher</button>
+                </td>
+            </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = vouchers.map(voucher => renderVoucherRow(voucher)).join('');
+    }
+
+    // Render single voucher row
+    function renderVoucherRow(voucher) {
+        let discountHtml = '';
+        if (voucher.type === 'percentage') {
+            discountHtml = `<strong>${parseFloat(voucher.value).toFixed(0)}%</strong>`;
+            if (voucher.max_discount) {
+                discountHtml += `<br><small class="text-muted">max RM${parseFloat(voucher.max_discount).toFixed(2)}</small>`;
+            }
+        } else {
+            discountHtml = `<strong>RM ${parseFloat(voucher.value).toFixed(2)}</strong>`;
+        }
+
+        const usageHtml = voucher.usage_limit 
+            ? `${voucher.usage_count} / ${voucher.usage_limit}`
+            : `${voucher.usage_count}`;
+
+        let expiresHtml = '';
+        if (voucher.expires_at) {
+            const expiryDate = new Date(voucher.expires_at);
+            const formattedDate = expiryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            expiresHtml = voucher.is_expired 
+                ? `<span class="text-danger">${formattedDate}</span>`
+                : formattedDate;
+        } else {
+            expiresHtml = '<span class="text-muted">No expiry</span>';
+        }
+
+        let statusHtml = '';
+        let statusClass = '';
+        if (!voucher.is_active) {
+            statusHtml = '<span class="badge bg-secondary">Inactive</span>';
+            statusClass = 'secondary';
+        } else if (voucher.is_expired) {
+            statusHtml = '<span class="badge bg-danger">Expired</span>';
+            statusClass = 'danger';
+        } else {
+            statusHtml = '<span class="badge bg-success">Active</span>';
+            statusClass = 'success';
+        }
+
+        const toggleBtnClass = voucher.is_active ? 'btn-outline-warning' : 'btn-outline-success';
+        const toggleIcon = voucher.is_active ? 'pause' : 'play';
+
+        return `
+        <tr id="voucher-row-${voucher.id}" data-voucher-id="${voucher.id}">
+            <td class="px-4 py-3">
+                <span class="voucher-code">${escapeHtml(voucher.code)}</span>
+            </td>
+            <td class="py-3">${escapeHtml(voucher.name)}</td>
+            <td class="py-3">${discountHtml}</td>
+            <td class="py-3">RM ${parseFloat(voucher.min_order || 0).toFixed(2)}</td>
+            <td class="py-3">${usageHtml}</td>
+            <td class="py-3">${expiresHtml}</td>
+            <td class="py-3">${statusHtml}</td>
+            <td class="py-3 text-end pe-4">
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-info btn-action-sm" data-voucher-id="${voucher.id}" onclick="viewVoucher(this)"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-primary btn-action-sm" data-voucher='${JSON.stringify(voucher)}' onclick="editVoucher(this)"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-action-sm ${toggleBtnClass}" data-voucher-id="${voucher.id}" onclick="toggleVoucher(this)"><i class="bi bi-${toggleIcon}"></i></button>
+                    <button class="btn btn-sm btn-outline-danger btn-action-sm" data-voucher-id="${voucher.id}" data-voucher-name="${escapeHtml(voucher.name)}" onclick="deleteVoucher(this)"><i class="bi bi-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    // Render pagination
+    function renderPagination(pagination) {
+        const container = document.getElementById('pagination-container');
+        const info = document.getElementById('pagination-info');
+        const nav = document.getElementById('pagination-nav');
+
+        if (!pagination || pagination.total === 0 || pagination.last_page <= 1) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        info.textContent = `Showing ${pagination.from || 0} to ${pagination.to || 0} of ${pagination.total} vouchers`;
+
+        let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
+        
+        // Previous button
+        paginationHtml += `<li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault(); loadVouchers(${pagination.current_page - 1})">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>`;
+
+        // Page numbers
+        const startPage = Math.max(1, pagination.current_page - 2);
+        const endPage = Math.min(pagination.last_page, pagination.current_page + 2);
+
+        if (startPage > 1) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); loadVouchers(1)">1</a></li>`;
+            if (startPage > 2) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `<li class="page-item ${i === pagination.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="event.preventDefault(); loadVouchers(${i})">${i}</a>
+            </li>`;
+        }
+
+        if (endPage < pagination.last_page) {
+            if (endPage < pagination.last_page - 1) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); loadVouchers(${pagination.last_page})">${pagination.last_page}</a></li>`;
+        }
+
+        // Next button
+        paginationHtml += `<li class="page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault(); loadVouchers(${pagination.current_page + 1})">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>`;
+
+        paginationHtml += '</ul>';
+        nav.innerHTML = paginationHtml;
+    }
+
+    // Update stats cards
+    function updateStats(stats) {
+        if (!stats) return;
+        
+        const cards = document.querySelectorAll('.row.g-4.mb-4 .card-body h3');
+        if (cards.length >= 3) {
+            if (stats.total !== undefined) cards[0].textContent = stats.total;
+            if (stats.active !== undefined) cards[1].textContent = stats.active;
+            if (stats.total_usage !== undefined) cards[2].textContent = stats.total_usage;
+        }
+    }
+
+    // Clear filters
+    window.clearFilters = function() {
+        document.getElementById('filter-search').value = '';
+        document.getElementById('filter-status').value = '';
+        loadVouchers(1);
+    };
+
+    // Load vouchers on page load
+    loadVouchers(1);
 
     // View Modal
     window.viewVoucher = async function(btn) {
@@ -701,7 +834,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (res.ok && data.success) {
                 closeEditModal();
-                const voucher = data.data?.voucher || data.voucher;
+                const responseData = data.data || data;
+                const voucher = responseData.voucher;
+                const stats = responseData.stats;
                 
                 if (currentEditId && voucher) {
                     // Update existing row
@@ -713,8 +848,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     showToast('Voucher created successfully!', 'success');
                 } else {
                     showToast(data.message || 'Voucher saved successfully!', 'success');
-                    // Fallback reload only if no voucher data returned
-                    setTimeout(() => location.reload(), 1000);
+                    // Fallback: reload current page via AJAX
+                    loadVouchers(currentPage);
+                }
+                
+                // Update stats if returned
+                if (stats) {
+                    updateStats(stats);
                 }
             } else {
                 const errorMessage = data.message || 'Operation failed. Please check your input.';
@@ -745,7 +885,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const data = await res.json();
             if (data.success) {
-                const isActive = data.is_active || data.data?.is_active;
+                const responseData = data.data || data;
+                const isActive = responseData.is_active;
+                const stats = responseData.stats;
+                
                 const row = document.getElementById('voucher-row-' + id);
                 if (row) {
                     // Update status badge
@@ -764,6 +907,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.offsetHeight;
                     row.style.animation = 'flashHighlight 1s ease';
                 }
+                
+                // Update stats if returned
+                if (stats) {
+                    updateStats(stats);
+                }
+                
                 showToast(data.message || (isActive ? 'Voucher activated!' : 'Voucher deactivated!'), 'success');
             }
         } catch (e) {
@@ -796,16 +945,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     const data = await res.json();
                     if (data.success) {
+                        const responseData = data.data || data;
+                        const stats = responseData.stats;
+                        
                         // Remove row from DOM
                         const row = document.getElementById('voucher-row-' + id);
                         if (row) {
                             row.style.animation = 'fadeOut 0.3s ease';
                             setTimeout(() => {
                                 row.remove();
+                                
+                                // Update stats if returned
+                                if (stats) {
+                                    updateStats(stats);
+                                }
+                                
                                 // Check if table is empty
-                                const tbody = document.querySelector('.vouchers-table tbody');
+                                const tbody = document.getElementById('vouchers-tbody');
                                 if (tbody && tbody.querySelectorAll('tr[data-voucher-id]').length === 0) {
-                                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4"><i class="bi bi-ticket-perforated fs-1 text-muted"></i><p class="text-muted mt-2">No vouchers found</p></td></tr>`;
+                                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5"><i class="bi bi-ticket-perforated fs-1 text-muted"></i><p class="text-muted mt-2">No vouchers found</p><button class="btn btn-primary btn-sm" onclick="showAddModal()">Create Your First Voucher</button></td></tr>`;
                                 }
                             }, 300);
                         }

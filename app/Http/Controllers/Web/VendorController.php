@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\ImageHelper;
 use App\Models\Order;
 use App\Models\MenuItem;
+use App\Models\Category;
 use App\Models\Pickup;
 use App\Models\Voucher;
 use App\Patterns\State\OrderStateManager;
@@ -60,8 +61,38 @@ class VendorController extends Controller
             return $this->successResponse([
                 'todayOrders' => $todayOrders,
                 'todayRevenue' => (float) $todayRevenue,
-                'pendingOrders' => $pendingOrders->count(),
-                'readyOrders' => $readyOrders->count(),
+                'pendingOrdersCount' => $pendingOrders->count(),
+                'readyOrdersCount' => $readyOrders->count(),
+                'recentOrders' => $recentOrders->map(function($order) {
+                    $firstItem = $order->items->first();
+                    return [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'total' => (float) $order->total,
+                        'created_at' => $order->created_at->format('M d, h:i A'),
+                        'customer' => [
+                            'name' => $order->user->name ?? 'Unknown',
+                            'avatar' => ImageHelper::avatar($order->user->avatar ?? null, $order->user->name ?? 'Customer'),
+                        ],
+                        'first_item' => $firstItem ? [
+                            'name' => $firstItem->item_name,
+                            'quantity' => $firstItem->quantity,
+                        ] : null,
+                        'remaining_items' => max(0, $order->items->count() - 1),
+                    ];
+                }),
+                'readyOrders' => $readyOrders->take(5)->map(function($order) {
+                    return [
+                        'id' => $order->id,
+                        'queue_number' => $order->pickup->queue_number ?? 'N/A',
+                        'customer_name' => $order->user->name ?? 'Unknown',
+                    ];
+                }),
+                'vendor' => [
+                    'store_name' => $vendor->store_name,
+                    'is_open' => $vendor->is_open,
+                ],
             ]);
         }
 
@@ -319,6 +350,19 @@ class VendorController extends Controller
         
         $items = $query->orderBy('name')->paginate($perPage)->withQueryString();
 
+        // Get stats for the menu
+        $stats = [
+            'total' => MenuItem::where('vendor_id', $vendor->id)->count(),
+            'available' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', true)->count(),
+            'unavailable' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', false)->count(),
+            'categories' => MenuItem::where('vendor_id', $vendor->id)->distinct('category_id')->count('category_id'),
+        ];
+
+        // Get all categories for this vendor's items
+        $categories = Category::whereHas('menuItems', function($q) use ($vendor) {
+            $q->where('vendor_id', $vendor->id);
+        })->pluck('name')->toArray();
+
         // Return JSON for AJAX requests
         if ($request->ajax() || $request->wantsJson()) {
             return $this->successResponse([
@@ -328,6 +372,7 @@ class VendorController extends Controller
                         'name' => $item->name,
                         'description' => $item->description,
                         'price' => (float) $item->price,
+                        'category_id' => $item->category_id,
                         'category' => $item->category ? [
                             'id' => $item->category->id,
                             'name' => $item->category->name,
@@ -345,6 +390,8 @@ class VendorController extends Controller
                     'from' => $items->firstItem(),
                     'to' => $items->lastItem(),
                 ],
+                'stats' => $stats,
+                'categories' => $categories,
                 'filters' => [
                     'search' => $request->search,
                     'category' => $request->category,
@@ -437,7 +484,13 @@ class VendorController extends Controller
                         'category_id' => $menuItem->category_id,
                         'category' => $menuItem->category ? ['name' => $menuItem->category->name] : null,
                         'image' => ImageHelper::menuItem($menuItem->image),
-                    ]
+                    ],
+                    'stats' => [
+                        'total' => MenuItem::where('vendor_id', $vendor->id)->count(),
+                        'available' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', true)->count(),
+                        'unavailable' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', false)->count(),
+                        'categories' => MenuItem::where('vendor_id', $vendor->id)->distinct('category_id')->count('category_id'),
+                    ],
                 ], 'Menu item created successfully.');
             }
 
@@ -510,7 +563,13 @@ class VendorController extends Controller
                         'category_id' => $menuItem->category_id,
                         'category' => $menuItem->category ? ['name' => $menuItem->category->name] : null,
                         'image' => ImageHelper::menuItem($menuItem->image),
-                    ]
+                    ],
+                    'stats' => [
+                        'total' => MenuItem::where('vendor_id', $vendor->id)->count(),
+                        'available' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', true)->count(),
+                        'unavailable' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', false)->count(),
+                        'categories' => MenuItem::where('vendor_id', $vendor->id)->distinct('category_id')->count('category_id'),
+                    ],
                 ], 'Menu item updated successfully.');
             }
 
@@ -548,7 +607,14 @@ class VendorController extends Controller
             $menuItem->delete();
 
             if ($request->ajax() || $request->wantsJson()) {
-                return $this->successResponse(null, 'Menu item deleted successfully.');
+                return $this->successResponse([
+                    'stats' => [
+                        'total' => MenuItem::where('vendor_id', $vendor->id)->count(),
+                        'available' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', true)->count(),
+                        'unavailable' => MenuItem::where('vendor_id', $vendor->id)->where('is_available', false)->count(),
+                        'categories' => MenuItem::where('vendor_id', $vendor->id)->distinct('category_id')->count('category_id'),
+                    ],
+                ], 'Menu item deleted successfully.');
             }
 
             return redirect()->route('vendor.menu')->with('success', 'Menu item deleted successfully.');
@@ -971,7 +1037,14 @@ class VendorController extends Controller
             ]);
 
             if ($request->ajax()) {
-                return $this->successResponse(['voucher' => $voucher], 'Voucher created successfully!');
+                $stats = [
+                    'total' => Voucher::where('vendor_id', $vendor->id)->count(),
+                    'active' => Voucher::where('vendor_id', $vendor->id)->where('is_active', true)->where(function ($q) {
+                        $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    })->count(),
+                    'total_usage' => Voucher::where('vendor_id', $vendor->id)->sum('usage_count'),
+                ];
+                return $this->successResponse(['voucher' => $voucher, 'stats' => $stats], 'Voucher created successfully!');
             }
 
             return back()->with('success', 'Voucher created successfully!');
@@ -1036,7 +1109,14 @@ class VendorController extends Controller
             ]);
 
             if ($request->ajax()) {
-                return $this->successResponse(['voucher' => $voucher], 'Voucher updated successfully!');
+                $stats = [
+                    'total' => Voucher::where('vendor_id', $vendor->id)->count(),
+                    'active' => Voucher::where('vendor_id', $vendor->id)->where('is_active', true)->where(function ($q) {
+                        $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    })->count(),
+                    'total_usage' => Voucher::where('vendor_id', $vendor->id)->sum('usage_count'),
+                ];
+                return $this->successResponse(['voucher' => $voucher, 'stats' => $stats], 'Voucher updated successfully!');
             }
 
             return back()->with('success', 'Voucher updated successfully!');
@@ -1065,7 +1145,14 @@ class VendorController extends Controller
         $voucher->delete();
 
         if (request()->ajax()) {
-            return $this->successResponse(null, 'Voucher deleted successfully!');
+            $stats = [
+                'total' => Voucher::where('vendor_id', $vendor->id)->count(),
+                'active' => Voucher::where('vendor_id', $vendor->id)->where('is_active', true)->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })->count(),
+                'total_usage' => Voucher::where('vendor_id', $vendor->id)->sum('usage_count'),
+            ];
+            return $this->successResponse(['stats' => $stats], 'Voucher deleted successfully!');
         }
 
         return back()->with('success', 'Voucher deleted successfully!');
@@ -1080,8 +1167,17 @@ class VendorController extends Controller
 
         $voucher->update(['is_active' => !$voucher->is_active]);
 
+        $stats = [
+            'total' => Voucher::where('vendor_id', $vendor->id)->count(),
+            'active' => Voucher::where('vendor_id', $vendor->id)->where('is_active', true)->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })->count(),
+            'total_usage' => Voucher::where('vendor_id', $vendor->id)->sum('usage_count'),
+        ];
+
         return $this->successResponse([
             'is_active' => $voucher->is_active,
+            'stats' => $stats,
         ], $voucher->is_active ? 'Voucher activated!' : 'Voucher deactivated!');
     }
 

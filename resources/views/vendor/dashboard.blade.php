@@ -403,53 +403,181 @@ document.addEventListener('DOMContentLoaded', function() {
     let lastOrderCount = {{ $todayOrders }};
     let lastPendingCount = {{ $pendingOrders->count() }};
 
-    // Poll for dashboard updates every 15 seconds
-    function checkForUpdates() {
-        fetch('/vendor/dashboard', {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const stats = data.data || data;
-                // Check if there are new orders
-                if (stats.todayOrders > lastOrderCount || stats.pendingOrders > lastPendingCount) {
-                    // Show notification with action button
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'New Order!',
-                        text: 'You have received a new order.',
-                        showCancelButton: true,
-                        confirmButtonText: '<i class="bi bi-arrow-clockwise me-1"></i> Refresh Now',
-                        cancelButtonText: 'Later',
-                        confirmButtonColor: '#FF9500',
-                        timer: 10000,
-                        timerProgressBar: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            location.reload();
-                        }
-                    });
-                    
-                    // Update stats cards
-                    const todayOrdersEl = document.querySelector('.col-sm-6.col-md-3:nth-child(1) h3');
-                    if (todayOrdersEl) todayOrdersEl.textContent = stats.todayOrders;
-                    
-                    const pendingBadge = document.querySelector('.badge.bg-warning');
-                    if (pendingBadge) pendingBadge.textContent = stats.pendingOrders + ' Pending';
+    const statusConfig = {
+        'pending': { bg: '#fef3c7', color: '#d97706', icon: 'hourglass-split' },
+        'confirmed': { bg: '#dcfce7', color: '#16a34a', icon: 'check-circle' },
+        'preparing': { bg: '#dbeafe', color: '#2563eb', icon: 'fire' },
+        'ready': { bg: '#ede9fe', color: '#7c3aed', icon: 'bell' },
+        'completed': { bg: '#f3f4f6', color: '#374151', icon: 'check-circle-fill' },
+        'cancelled': { bg: '#fee2e2', color: '#dc2626', icon: 'x-circle' }
+    };
+
+    // Load dashboard data via AJAX
+    window.loadDashboard = async function() {
+        try {
+            const res = await fetch('/vendor/dashboard', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const response = await res.json();
+
+            if (response.success) {
+                const data = response.data || response;
+                updateStatsCards(data);
+                renderRecentOrders(data.recentOrders || []);
+                renderReadyOrders(data.readyOrders || []);
+                updateStoreStatus(data.vendor);
+                
+                // Check for new orders
+                if (data.todayOrders > lastOrderCount || data.pendingOrdersCount > lastPendingCount) {
+                    showNewOrderNotification();
                 }
-                lastOrderCount = stats.todayOrders;
-                lastPendingCount = stats.pendingOrders;
+                lastOrderCount = data.todayOrders;
+                lastPendingCount = data.pendingOrdersCount;
             }
-        })
-        .catch(() => {});
+        } catch (e) {
+            console.error('Error loading dashboard:', e);
+        }
+    };
+
+    // Update stats cards
+    function updateStatsCards(data) {
+        const cards = document.querySelectorAll('.row.g-4.mb-4 .card-body h3');
+        if (cards.length >= 4) {
+            cards[0].textContent = data.todayOrders;
+            cards[1].innerHTML = `RM ${parseFloat(data.todayRevenue).toFixed(2)}`;
+            cards[2].textContent = data.pendingOrdersCount;
+            cards[3].textContent = data.readyOrdersCount;
+        }
+    }
+
+    // Render recent orders table
+    function renderRecentOrders(orders) {
+        const tbody = document.querySelector('.table-responsive tbody');
+        if (!tbody) return;
+
+        if (!orders || orders.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="6" class="text-center py-4">
+                    <div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem;">
+                        <i class="bi bi-inbox fs-3 text-muted"></i>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size: 0.85rem;">No orders yet</p>
+                </td>
+            </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = orders.map(order => {
+            const config = statusConfig[order.status] || statusConfig['pending'];
+            const customerAvatar = order.customer?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.customer?.name || 'U')}&background=f3f4f6&color=6b7280&size=32`;
+            
+            return `
+            <tr class="order-row">
+                <td class="px-3">
+                    <div class="d-flex align-items-center">
+                        <div class="me-2" style="width: 36px; height: 36px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-receipt text-white" style="font-size: 0.85rem;"></i>
+                        </div>
+                        <span class="fw-bold" style="font-size: 0.85rem;">${order.order_number}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="${customerAvatar}" class="rounded-circle me-2" width="32" height="32" onerror="this.src='https://ui-avatars.com/api/?name=U&background=f3f4f6&color=6b7280&size=32'">
+                        <span class="fw-medium" style="font-size: 0.85rem;">${(order.customer?.name || 'Unknown').substring(0, 15)}</span>
+                    </div>
+                </td>
+                <td>
+                    ${order.first_item ? `
+                        <span style="font-size: 0.85rem;">${order.first_item.quantity}x ${order.first_item.name.substring(0, 15)}</span>
+                        ${order.remaining_items > 0 ? `<br><small class="text-muted">+${order.remaining_items} more</small>` : ''}
+                    ` : ''}
+                </td>
+                <td>
+                    <span class="fw-bold" style="color: #FF9500; font-size: 0.85rem;">RM ${parseFloat(order.total).toFixed(2)}</span>
+                </td>
+                <td>
+                    <span class="status-badge" style="background: ${config.bg}; color: ${config.color}; padding: 0.3rem 0.6rem; border-radius: 50px; font-size: 0.7rem; font-weight: 600;">
+                        <i class="bi bi-${config.icon} me-1"></i>${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </span>
+                </td>
+                <td class="text-end px-3">
+                    <button type="button" class="btn btn-sm" style="background: #6366f1; color: white; border-radius: 8px; padding: 0.4rem 0.75rem; font-size: 0.75rem;" 
+                            onclick="viewOrder(${order.id})" title="View Details">
+                        <i class="bi bi-eye me-1"></i>View
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Render ready for pickup orders
+    function renderReadyOrders(orders) {
+        const container = document.querySelector('.col-md-4 .card:last-child .card-body');
+        if (!container) return;
+        
+        // Keep the title
+        let html = '<h6 class="fw-bold mb-3">Ready for Pickup</h6>';
+        
+        if (!orders || orders.length === 0) {
+            html += '<p class="text-center text-muted mb-0">No orders ready for pickup</p>';
+        } else {
+            orders.forEach((order, index) => {
+                html += `
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 ${index < orders.length - 1 ? 'border-bottom' : ''}">
+                    <div>
+                        <strong class="text-primary">#${order.queue_number}</strong>
+                        <p class="mb-0 small text-muted">${order.customer_name}</p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-success" onclick="completeOrder(${order.id})">
+                        <i class="bi bi-check-lg"></i> Done
+                    </button>
+                </div>`;
+            });
+        }
+        
+        container.innerHTML = html;
+    }
+
+    // Update store status UI
+    function updateStoreStatus(vendor) {
+        if (!vendor) return;
+        const statusBadge = document.querySelector('.store-status-badge');
+        const toggleBtn = document.querySelector('.store-toggle-btn');
+        
+        if (statusBadge) {
+            statusBadge.className = `store-status-badge badge ${vendor.is_open ? 'bg-success' : 'bg-secondary'}`;
+            statusBadge.innerHTML = `<i class="bi bi-${vendor.is_open ? 'check-circle' : 'x-circle'} me-1"></i>${vendor.is_open ? 'Open' : 'Closed'}`;
+        }
+        
+        if (toggleBtn) {
+            toggleBtn.className = `store-toggle-btn btn btn-sm ${vendor.is_open ? 'btn-outline-danger' : 'btn-outline-success'}`;
+            toggleBtn.innerHTML = `<i class="bi bi-${vendor.is_open ? 'pause' : 'play'}-fill me-1"></i>${vendor.is_open ? 'Close Store' : 'Open Store'}`;
+            toggleBtn.setAttribute('onclick', `toggleStoreStatus(${!vendor.is_open})`);
+        }
+    }
+
+    // Show new order notification
+    function showNewOrderNotification() {
+        Swal.fire({
+            icon: 'info',
+            title: 'New Order!',
+            text: 'You have received a new order.',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-arrow-clockwise me-1"></i> Refresh Data',
+            cancelButtonText: 'Later',
+            confirmButtonColor: '#FF9500',
+            timer: 10000,
+            timerProgressBar: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                loadDashboard();
+            }
+        });
     }
 
     // Start polling every 15 seconds
-    setInterval(checkForUpdates, 15000);
+    setInterval(loadDashboard, 15000);
 
     // View Order Modal
     window.viewOrder = async function(orderId) {
@@ -563,44 +691,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Complete order via AJAX
-    window.completeOrder = async function(orderId) {
-        const result = await Swal.fire({
-            title: 'Complete Order?',
-            text: 'Mark this order as completed?',
-            icon: 'question',
+    // Complete order via QR code verification (same as Order Management page)
+    window.completeOrder = function(orderId) {
+        Swal.fire({
+            title: '<i class="bi bi-qr-code-scan text-primary"></i> Scan QR Code',
+            html: `
+                <p class="text-muted mb-3">Ask customer to show their pickup QR code</p>
+                <input type="text" id="qr-input" class="form-control form-control-lg text-center" 
+                       placeholder="Scan or enter QR code" autofocus autocomplete="off"
+                       style="font-family: monospace; letter-spacing: 2px;">
+                <small class="text-muted mt-2 d-block">The QR code will be verified automatically</small>
+            `,
             showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Verify & Complete',
+            cancelButtonText: 'Cancel',
             confirmButtonColor: '#28a745',
-            confirmButtonText: 'Yes, complete it'
-        });
-        
-        if (!result.isConfirmed) return;
-        
-        try {
-            const res = await fetch(`/vendor/orders/${orderId}/status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ _method: 'PUT', status: 'completed' })
-            });
-            const data = await res.json();
-            if (data.success) {
-                // Remove order card from recent orders without reload
-                const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
-                if (orderCard) {
-                    orderCard.style.animation = 'fadeOut 0.3s ease';
-                    setTimeout(() => orderCard.remove(), 300);
+            didOpen: () => {
+                const input = document.getElementById('qr-input');
+                input.focus();
+                // Auto-submit on scan (QR scanners usually add Enter key)
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        Swal.clickConfirm();
+                    }
+                });
+            },
+            preConfirm: async () => {
+                const qrCode = document.getElementById('qr-input').value.trim();
+                if (!qrCode) {
+                    Swal.showValidationMessage('Please scan or enter the QR code');
+                    return false;
                 }
+                
+                try {
+                    const res = await fetch(`/vendor/orders/${orderId}/complete-qr`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ qr_code: qrCode })
+                    });
+                    const data = await res.json();
+                    
+                    if (!data.success) {
+                        throw new Error(data.message || 'Invalid QR code');
+                    }
+                    return data;
+                } catch (error) {
+                    Swal.showValidationMessage(error.message || 'Verification failed');
+                    return false;
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                // Refresh dashboard data to update ready orders list
+                loadDashboard();
                 showToast('Order completed successfully!', 'success');
-            } else {
-                Swal.fire('Error', data.message || 'Failed to complete order', 'error');
             }
-        } catch (e) {
-            Swal.fire('Error', 'An error occurred', 'error');
-        }
+        });
     };
 
     // Close modal with Escape key

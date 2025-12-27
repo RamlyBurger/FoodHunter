@@ -86,7 +86,9 @@ class NotificationController extends Controller
         $notification->markAsRead();
 
         if ($request->expectsJson()) {
-            return $this->successResponse(null, 'Notification marked as read.');
+            return $this->successResponse([
+                'unread_count' => Notification::where('user_id', Auth::id())->where('is_read', false)->count(),
+            ], 'Notification marked as read.');
         }
 
         return back()->with('success', 'Notification marked as read.');
@@ -102,7 +104,10 @@ class NotificationController extends Controller
             ]);
 
         if ($request->expectsJson()) {
-            return $this->successResponse(['count' => $count], 'All notifications marked as read.');
+            return $this->successResponse([
+                'count' => $count,
+                'unread_count' => 0,
+            ], 'All notifications marked as read.');
         }
 
         return back()->with('success', 'All notifications marked as read.');
@@ -120,7 +125,10 @@ class NotificationController extends Controller
         $notification->delete();
 
         if ($request->expectsJson()) {
-            return $this->successResponse(null, 'Notification deleted.');
+            return $this->successResponse([
+                'unread_count' => Notification::where('user_id', Auth::id())->where('is_read', false)->count(),
+                'total_count' => Notification::where('user_id', Auth::id())->count(),
+            ], 'Notification deleted.');
         }
 
         return back()->with('success', 'Notification deleted.');
