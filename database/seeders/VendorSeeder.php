@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Vendor Seeder - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * 
+ * Seeds the vendors table with sample vendor accounts and operating hours.
+ * Creates test vendor stores with their user accounts.
+ * =============================================================================
+ */
 
 namespace Database\Seeders;
 

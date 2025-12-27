@@ -4,7 +4,7 @@ namespace App\Patterns\Observer;
 
 /**
  * Observer Pattern - Observer Interface
- * Student 4: Cart, Checkout & Notifications Module
+ * Lee Song Yan: Cart, Checkout & Notifications Module
  * 
  * Defines the interface for objects that should be notified of changes.
  */

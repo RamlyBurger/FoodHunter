@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Cart Items Table Migration - Lee Song Yan (Cart, Checkout & Notifications)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * 
+ * Creates the cart_items table for storing shopping cart items.
+ * Supports quantity and special instructions per item.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

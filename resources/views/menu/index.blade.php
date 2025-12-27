@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Menu Browsing Page - Haerine Deepak Singh (Menu & Catalog Module)
+|==============================================================================
+|
+| @author     Haerine Deepak Singh
+| @module     Menu & Catalog Module
+| @pattern    Repository Pattern (EloquentMenuItemRepository)
+|
+| Customer menu browsing with category/vendor filtering and search.
+| Uses AJAX for dynamic filtering without page reload.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Menu')

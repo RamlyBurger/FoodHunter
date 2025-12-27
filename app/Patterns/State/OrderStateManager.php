@@ -7,7 +7,7 @@ use InvalidArgumentException;
 
 /**
  * State Pattern - Order State Manager
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  * 
  * Manages order state transitions using the State pattern.
  */

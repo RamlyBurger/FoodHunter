@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Customer Profile Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| User profile management with AJAX form submissions.
+| Includes avatar upload, email change with OTP, and password change.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'My Profile')
@@ -931,7 +944,7 @@ document.querySelector('#avatarModal form')?.addEventListener('submit', function
     });
 });
 
-// Load user stats using Student 1's API
+// Load user stats using Ng Wayne Xiang's API
 function loadUserStats() {
     fetch('/api/auth/user-stats', {
         headers: {

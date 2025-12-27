@@ -8,8 +8,8 @@
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Returns the current user's cart summary including item count, subtotal, service fee, and total. Used by Menu module to show cart status in navigation bar and for calculating checkout totals. |
-| Source Module | Cart, Checkout & Notifications (Student 4) |
-| Target Module | Menu & Catalog (Student 2), Order & Pickup (Student 3) |
+| Source Module | Cart, Checkout & Notifications (Lee Song Yan) |
+| Target Module | Menu & Catalog (Haerine Deepak Singh), Order & Pickup (Low Nam Lee) |
 | URL | http://127.0.0.1:8000/api/cart/summary |
 | Function Name | summary() |
 | HTTP Method | GET |
@@ -103,8 +103,8 @@ function updateCartSummary(summary) {
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Menu & Catalog | Student 2 | Display cart badge in navigation |
-| Order & Pickup | Student 3 | Calculate order totals from cart |
+| Menu & Catalog | Haerine Deepak Singh | Display cart badge in navigation |
+| Order & Pickup | Low Nam Lee | Calculate order totals from cart |
 | Checkout Page | Frontend | Display payment summary |
 
 ---
@@ -117,8 +117,8 @@ function updateCartSummary(summary) {
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Sends notifications to users for various events (order updates, promotions, welcome messages). Used by all modules to communicate with users via in-app notifications. Implements Observer Pattern for event-driven notification dispatch. |
-| Source Module | Cart, Checkout & Notifications (Student 4) |
-| Target Module | User & Auth (Student 1), Order & Pickup (Student 3), Vendor Management (Student 5) |
+| Source Module | Cart, Checkout & Notifications (Lee Song Yan) |
+| Target Module | User & Auth (Ng Wayne Xiang), Order & Pickup (Low Nam Lee), Vendor Management (Lee Kin Hang) |
 | URL | http://127.0.0.1:8000/api/notifications/send |
 | Function Name | send() |
 | HTTP Method | POST |
@@ -219,14 +219,14 @@ Accept: application/json
 
 ```php
 // app/Http/Controllers/Api/AuthController.php (line 41-48)
-// Student 1 consumes Send Notification API to send welcome notifications after registration
+// Ng Wayne Xiang consumes Send Notification API to send welcome notifications after registration
 
 public function register(RegisterRequest $request): JsonResponse
 {
     $user = $this->authService->register($request->validated());
     $token = $user->createToken('auth-token')->plainTextToken;
 
-    // Web Service: Consume Notification Service (Student 4)
+    // Web Service: Consume Notification Service (Lee Song Yan)
     $this->notificationService->send(
         $user->id,
         'welcome',
@@ -246,13 +246,13 @@ public function register(RegisterRequest $request): JsonResponse
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| User & Authentication | Student 1 | Send welcome notification on registration |
-| Order & Pickup | Student 3 | Send order status update notifications |
-| Vendor Management | Student 5 | Send new order notifications to vendors |
+| User & Authentication | Ng Wayne Xiang | Send welcome notification on registration |
+| Order & Pickup | Low Nam Lee | Send order status update notifications |
+| Vendor Management | Lee Kin Hang | Send new order notifications to vendors |
 
 ---
 
-### 6.3 Web Service Consumed: Voucher Validation API (Student 5)
+### 6.3 Web Service Consumed: Voucher Validation API (Lee Kin Hang)
 
 #### 6.3.1 Webservice Mechanism
 
@@ -260,8 +260,8 @@ public function register(RegisterRequest $request): JsonResponse
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates voucher codes during checkout to apply discounts. Consumed when user applies a voucher code before payment processing. |
-| Source Module | Vendor Management (Student 5) |
-| Target Module | Cart, Checkout & Notifications (Student 4) |
+| Source Module | Vendor Management (Lee Kin Hang) |
+| Target Module | Cart, Checkout & Notifications (Lee Song Yan) |
 | URL | http://127.0.0.1:8000/api/vouchers/validate |
 | Function Name | validate() |
 | HTTP Method | POST |
@@ -318,7 +318,7 @@ Content-Type: application/json
 // routes/api.php
 
 Route::middleware('auth:sanctum')->group(function () {
-    // Cart (Student 4 - Cart, Checkout & Notifications Module)
+    // Cart (Lee Song Yan - Cart, Checkout & Notifications Module)
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'add']);
     Route::put('/cart/{cartItem}', [CartController::class, 'update']);
@@ -326,15 +326,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart', [CartController::class, 'clear']);
     Route::get('/cart/count', [CartController::class, 'count']);
     
-    // Web Service: Cart Summary (Student 4 exposes, Student 2 consumes)
+    // Web Service: Cart Summary (Lee Song Yan exposes, Haerine Deepak Singh consumes)
     Route::get('/cart/summary', [CartController::class, 'summary']);
     
-    // Notifications (Student 4)
+    // Notifications (Lee Song Yan)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     
-    // Web Service: Send Notification (Student 4 exposes, all modules consume)
+    // Web Service: Send Notification (Lee Song Yan exposes, all modules consume)
     Route::post('/notifications/send', [NotificationController::class, 'send']);
     
 });

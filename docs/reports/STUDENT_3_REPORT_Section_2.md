@@ -27,7 +27,7 @@ When a customer places an order through the checkout process, this module takes 
 6. **Cancelled**: Order was cancelled (terminal state)
 
 Each state transition triggers appropriate actions including:
-- Notification to customer via Observer Pattern (Student 4's module)
+- Notification to customer via Observer Pattern (Lee Song Yan's module)
 - Timestamp recording for analytics and tracking
 - Queue number assignment (on confirmation)
 - QR code generation (on ready status)
@@ -59,8 +59,8 @@ This module exposes two critical APIs consumed by other modules:
 - **Pickup QR Validation API** (`POST /api/orders/validate-pickup`): Validates QR codes for the vendor's pickup scanner interface
 
 The module also consumes:
-- **Token Validation API** (Student 1): Verifies user authentication before order creation
-- **Item Availability API** (Student 2): Validates all cart items are available before order creation
+- **Token Validation API** (Ng Wayne Xiang): Verifies user authentication before order creation
+- **Item Availability API** (Haerine Deepak Singh): Validates all cart items are available before order creation
 
 **Sub-Modules Implemented:**
 

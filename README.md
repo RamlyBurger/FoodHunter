@@ -30,14 +30,14 @@ This system is designed for **5 students** to develop, with each student respons
 
 ```
 ┌─────────────┐     consumes      ┌─────────────┐
-│  Student 1  │ ───────────────▶  │  Student 4  │
+│  Ng Wayne Xiang  │ ───────────────▶  │  Lee Song Yan  │
 │    Auth     │                   │ Notification│
 └─────────────┘                   └─────────────┘
       ▲                                 │
       │ consumes                        │ consumes
       │                                 ▼
 ┌─────────────┐                   ┌─────────────┐
-│  Student 2  │                   │  Student 3  │
+│  Haerine Deepak Singh  │                   │  Low Nam Lee  │
 │    Menu     │ ◀─────────────────│    Order    │
 └─────────────┘     consumes      └─────────────┘
       ▲                                 ▲
@@ -47,7 +47,7 @@ This system is designed for **5 students** to develop, with each student respons
       └───────────────┬─────────────────┘
                       │
                 ┌─────────────┐
-                │  Student 5  │
+                │  Lee Kin Hang  │
                 │   Vendor    │
                 └─────────────┘
 ```
@@ -56,11 +56,11 @@ This system is designed for **5 students** to develop, with each student respons
 
 | Student | Module | Exposes | Consumes |
 |---------|--------|---------|----------|
-| 1 | User & Auth | `POST /api/auth/validate-token`, `GET /api/auth/user-stats` | Student 4's `POST /api/notifications/send` |
-| 2 | Menu & Catalog | `GET /api/menu/{id}/availability`, `GET /api/menu/popular` | Student 1's `POST /api/auth/validate-token` |
-| 3 | Order & Pickup | `GET /api/orders/{id}/status`, `POST /api/orders/validate-pickup` | Student 2's `GET /api/menu/{id}/availability` |
-| 4 | Cart, Checkout & Notifications | `GET /api/cart/summary`, `POST /api/notifications/send` | Student 5's `POST /api/vouchers/validate` |
-| 5 | Vendor Management | `POST /api/vouchers/validate`, `GET /api/vendors/{id}/availability` | Student 4's `POST /api/notifications/send` |
+| 1 | User & Auth | `POST /api/auth/validate-token`, `GET /api/auth/user-stats` | Lee Song Yan's `POST /api/notifications/send` |
+| 2 | Menu & Catalog | `GET /api/menu/{id}/availability`, `GET /api/menu/popular` | Ng Wayne Xiang's `POST /api/auth/validate-token` |
+| 3 | Order & Pickup | `GET /api/orders/{id}/status`, `POST /api/orders/validate-pickup` | Haerine Deepak Singh's `GET /api/menu/{id}/availability` |
+| 4 | Cart, Checkout & Notifications | `GET /api/cart/summary`, `POST /api/notifications/send` | Lee Kin Hang's `POST /api/vouchers/validate` |
+| 5 | Vendor Management | `POST /api/vouchers/validate`, `GET /api/vendors/{id}/availability` | Lee Song Yan's `POST /api/notifications/send` |
 
 ---
 
@@ -151,22 +151,22 @@ This system is designed for **5 students** to develop, with each student respons
 ### Protected Endpoints (Require Authentication)
 | Method | Endpoint | Description | Module |
 |--------|----------|-------------|--------|
-| GET | `/api/auth/user` | Get current user | Student 1 |
-| POST | `/api/auth/validate-token` | Validate token (Web Service) | Student 1 |
-| GET | `/api/auth/user-stats` | User statistics (Web Service) | Student 1 |
-| GET | `/api/menu/{id}/availability` | Item availability (Web Service) | Student 2 |
-| GET | `/api/menu/popular` | Popular items (Web Service) | Student 2 |
-| GET | `/api/orders` | List orders | Student 3 |
-| POST | `/api/orders` | Create order | Student 3 |
-| GET | `/api/orders/{id}/status` | Order status (Web Service) | Student 3 |
-| POST | `/api/orders/validate-pickup` | Validate pickup QR (Web Service) | Student 3 |
-| GET | `/api/cart` | Get cart items | Student 4 |
-| POST | `/api/cart` | Add to cart | Student 4 |
-| GET | `/api/cart/summary` | Cart summary (Web Service) | Student 4 |
-| GET | `/api/cart/validate` | Validate cart (Web Service) | Student 4 |
-| POST | `/api/notifications/send` | Send notification (Web Service) | Student 4 |
-| POST | `/api/vouchers/validate` | Validate voucher (Web Service) | Student 5 |
-| GET | `/api/vendors/{id}/availability` | Vendor availability (Web Service) | Student 5 |
+| GET | `/api/auth/user` | Get current user | Ng Wayne Xiang |
+| POST | `/api/auth/validate-token` | Validate token (Web Service) | Ng Wayne Xiang |
+| GET | `/api/auth/user-stats` | User statistics (Web Service) | Ng Wayne Xiang |
+| GET | `/api/menu/{id}/availability` | Item availability (Web Service) | Haerine Deepak Singh |
+| GET | `/api/menu/popular` | Popular items (Web Service) | Haerine Deepak Singh |
+| GET | `/api/orders` | List orders | Low Nam Lee |
+| POST | `/api/orders` | Create order | Low Nam Lee |
+| GET | `/api/orders/{id}/status` | Order status (Web Service) | Low Nam Lee |
+| POST | `/api/orders/validate-pickup` | Validate pickup QR (Web Service) | Low Nam Lee |
+| GET | `/api/cart` | Get cart items | Lee Song Yan |
+| POST | `/api/cart` | Add to cart | Lee Song Yan |
+| GET | `/api/cart/summary` | Cart summary (Web Service) | Lee Song Yan |
+| GET | `/api/cart/validate` | Validate cart (Web Service) | Lee Song Yan |
+| POST | `/api/notifications/send` | Send notification (Web Service) | Lee Song Yan |
+| POST | `/api/vouchers/validate` | Validate voucher (Web Service) | Lee Kin Hang |
+| GET | `/api/vendors/{id}/availability` | Vendor availability (Web Service) | Lee Kin Hang |
 
 ### Vendor Endpoints
 | Method | Endpoint | Description |
@@ -180,31 +180,31 @@ This system is designed for **5 students** to develop, with each student respons
 
 ## Design Patterns Implementation
 
-### Student 1: Strategy Pattern (User & Authentication)
+### Ng Wayne Xiang: Strategy Pattern (User & Authentication)
 **Location**: `app/Patterns/Strategy/`
 - `AuthStrategyInterface.php` - Strategy interface
 - `PasswordAuthStrategy.php` - Email/password authentication
 - `TokenAuthStrategy.php` - API token authentication
 - `AuthContext.php` - Context that uses strategies
 
-### Student 2: Repository Pattern (Menu & Catalog)
+### Haerine Deepak Singh: Repository Pattern (Menu & Catalog)
 **Location**: `app/Patterns/Repository/`
 - `MenuItemRepositoryInterface.php` - Repository interface
 - `EloquentMenuItemRepository.php` - Eloquent implementation
 
-### Student 3: State Pattern (Order & Pickup)
+### Low Nam Lee: State Pattern (Order & Pickup)
 **Location**: `app/Patterns/State/`
 - `OrderStateInterface.php` - State interface
 - `PendingState.php`, `ConfirmedState.php`, `PreparingState.php`, `ReadyState.php`
 - `OrderStateManager.php` - Manages state transitions
 
-### Student 4: Observer Pattern (Cart, Checkout & Notifications)
+### Lee Song Yan: Observer Pattern (Cart, Checkout & Notifications)
 **Location**: `app/Patterns/Observer/`
 - `SubjectInterface.php`, `ObserverInterface.php`
 - `OrderSubject.php` - Subject for order events
 - `NotificationObserver.php` - Concrete observer for notifications
 
-### Student 5: Factory Pattern (Vendor Management)
+### Lee Kin Hang: Factory Pattern (Vendor Management)
 **Location**: `app/Patterns/Factory/`
 - `VoucherFactory.php` - Creates voucher discount calculators
 - `VoucherInterface.php` - Voucher interface
@@ -237,11 +237,11 @@ FoodHunter/
 │   │   └── Requests/              # Form Request validation
 │   ├── Models/                    # Eloquent models
 │   ├── Patterns/                  # Design patterns
-│   │   ├── Strategy/              # Student 1 - User & Auth
-│   │   ├── Repository/            # Student 2 - Menu & Catalog
-│   │   ├── State/                 # Student 3 - Order & Pickup
-│   │   ├── Observer/              # Student 4 - Cart & Notifications
-│   │   └── Factory/               # Student 5 - Vendor Management
+│   │   ├── Strategy/              # Ng Wayne Xiang - User & Auth
+│   │   ├── Repository/            # Haerine Deepak Singh - Menu & Catalog
+│   │   ├── State/                 # Low Nam Lee - Order & Pickup
+│   │   ├── Observer/              # Lee Song Yan - Cart & Notifications
+│   │   └── Factory/               # Lee Kin Hang - Vendor Management
 │   └── Services/                  # Business logic services
 ├── database/
 │   ├── migrations/                # Database migrations

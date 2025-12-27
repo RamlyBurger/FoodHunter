@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * User Factory - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Factory for generating fake User model instances for testing.
+ * Used in automated tests and database seeding.
+ * =============================================================================
+ */
 
 namespace Database\Factories;
 

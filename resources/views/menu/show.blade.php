@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Menu Item Detail Page - Haerine Deepak Singh (Menu & Catalog Module)
+|==============================================================================
+|
+| @author     Haerine Deepak Singh
+| @module     Menu & Catalog Module
+| @pattern    Repository Pattern (EloquentMenuItemRepository)
+|
+| Displays single menu item with vendor info and add to cart.
+| Integrates with Lee Song Yan's Cart module for shopping functionality.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', $item->name)

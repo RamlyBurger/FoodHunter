@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Password Change OTP Template - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| Email template for OTP verification during password change.
+| Sent via Supabase when user requests password reset.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html>
 <head>

@@ -6,7 +6,7 @@ use App\Models\Order;
 
 /**
  * State Pattern - Abstract Order State
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  * 
  * Base class providing default implementations for state transitions.
  */

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Repository Pattern - Menu Item Repository Interface
- * Student 2: Menu & Catalog Module
+ * Haerine Deepak Singh: Menu & Catalog Module
  * 
  * This interface abstracts the data layer for menu items,
  * providing a collection-like interface for accessing domain objects.

@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Verify Password Change OTP - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| OTP verification for password change request.
+| Uses Supabase for secure OTP verification.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

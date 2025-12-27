@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Custom Pagination Component - Shared (All Students)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+| @module     Shared Infrastructure
+|
+| Custom Bootstrap-styled pagination component.
+| Used across menu, orders, and vendor pages.
+|==============================================================================
+--}}
+
 @php
     // Always show pagination, even for single page
     $alwaysShow = true;

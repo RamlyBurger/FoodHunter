@@ -6,7 +6,7 @@ use App\Models\Order;
 
 /**
  * State Pattern - Preparing State
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  */
 class PreparingState extends AbstractOrderState
 {

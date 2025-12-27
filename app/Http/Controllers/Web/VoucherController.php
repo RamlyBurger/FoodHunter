@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Voucher Controller - Student 5
+ * Voucher Controller - Lee Kin Hang
  * 
  * Uses Factory Pattern to create voucher objects with different discount logic.
  */

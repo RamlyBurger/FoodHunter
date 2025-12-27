@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Menu Item Card Component - Haerine Deepak Singh (Menu & Catalog Module)
+|==============================================================================
+|
+| @author     Haerine Deepak Singh
+| @module     Menu & Catalog Module
+|
+| Reusable card component for displaying menu items in grid layouts.
+| Used across home page, menu browsing, and vendor pages.
+|==============================================================================
+--}}
+
 @props(['item', 'wishlistIds' => [], 'showVendor' => true])
 
 <div class="col-6 col-md-4 col-lg-3">

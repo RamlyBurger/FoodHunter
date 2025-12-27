@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Verify Email Change Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| OTP verification for email change request.
+| Uses Supabase for secure OTP verification.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

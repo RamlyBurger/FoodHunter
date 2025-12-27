@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Payment Model - Lee Song Yan (Cart, Checkout & Notifications Module)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * 
+ * Represents payment transactions for orders.
+ * Supports multiple payment methods (cash, card, e-wallet).
+ * =============================================================================
+ */
 
 namespace App\Models;
 

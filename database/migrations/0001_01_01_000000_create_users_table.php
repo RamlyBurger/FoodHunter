@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Users Table Migration - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Creates the users table for storing customer and vendor accounts.
+ * Includes role-based access control and profile fields.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

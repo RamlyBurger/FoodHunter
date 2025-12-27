@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Vendor Dashboard API Controller - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Provides vendor dashboard statistics and analytics via API.
+ * Includes sales data, order counts, and revenue metrics.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Api\Vendor;
 

@@ -19,7 +19,7 @@ This separation ensures that sensitive operations like payment processing are is
 
 When a customer browses menu items, this module handles the complete cart lifecycle:
 
-1. **Add to Cart**: Items are added with quantity and special instructions. The system validates item availability via Student 2's Item Availability API before adding.
+1. **Add to Cart**: Items are added with quantity and special instructions. The system validates item availability via Haerine Deepak Singh's Item Availability API before adding.
 2. **Update Quantity**: Users can increase/decrease quantities with real-time price recalculation
 3. **Remove Items**: Individual items can be removed, or the entire cart can be cleared
 4. **Persistence**: Cart items are stored in the database, allowing users to resume shopping across sessions and devices
@@ -70,17 +70,17 @@ This module exposes and consumes several web services:
 - **Send Notification API** (`POST /api/notifications/send`): Allows other modules to send notifications
 
 **Consumed APIs:**
-- **Voucher Validation API** (Student 5): Validates voucher codes and calculates discounts
+- **Voucher Validation API** (Lee Kin Hang): Validates voucher codes and calculates discounts
 
 **Sub-Modules Implemented:**
 
 **Shopping Cart:** Manages cart items including add, update, remove, and clear operations. Cart items are persisted in the database and associated with the authenticated user. Supports special instructions for each item (e.g., "no onions", "extra spicy").
 
-**Cart Summary Calculation:** Calculates subtotals, service fees, and discounts with precision handling for currency. Uses the Factory Pattern (VoucherFactory from Student 5) to apply voucher discounts based on voucher type (fixed or percentage).
+**Cart Summary Calculation:** Calculates subtotals, service fees, and discounts with precision handling for currency. Uses the Factory Pattern (VoucherFactory from Lee Kin Hang) to apply voucher discounts based on voucher type (fixed or percentage).
 
 **Checkout Processing:** Converts cart items into orders grouped by vendor for efficient preparation. Handles multiple payment methods (cash on pickup, credit/debit card via Stripe, e-wallet, online banking). Creates order, payment, and pickup records within a database transaction ensuring atomicity.
 
-**Voucher Application:** Validates and applies voucher codes during checkout by consuming Student 5's Voucher Validation API. Supports fixed amount and percentage-based discounts with minimum order requirements and maximum discount caps. Prevents double-application of vouchers.
+**Voucher Application:** Validates and applies voucher codes during checkout by consuming Lee Kin Hang's Voucher Validation API. Supports fixed amount and percentage-based discounts with minimum order requirements and maximum discount caps. Prevents double-application of vouchers.
 
 **In-App Notifications:** Uses Observer Pattern to send real-time notifications when order events occur. Supports multiple notification types: order_created, order_status, order_completed, promotion, and system announcements.
 

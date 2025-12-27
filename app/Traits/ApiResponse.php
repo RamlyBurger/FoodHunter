@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * ApiResponse Trait - Shared (All Students)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+ * @module     Shared Infrastructure
+ * 
+ * Provides standardized JSON API responses across all controllers.
+ * Ensures consistent response format with success/error handling.
+ * =============================================================================
+ */
 
 namespace App\Traits;
 

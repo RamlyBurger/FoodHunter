@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Vendor Hours Table Migration - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * 
+ * Creates the vendor_hours table for store operating hours.
+ * Supports daily schedules with open/close times.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

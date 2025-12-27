@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * User Seeder - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Seeds the users table with test customer accounts.
+ * Creates sample users for testing authentication and orders.
+ * =============================================================================
+ */
 
 namespace Database\Seeders;
 

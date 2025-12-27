@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Change Password Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| Password change with current password verification.
+| Enforces password complexity per OWASP guidelines.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

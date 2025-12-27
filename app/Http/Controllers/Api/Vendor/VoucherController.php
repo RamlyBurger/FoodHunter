@@ -12,11 +12,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 /**
- * Vendor Voucher API Controller - Student 5
+ * Vendor Voucher API Controller - Lee Kin Hang
  * 
  * Design Pattern: Factory Pattern (for voucher discount calculation)
  * 
- * Web Service: Exposes voucher validation API for Cart module (Student 4)
+ * Web Service: Exposes voucher validation API for Cart module (Lee Song Yan)
  */
 class VoucherController extends Controller
 {
@@ -148,7 +148,7 @@ class VoucherController extends Controller
     /**
      * Web Service: Expose - Validate Voucher API
      * 
-     * Student 4 (Cart module) consumes this to validate vouchers during checkout.
+     * Lee Song Yan (Cart module) consumes this to validate vouchers during checkout.
      * Uses Factory Pattern to calculate discounts based on voucher type.
      * 
      * @param Request $request

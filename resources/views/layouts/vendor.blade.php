@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Vendor Layout - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+|
+| Layout template for vendor portal pages with sidebar navigation.
+| Used by vendor dashboard, orders, menu, and voucher management pages.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

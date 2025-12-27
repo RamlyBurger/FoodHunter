@@ -8,7 +8,7 @@ use App\Patterns\Repository\MenuItemRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Menu Service - Student 2
+ * Menu Service - Haerine Deepak Singh
  * 
  * Uses Repository Pattern with security features:
  * - Parameterized Queries (SQL Injection Protection) - via Eloquent ORM

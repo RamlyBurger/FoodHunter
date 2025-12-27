@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * VendorHour Model - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * 
+ * Stores vendor operating hours for each day of the week.
+ * Used to determine if a vendor is currently open for orders.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

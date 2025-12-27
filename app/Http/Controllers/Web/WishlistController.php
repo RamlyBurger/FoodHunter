@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Wishlist Controller - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * @pattern    Repository Pattern (EloquentMenuItemRepository)
+ * 
+ * Handles customer wishlist operations including add, remove, and toggle.
+ * Part of the menu browsing experience for saving favorite items.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Web;
 

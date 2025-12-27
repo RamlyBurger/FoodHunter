@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Vendor Store Page (Customer View) - Haerine Deepak Singh (Menu & Catalog Module)
+|==============================================================================
+|
+| @author     Haerine Deepak Singh
+| @module     Menu & Catalog Module
+|
+| Customer-facing vendor store page with menu items and AJAX pagination.
+| Displays vendor info, top selling items, and full menu catalog.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', $vendor->store_name)

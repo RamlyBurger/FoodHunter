@@ -1,13 +1,23 @@
 <?php
+/**
+ * =============================================================================
+ * RegisterRequest - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * @security   OWASP [38-39]: Password complexity and length requirements
+ * 
+ * Form request validation for user registration.
+ * Enforces password complexity rules for security.
+ * =============================================================================
+ */
 
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-/**
- * OWASP [38-39]: Enforce password complexity and length requirements
- */
 class RegisterRequest extends FormRequest
 {
     public function authorize(): bool

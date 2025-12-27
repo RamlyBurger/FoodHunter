@@ -6,7 +6,7 @@ use App\Models\Order;
 
 /**
  * Observer Pattern - Order Subject
- * Student 4: Cart, Checkout & Notifications Module
+ * Lee Song Yan: Cart, Checkout & Notifications Module
  * 
  * Concrete subject that notifies observers about order events.
  */

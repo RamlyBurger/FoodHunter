@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cart Controller - Student 4
+ * Cart Controller - Lee Song Yan
  * 
  * Uses Factory Pattern (via VoucherFactory) for voucher discount calculations.
  * Uses Observer Pattern for notifications when checkout completes.

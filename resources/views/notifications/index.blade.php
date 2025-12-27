@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Notifications Page - Lee Song Yan (Cart, Checkout & Notifications Module)
+|==============================================================================
+|
+| @author     Lee Song Yan
+| @module     Cart, Checkout & Notifications Module
+| @pattern    Observer Pattern (NotificationObserver)
+|
+| Displays user notifications with AJAX loading and mark as read.
+| Notifications created by Observer Pattern from order events.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Notifications')

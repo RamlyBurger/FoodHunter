@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Notification Model - Lee Song Yan (Cart, Checkout & Notifications Module)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * @pattern    Observer Pattern (NotificationObserver)
+ * 
+ * Represents in-app notifications for users.
+ * Created by Observer Pattern when order events occur.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

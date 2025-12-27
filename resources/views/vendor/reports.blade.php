@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Vendor Reports Page - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+|
+| Sales analytics and reporting dashboard for vendors.
+| Includes revenue charts, order statistics, and printable reports.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Reports & Analytics - Vendor Dashboard')

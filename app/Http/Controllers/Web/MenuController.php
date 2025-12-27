@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Menu Web Controller - Student 2
+ * Menu Web Controller - Haerine Deepak Singh
  * 
  * Uses Repository Pattern to abstract database access for menu items.
  */

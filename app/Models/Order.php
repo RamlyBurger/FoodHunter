@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Order Model - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * @pattern    State Pattern (OrderStateManager)
+ * 
+ * Represents customer orders with status tracking and pickup information.
+ * Status transitions managed by State Pattern in OrderStateManager.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

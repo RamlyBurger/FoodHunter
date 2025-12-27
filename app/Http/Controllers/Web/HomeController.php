@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Home Controller - Shared (All Students)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+ * @module     Shared Infrastructure
+ * 
+ * Renders the main home page with categories, featured items, and vendors.
+ * Uses data from Haerine Deepak Singh's Menu module and displays for all users.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Web;
 

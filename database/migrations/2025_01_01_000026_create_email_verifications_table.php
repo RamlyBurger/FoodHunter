@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Email Verifications Table Migration - Ng Wayne Xiang (User & Authentication)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Creates the email_verifications table for OTP-based verification.
+ * Used for signup, email change, and password reset flows via Supabase.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

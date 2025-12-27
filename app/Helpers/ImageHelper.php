@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * ImageHelper - Shared (All Students)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+ * @module     Shared Infrastructure
+ * 
+ * Provides image URL generation for avatars, logos, and menu item images.
+ * Used across all modules for consistent image handling.
+ * =============================================================================
+ */
 
 namespace App\Helpers;
 

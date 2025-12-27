@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Wishlist Page - Haerine Deepak Singh (Menu & Catalog Module)
+|==============================================================================
+|
+| @author     Haerine Deepak Singh
+| @module     Menu & Catalog Module
+|
+| Displays user's saved/favorite menu items with AJAX operations.
+| Allows quick add to cart from wishlist items.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'My Wishlist')

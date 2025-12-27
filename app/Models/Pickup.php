@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Pickup Model - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * @pattern    State Pattern (OrderStateManager)
+ * 
+ * Represents order pickup information including queue number and QR code.
+ * QR codes are digitally signed for secure verification.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

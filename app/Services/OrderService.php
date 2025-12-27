@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Order Service - Student 3
+ * Order Service - Low Nam Lee
  * 
  * Uses State Pattern with security features:
  * - Authorization Checks (IDOR Protection) [OWASP 86]

@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Personal Access Tokens Migration - Ng Wayne Xiang (User & Authentication)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Creates the personal_access_tokens table for Laravel Sanctum.
+ * Used for API token-based authentication.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

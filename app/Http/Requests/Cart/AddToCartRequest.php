@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * AddToCartRequest - Lee Song Yan (Cart, Checkout & Notifications Module)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * 
+ * Form request validation for adding items to cart.
+ * Validates menu item ID, quantity, and special instructions.
+ * =============================================================================
+ */
 
 namespace App\Http\Requests\Cart;
 

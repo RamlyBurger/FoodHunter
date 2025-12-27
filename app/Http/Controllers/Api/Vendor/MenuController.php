@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Vendor Menu API Controller - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Handles vendor menu item CRUD operations via API.
+ * Includes image upload with security validation.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Api\Vendor;
 

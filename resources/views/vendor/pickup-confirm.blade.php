@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Pickup Confirmation Page - Low Nam Lee (Order & Pickup Module)
+|==============================================================================
+|
+| @author     Low Nam Lee
+| @module     Order & Pickup Module
+|
+| Displays order pickup confirmation after QR code verification.
+| Shows order details and completion status to vendor.
+|==============================================================================
+--}}
+
 @extends('layouts.vendor')
 
 @section('title', 'Confirm Pickup')

@@ -8,8 +8,8 @@
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates a voucher code and calculates the discount amount based on the cart subtotal. Used by Cart and Order modules during checkout to apply voucher discounts. Implements the Factory Pattern for flexible discount calculation strategies. |
-| Source Module | Vendor Management (Student 5) |
-| Target Module | Cart, Checkout & Notifications (Student 4), Order & Pickup (Student 3) |
+| Source Module | Vendor Management (Lee Kin Hang) |
+| Target Module | Cart, Checkout & Notifications (Lee Song Yan), Order & Pickup (Low Nam Lee) |
 | URL | http://127.0.0.1:8000/api/vouchers/validate |
 | Function Name | validate() |
 | HTTP Method | POST |
@@ -186,7 +186,7 @@ public function validate(Request $request): JsonResponse
 
 ```javascript
 // resources/views/cart/index.blade.php (line 341-389)
-// applyVoucher() function validates voucher using Student 5's API
+// applyVoucher() function validates voucher using Lee Kin Hang's API
 
 function applyVoucher() {
     const input = document.getElementById('voucher-code-input');
@@ -194,7 +194,7 @@ function applyVoucher() {
     const errorDiv = document.getElementById('voucher-error');
     const code = input.value.trim().toUpperCase();
     
-    // First validate voucher using Student 5's API
+    // First validate voucher using Lee Kin Hang's API
     const subtotal = parseFloat(document.querySelector('.subtotal-value')?.textContent?.replace('RM ', '') || 0);
     
     fetch('/api/vouchers/validate', {
@@ -215,7 +215,7 @@ function applyVoucher() {
             btn.innerHTML = 'Apply';
             return Promise.reject('validation_failed');
         }
-        // Voucher validated via Student 5 API, now apply it
+        // Voucher validated via Lee Kin Hang API, now apply it
         return fetch('/vouchers/apply', { /* apply voucher */ });
     })
 }
@@ -225,7 +225,7 @@ function applyVoucher() {
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart, Checkout & Notifications | Student 4 | Validate voucher before applying to cart |
+| Cart, Checkout & Notifications | Lee Song Yan | Validate voucher before applying to cart |
 | Cart Page | Frontend | Real-time voucher validation on cart/index.blade.php |
 | Checkout Page | Frontend | Final voucher validation before payment |
 
@@ -239,8 +239,8 @@ function applyVoucher() {
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Returns vendor availability status including whether the vendor is currently open, their operating hours for the day, and estimated preparation time. Used by Cart and Order modules to validate vendor availability before placing orders. |
-| Source Module | Vendor Management (Student 5) |
-| Target Module | Cart, Checkout & Notifications (Student 4), Order & Pickup (Student 3), Menu & Catalog (Student 2) |
+| Source Module | Vendor Management (Lee Kin Hang) |
+| Target Module | Cart, Checkout & Notifications (Lee Song Yan), Order & Pickup (Low Nam Lee), Menu & Catalog (Haerine Deepak Singh) |
 | URL | http://127.0.0.1:8000/api/vendors/{vendor}/availability |
 | Function Name | vendorAvailability() |
 | HTTP Method | GET |
@@ -348,7 +348,7 @@ Accept: application/json
 // Checkout page consumes Vendor Availability API before processing payment
 
 // Inside processPayment() function:
-// Validate vendor availability using Student 5's API before processing
+// Validate vendor availability using Lee Kin Hang's API before processing
 @if(isset($vendor) && $vendor)
 const vendorAvailability = await fetch('/api/vendors/{{ $vendor->id }}/availability', {
     headers: { 'Accept': 'application/json' }
@@ -373,13 +373,13 @@ if (!vendorAvailability.success || !vendorAvailability.data?.is_currently_open) 
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart, Checkout & Notifications | Student 4 | Validate vendor is open before checkout |
-| Order & Pickup | Student 3 | Verify vendor availability before order creation |
-| Menu & Catalog | Student 2 | Display vendor open/closed status on menu pages |
+| Cart, Checkout & Notifications | Lee Song Yan | Validate vendor is open before checkout |
+| Order & Pickup | Low Nam Lee | Verify vendor availability before order creation |
+| Menu & Catalog | Haerine Deepak Singh | Display vendor open/closed status on menu pages |
 
 ---
 
-### 6.3 Web Service Consumed: Send Notification API (Student 4)
+### 6.3 Web Service Consumed: Send Notification API (Lee Song Yan)
 
 #### 6.3.1 Webservice Mechanism
 
@@ -387,8 +387,8 @@ if (!vendorAvailability.success || !vendorAvailability.data?.is_currently_open) 
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Sends notifications to vendors when new orders are received. Consumed by Vendor Management module to notify vendors of incoming orders and important updates. |
-| Source Module | Cart, Checkout & Notifications (Student 4) |
-| Target Module | Vendor Management (Student 5) |
+| Source Module | Cart, Checkout & Notifications (Lee Song Yan) |
+| Target Module | Vendor Management (Lee Kin Hang) |
 | URL | http://127.0.0.1:8000/api/notifications/send |
 | Function Name | send() |
 | HTTP Method | POST |
@@ -446,15 +446,15 @@ Accept: application/json
 ```php
 // routes/api.php
 
-// Public Vendor Routes (Student 5)
+// Public Vendor Routes (Lee Kin Hang)
 Route::get('/vendors/{vendor}/availability', [MenuController::class, 'vendorAvailability']);
 
-// Voucher Validation (Student 5 exposes, Cart/Order modules consume)
+// Voucher Validation (Lee Kin Hang exposes, Cart/Order modules consume)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/vouchers/validate', [VendorVoucherController::class, 'validate']);
 });
 
-// Vendor Management Routes (Student 5)
+// Vendor Management Routes (Lee Kin Hang)
 Route::middleware(['auth:sanctum', 'vendor'])->prefix('vendor')->group(function () {
     Route::get('/dashboard', [VendorDashboardController::class, 'index']);
     Route::get('/vouchers', [VendorVoucherController::class, 'index']);

@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Main App Layout - Shared (All Students)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+| @module     Shared Infrastructure
+|
+| Main layout template for all customer-facing pages.
+| Includes navbar, footer, and shared scripts/styles.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1316,14 +1328,14 @@
             });
         }
         
-        // Add to cart via AJAX (consumes Student 2's Item Availability API first)
+        // Add to cart via AJAX (consumes Haerine Deepak Singh's Item Availability API first)
         function addToCart(itemId, quantity = 1, btn = null) {
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             }
             
-            // First check item availability using Student 2's API
+            // First check item availability using Haerine Deepak Singh's API
             fetch('/api/menu/' + itemId + '/availability', {
                 headers: { 'Accept': 'application/json' }
             })

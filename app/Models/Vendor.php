@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Vendor Model - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Represents food vendors/stalls in the canteen.
+ * Manages store profile, operating hours, and menu items.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

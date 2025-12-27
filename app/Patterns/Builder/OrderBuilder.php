@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Builder Pattern - Order Builder
- * Student 3: Cart & Checkout Module
+ * Low Nam Lee: Cart & Checkout Module
  * 
  * Separates the construction of a complex Order object from its representation.
  * Allows step-by-step construction of orders with items, payment, and pickup info.

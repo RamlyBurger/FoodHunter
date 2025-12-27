@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Order Detail Page - Low Nam Lee (Order & Pickup Module)
+|==============================================================================
+|
+| @author     Low Nam Lee
+| @module     Order & Pickup Module
+| @pattern    State Pattern (OrderStateManager)
+|
+| Displays order details with QR code for pickup and status polling.
+| Includes cancel and reorder functionality via AJAX.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Order ' . $order->order_number)
@@ -513,7 +527,7 @@
 
 @push('scripts')
 <script>
-// AJAX polling for order status updates (consumes Student 4's Order Status API)
+// AJAX polling for order status updates (consumes Lee Song Yan's Order Status API)
 const orderId = {{ $order->id }};
 const currentStatus = '{{ $order->status }}';
 let statusCheckInterval = null;

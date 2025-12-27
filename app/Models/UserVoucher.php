@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * UserVoucher Model - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Pivot table linking users to redeemed vouchers.
+ * Tracks usage count and redemption timestamps.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

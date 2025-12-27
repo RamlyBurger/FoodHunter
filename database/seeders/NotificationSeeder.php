@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Notification Seeder - Lee Song Yan (Cart, Checkout & Notifications Module)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * 
+ * Seeds the notifications table with sample notifications for testing.
+ * Creates welcome and promotional notifications for test users.
+ * =============================================================================
+ */
 
 namespace Database\Seeders;
 

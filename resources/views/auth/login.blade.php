@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Login Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+| @pattern    Strategy Pattern (AuthContext, PasswordAuthStrategy)
+|
+| User login with email/password and Google OAuth options.
+| Implements OWASP security guidelines for authentication.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

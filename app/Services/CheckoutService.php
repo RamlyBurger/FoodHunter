@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Checkout Service - Student 3
+ * Checkout Service - Low Nam Lee
  * 
  * Uses Builder Pattern with security features:
  * - Server-side Price Validation (Price Manipulation Protection)

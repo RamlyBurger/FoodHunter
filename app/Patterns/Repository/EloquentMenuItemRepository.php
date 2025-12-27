@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 /**
  * Repository Pattern - Eloquent Menu Item Repository
- * Student 2: Menu & Catalog Module
+ * Haerine Deepak Singh: Menu & Catalog Module
  * 
  * Concrete implementation using Eloquent ORM.
  * Encapsulates all database operations for menu items.

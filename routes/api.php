@@ -27,23 +27,23 @@ use App\Http\Controllers\Api\Vendor\VoucherController as VendorVoucherController
 // PUBLIC ROUTES
 // ============================================================================
 
-// Authentication (Student 1)
+// Authentication (Ng Wayne Xiang)
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
-// Menu - Public (Student 2)
+// Menu - Public (Haerine Deepak Singh)
 Route::get('/categories', [MenuController::class, 'categories']);
 Route::get('/vendors', [MenuController::class, 'vendors']);
 Route::get('/vendors/{vendor}', [MenuController::class, 'vendorMenu']);
-// Web Service: Vendor Availability (Student 5 exposes, Cart/Order modules consume)
+// Web Service: Vendor Availability (Lee Kin Hang exposes, Cart/Order modules consume)
 Route::get('/vendors/{vendor}/availability', [MenuController::class, 'vendorAvailability']);
 Route::get('/menu/featured', [MenuController::class, 'featured']);
 Route::get('/menu/search', [MenuController::class, 'search']);
-// Web Service: Popular Items (Student 2 exposes, Order/Cart modules consume)
+// Web Service: Popular Items (Haerine Deepak Singh exposes, Order/Cart modules consume)
 Route::get('/menu/popular', [MenuController::class, 'popularItems']);
 Route::get('/menu/{menuItem}', [MenuController::class, 'show']);
 Route::get('/menu/{menuItem}/related', [MenuController::class, 'related']);
-// Web Service: Menu Item Availability (Student 2 exposes, Student 3 consumes)
+// Web Service: Menu Item Availability (Haerine Deepak Singh exposes, Low Nam Lee consumes)
 Route::get('/menu/{menuItem}/availability', [MenuController::class, 'checkAvailability']);
 
 // ============================================================================
@@ -52,54 +52,54 @@ Route::get('/menu/{menuItem}/availability', [MenuController::class, 'checkAvaila
 
 Route::middleware('auth:sanctum')->group(function () {
     
-    // Auth (Student 1)
+    // Auth (Ng Wayne Xiang)
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/user', [AuthController::class, 'user']);
-    // Web Service: Token Validation (Student 1 exposes, others consume)
+    // Web Service: Token Validation (Ng Wayne Xiang exposes, others consume)
     Route::post('/auth/validate-token', [AuthController::class, 'validateToken']);
-    // Web Service: User Statistics (Student 1 exposes, Order/Menu modules consume)
+    // Web Service: User Statistics (Ng Wayne Xiang exposes, Order/Menu modules consume)
     Route::get('/auth/user-stats', [AuthController::class, 'userStats']);
 
-    // Cart (Student 4 - Cart, Checkout & Notifications Module)
+    // Cart (Lee Song Yan - Cart, Checkout & Notifications Module)
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'add']);
     Route::put('/cart/{cartItem}', [CartController::class, 'update']);
     Route::delete('/cart/{cartItem}', [CartController::class, 'remove']);
     Route::delete('/cart', [CartController::class, 'clear']);
     Route::get('/cart/count', [CartController::class, 'count']);
-    // Web Service: Cart Validation (Student 4 exposes, Order module consumes)
+    // Web Service: Cart Validation (Lee Song Yan exposes, Order module consumes)
     Route::get('/cart/validate', [CartController::class, 'validateCart']);
-    // Web Service: Cart Recommendations (consumes Student 2's Popular Items)
+    // Web Service: Cart Recommendations (consumes Haerine Deepak Singh's Popular Items)
     Route::get('/cart/recommendations', [CartController::class, 'recommendations']);
 
-    // Orders (Student 3 - Order & Pickup Module)
+    // Orders (Low Nam Lee - Order & Pickup Module)
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/active', [OrderController::class, 'active']);
-    // Web Service: Order History (consumes Student 1's User Stats)
+    // Web Service: Order History (consumes Ng Wayne Xiang's User Stats)
     Route::get('/orders/history', [OrderController::class, 'history']);
-    // Web Service: Pickup QR Validation (Student 3 exposes, Vendor module consumes)
+    // Web Service: Pickup QR Validation (Low Nam Lee exposes, Vendor module consumes)
     Route::post('/orders/validate-pickup', [OrderController::class, 'validatePickupQr']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder']);
-    // Web Service: Order Status (Student 3 exposes, Student 4 consumes)
+    // Web Service: Order Status (Low Nam Lee exposes, Lee Song Yan consumes)
     Route::get('/orders/{order}/status', [OrderController::class, 'status']);
 
-    // Notifications (Student 4 - Cart, Checkout & Notifications Module)
+    // Notifications (Lee Song Yan - Cart, Checkout & Notifications Module)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/dropdown', [NotificationController::class, 'dropdown']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
-    // Web Service: Send Notification (Student 4 exposes, Students 1,3,5 consume)
+    // Web Service: Send Notification (Lee Song Yan exposes, Students 1,3,5 consume)
     Route::post('/notifications/send', [NotificationController::class, 'send']);
 
-    // Web Service: Cart Summary (Student 4 exposes, Student 2 consumes)
+    // Web Service: Cart Summary (Lee Song Yan exposes, Haerine Deepak Singh consumes)
     Route::get('/cart/summary', [CartController::class, 'summary']);
 
-    // Web Service: Validate Voucher (Student 5 exposes, Student 4 consumes)
+    // Web Service: Validate Voucher (Lee Kin Hang exposes, Lee Song Yan consumes)
     // Available to all authenticated users for checkout
     Route::post('/vouchers/validate', [VendorVoucherController::class, 'validate']);
 
@@ -130,7 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders/{order}', [VendorOrderController::class, 'show']);
         Route::put('/orders/{order}/status', [VendorOrderController::class, 'updateStatus']);
 
-        // Voucher Management (Student 5)
+        // Voucher Management (Lee Kin Hang)
         Route::get('/vouchers', [VendorVoucherController::class, 'index']);
         Route::post('/vouchers', [VendorVoucherController::class, 'store']);
         Route::put('/vouchers/{voucher}', [VendorVoucherController::class, 'update']);

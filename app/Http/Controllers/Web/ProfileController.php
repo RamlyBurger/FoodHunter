@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Profile Controller - Student 1
+ * Profile Controller - Ng Wayne Xiang
  * 
  * Handles user profile management including email change with Supabase OTP verification.
  */

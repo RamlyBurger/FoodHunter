@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Home Page - Shared (All Students)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+| @module     Shared Infrastructure
+|
+| Landing page displaying categories, featured items, popular items,
+| and vendor listings. Uses Haerine Deepak Singh's Menu API for popular items.
+|==============================================================================
+--}}
 @extends('layouts.app')
 
 @section('title', 'Home')
@@ -291,7 +303,7 @@
         </div>
     </section>
 
-    <!-- Popular Items (Loaded via Student 2's API) -->
+    <!-- Popular Items (Loaded via Haerine Deepak Singh's API) -->
     <section class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-fire me-2" style="color: #ff6b35;"></i>Most Popular</h3>
@@ -594,7 +606,7 @@
         }
     });
 
-    // Load popular items using Student 2's API
+    // Load popular items using Haerine Deepak Singh's API
     function loadPopularItems() {
         const container = document.getElementById('popular-items-container');
         
@@ -605,7 +617,7 @@
         .then(response => {
             const data = response.data || response;
             if (data.items && data.items.length > 0) {
-                // Render popular items from Student 2's API
+                // Render popular items from Haerine Deepak Singh's API
                 container.innerHTML = data.items.map(item => {
                     const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200`;
                     const price = parseFloat(item.price).toFixed(2);

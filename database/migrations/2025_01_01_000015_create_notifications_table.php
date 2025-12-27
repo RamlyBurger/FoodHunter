@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Notifications Table Migration - Lee Song Yan (Cart, Checkout & Notifications)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * @pattern    Observer Pattern (NotificationObserver)
+ * 
+ * Creates the notifications table for in-app user notifications.
+ * Stores order updates, promotions, and system messages.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

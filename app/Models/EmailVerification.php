@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * EmailVerification Model - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Stores OTP codes for email verification during registration and email change.
+ * Integrates with Supabase for OTP generation and delivery.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

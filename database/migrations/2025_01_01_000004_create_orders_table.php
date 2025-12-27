@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Orders Table Migration - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * @pattern    State Pattern (order status management)
+ * 
+ * Creates the orders table for storing customer orders.
+ * Tracks order status, totals, and payment information.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

@@ -6,7 +6,7 @@ use App\Models\Voucher;
 
 /**
  * Factory Pattern - Voucher Factory
- * Student 5: Vendor Management Module
+ * Lee Kin Hang: Vendor Management Module
  * 
  * Creates appropriate voucher objects based on voucher type.
  * This factory encapsulates the creation logic and returns

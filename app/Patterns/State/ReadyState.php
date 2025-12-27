@@ -8,7 +8,7 @@ use App\Patterns\Observer\NotificationObserver;
 
 /**
  * State Pattern - Ready State
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  */
 class ReadyState extends AbstractOrderState
 {

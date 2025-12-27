@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Contact Page - Shared (All Students)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+| @module     Shared Infrastructure
+|
+| Contact information page for FoodHunter system.
+| Displays contact details and support information.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Contact Us')

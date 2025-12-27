@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Email Verification Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| OTP verification for email during registration.
+| Uses Supabase for secure OTP generation and verification.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Verify Email')

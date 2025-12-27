@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Menu Item Seeder - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * 
+ * Seeds the menu_items table with sample food items for each vendor.
+ * Creates diverse menu items across different categories.
+ * =============================================================================
+ */
 
 namespace Database\Seeders;
 

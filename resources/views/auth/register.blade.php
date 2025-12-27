@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Register Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| User registration with email OTP verification via Supabase.
+| Enforces password complexity per OWASP guidelines.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

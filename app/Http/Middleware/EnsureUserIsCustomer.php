@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * EnsureUserIsCustomer Middleware - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * @security   OWASP [77-100]: Access Control
+ * 
+ * Ensures user is a customer (not a vendor) for customer-only pages.
+ * Prevents vendors from accessing customer routes like cart and orders.
+ * =============================================================================
+ */
 
 namespace App\Http\Middleware;
 
@@ -7,10 +20,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * OWASP [77-100]: Access Control middleware
- * Ensures user is a customer (not a vendor) for customer-only pages
- */
 class EnsureUserIsCustomer
 {
     public function handle(Request $request, Closure $next): Response

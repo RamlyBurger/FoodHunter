@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Supabase Service - Student 1
+ * Supabase Service - Ng Wayne Xiang
  * 
  * Handles email verification using Supabase Auth OTP.
  * Replaces EmailJS for more reliable email delivery.

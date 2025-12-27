@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Payments Table Migration - Lee Song Yan (Cart, Checkout & Notifications)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * 
+ * Creates the payments table for storing payment records.
+ * Supports multiple payment methods (cash, card, e-wallet).
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

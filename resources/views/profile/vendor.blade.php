@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Vendor Profile Page - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+|
+| Vendor store profile management with operating hours and avatar upload.
+| All form submissions use AJAX for seamless updates.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Vendor Profile - ' . $vendor->store_name)

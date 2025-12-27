@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Auth Service - Student 1
+ * Auth Service - Ng Wayne Xiang
  * 
  * Handles authentication with Strategy Pattern and security features:
  * - Rate Limiting (Brute Force Protection) [OWASP 41, 94]

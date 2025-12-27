@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Cart Page - Lee Song Yan (Cart, Checkout & Notifications Module)
+|==============================================================================
+|
+| @author     Lee Song Yan
+| @module     Cart, Checkout & Notifications Module
+|
+| Displays user's shopping cart with quantity controls and checkout options.
+| Integrates with Lee Kin Hang's Voucher system for discount application.
+|==============================================================================
+--}}
 @extends('layouts.app')
 
 @section('title', 'My Cart')
@@ -171,7 +183,7 @@
                 </div>
             </div>
 
-            <!-- Recommended Items - Popular Items from Student 2's API -->
+            <!-- Recommended Items - Popular Items from Haerine Deepak Singh's API -->
             @php
                 $cartItemIds = $cartItems->pluck('menu_item_id')->toArray();
                 $wishlistIds = auth()->check() ? auth()->user()->wishlists()->pluck('menu_item_id')->toArray() : [];
@@ -180,7 +192,7 @@
                 <h5 class="mb-4" style="font-weight: 700;"><i class="bi bi-fire me-2"
                         style="color: var(--primary-color);"></i>You might also like</h5>
                 <div class="row g-4" id="popular-items-container">
-                    <!-- Popular items loaded via Student 2's API -->
+                    <!-- Popular items loaded via Haerine Deepak Singh's API -->
                 </div>
             </section>
 
@@ -191,7 +203,7 @@
                     const wishlistIds = @json($wishlistIds);
 
                     /**
-                     * Load popular items from Student 2's Popular Items API
+                     * Load popular items from Haerine Deepak Singh's Popular Items API
                      * Consumes: GET /api/menu/popular
                      * This replaces the random items with trending popular items
                      */
@@ -471,7 +483,7 @@
                         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
                         errorDiv.style.display = 'none';
 
-                        // First validate voucher using Student 5's API
+                        // First validate voucher using Lee Kin Hang's API
                         const subtotal = parseFloat(
                             document.querySelector('[data-summary="total"]')
                                 ?.textContent
@@ -497,7 +509,7 @@
                                     btn.innerHTML = 'Apply';
                                     return Promise.reject('validation_failed');
                                 }
-                                // Voucher validated via Student 5 API, now apply it
+                                // Voucher validated via Lee Kin Hang API, now apply it
                                 return fetch('/vouchers/apply', {
                                     method: 'POST',
                                     headers: {

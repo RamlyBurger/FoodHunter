@@ -7,7 +7,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Strategy Pattern - Token Authentication Strategy
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * Authenticates users using API tokens (Sanctum).
  */

@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Forgot Password Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| Password reset request with OTP via Supabase.
+| OWASP compliant secure password reset flow.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

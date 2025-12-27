@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Password Verify Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| OTP verification for password reset flow.
+| Uses Supabase for secure OTP verification.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Verify Email')

@@ -38,7 +38,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 1: Test Rate Limiting
+     * Ng Wayne Xiang: Test Rate Limiting
      */
     public function testRateLimiting(Request $request)
     {
@@ -66,7 +66,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 1: Test Generic Error Messages
+     * Ng Wayne Xiang: Test Generic Error Messages
      */
     public function testGenericErrors(Request $request)
     {
@@ -94,7 +94,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 1: Test Session Security
+     * Ng Wayne Xiang: Test Session Security
      */
     public function testSessionSecurity()
     {
@@ -134,7 +134,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 2: Test SQL Injection Prevention
+     * Haerine Deepak Singh: Test SQL Injection Prevention
      */
     public function testSqlInjection(Request $request)
     {
@@ -180,7 +180,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 2: Test XSS Prevention (Output Encoding)
+     * Haerine Deepak Singh: Test XSS Prevention (Output Encoding)
      */
     public function testXssPrevention(Request $request)
     {
@@ -214,7 +214,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 3: Test CSRF Protection
+     * Low Nam Lee: Test CSRF Protection
      */
     public function testCsrfProtection(Request $request)
     {
@@ -238,7 +238,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 3: Test Server-Side Price Validation
+     * Low Nam Lee: Test Server-Side Price Validation
      */
     public function testPriceValidation(Request $request)
     {
@@ -270,7 +270,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 4: Test IDOR Prevention
+     * Lee Song Yan: Test IDOR Prevention
      */
     public function testIdorPrevention(Request $request)
     {
@@ -300,7 +300,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 4: Test QR Code Signature
+     * Lee Song Yan: Test QR Code Signature
      */
     public function testQrCodeSignature()
     {
@@ -346,7 +346,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 5: Test Cryptographic Voucher Generation
+     * Lee Kin Hang: Test Cryptographic Voucher Generation
      */
     public function testVoucherGeneration()
     {
@@ -375,7 +375,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 5: Test Audit Logging
+     * Lee Kin Hang: Test Audit Logging
      */
     public function testAuditLogging()
     {
@@ -451,7 +451,7 @@ class SecurityTestController extends Controller
     }
 
     /**
-     * Student 1: Test Single-Device Login
+     * Ng Wayne Xiang: Test Single-Device Login
      */
     public function testSingleDeviceLogin(Request $request)
     {

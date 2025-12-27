@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Wishlists Table Migration - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * 
+ * Creates the wishlists table for user's saved/favorite menu items.
+ * Links users to their favorite food items.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

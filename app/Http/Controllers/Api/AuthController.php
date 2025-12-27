@@ -14,7 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Auth Controller - Student 1
+ * Auth Controller - Ng Wayne Xiang
  * 
  * Design Pattern: Strategy Pattern (for authentication methods)
  * Security: Rate Limiting, Session Regeneration
@@ -38,7 +38,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        // Web Service: Consume Notification Service (Student 5)
+        // Web Service: Consume Notification Service (Lee Kin Hang)
         $this->notificationService->send(
             $user->id,
             'welcome',

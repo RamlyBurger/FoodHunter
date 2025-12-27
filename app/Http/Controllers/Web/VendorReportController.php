@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Vendor Report Controller - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * 
+ * Provides sales analytics and reporting for vendor dashboard.
+ * Generates revenue, order, and item statistics with date filtering.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Web;
 

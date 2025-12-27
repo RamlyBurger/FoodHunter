@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Vendor Dashboard - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+|
+| Main vendor dashboard with real-time stats, order overview, and quick actions.
+| Uses AJAX polling for live order updates every 15 seconds.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Vendor Dashboard - FoodHunter')

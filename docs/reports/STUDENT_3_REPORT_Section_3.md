@@ -72,7 +72,7 @@ use App\Models\Order;
 
 /**
  * State Pattern - Order State Interface
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  * 
  * Defines the interface for order states.
  * Each state handles transitions and actions specific to that state.
@@ -105,7 +105,7 @@ use App\Models\Order;
 
 /**
  * State Pattern - Abstract Order State
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  * 
  * Base class providing default implementations for state transitions.
  */
@@ -142,7 +142,7 @@ use App\Models\Order;
 
 /**
  * State Pattern - Pending State
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  */
 class PendingState extends AbstractOrderState
 {
@@ -180,7 +180,7 @@ use App\Models\Order;
 
 /**
  * State Pattern - Order State Manager
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  * 
  * Manages order state transitions using the State pattern.
  */

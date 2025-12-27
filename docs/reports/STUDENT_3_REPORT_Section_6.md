@@ -8,8 +8,8 @@
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Returns real-time order status and pickup information. Used by Notification module to get order details for status update notifications and by frontend for live order tracking. Implements State Pattern for order status transitions. |
-| Source Module | Order & Pickup (Student 3) |
-| Target Module | Cart, Checkout & Notifications (Student 4), Frontend |
+| Source Module | Order & Pickup (Low Nam Lee) |
+| Target Module | Cart, Checkout & Notifications (Lee Song Yan), Frontend |
 | URL | http://127.0.0.1:8000/api/orders/{order}/status |
 | Function Name | status() |
 | HTTP Method | GET |
@@ -125,8 +125,8 @@ statusCheckInterval = setInterval(checkOrderStatus, 15000);
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart, Checkout & Notifications | Student 4 | Get order details for notification content |
-| Vendor Management | Student 5 | Display order status to vendor |
+| Cart, Checkout & Notifications | Lee Song Yan | Get order details for notification content |
+| Vendor Management | Lee Kin Hang | Display order status to vendor |
 | Frontend | - | Live order tracking for customers |
 
 ---
@@ -139,8 +139,8 @@ statusCheckInterval = setInterval(checkOrderStatus, 15000);
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates a pickup QR code to verify order authenticity and mark order as collected. Used by vendors to confirm customer pickup and complete the order fulfillment process. Implements digital signature verification for QR code security. |
-| Source Module | Order & Pickup (Student 3) |
-| Target Module | Vendor Management (Student 5), Frontend |
+| Source Module | Order & Pickup (Low Nam Lee) |
+| Target Module | Vendor Management (Lee Kin Hang), Frontend |
 | URL | http://127.0.0.1:8000/api/orders/validate-pickup |
 | Function Name | validatePickupQr() |
 | HTTP Method | POST |
@@ -237,13 +237,13 @@ Accept: application/json
 
 ```javascript
 // resources/views/vendor/scan.blade.php (line 108-159)
-// Vendor QR scanner page - validates pickup QR code using Student 3's API
+// Vendor QR scanner page - validates pickup QR code using Low Nam Lee's API
 
-// AJAX form submission - Uses Student 3's validatePickupQr API
+// AJAX form submission - Uses Low Nam Lee's validatePickupQr API
 form.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Validate QR using Student 3's API
+    // Validate QR using Low Nam Lee's API
     fetch('/api/orders/validate-pickup', {
         method: 'POST',
         headers: {
@@ -281,12 +281,12 @@ form.addEventListener('submit', function(e) {
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Vendor Management | Student 5 | Verify pickup and complete order |
+| Vendor Management | Lee Kin Hang | Verify pickup and complete order |
 | Frontend | - | Vendor dashboard QR scanner |
 
 ---
 
-### 6.3 Web Service Consumed: Token Validation API (Student 1)
+### 6.3 Web Service Consumed: Token Validation API (Ng Wayne Xiang)
 
 #### 6.3.1 Webservice Mechanism
 
@@ -294,8 +294,8 @@ form.addEventListener('submit', function(e) {
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates user authentication token before processing order creation. Ensures the user session is still valid and prevents orders from expired sessions. |
-| Source Module | User & Authentication (Student 1) |
-| Target Module | Order & Pickup (Student 3) |
+| Source Module | User & Authentication (Ng Wayne Xiang) |
+| Target Module | Order & Pickup (Low Nam Lee) |
 | URL | http://127.0.0.1:8000/api/auth/validate-token |
 | Function Name | validateToken() |
 | HTTP Method | POST |
@@ -304,13 +304,13 @@ form.addEventListener('submit', function(e) {
 
 ```php
 // app/Http/Controllers/Api/OrderController.php (line 56-64)
-// Consumes Student 1's Validate Token API before creating orders
+// Consumes Ng Wayne Xiang's Validate Token API before creating orders
 
 public function store(CreateOrderRequest $request): JsonResponse
 {
     $user = $request->user();
     
-    // Web Service: Consume Student 1's Validate Token API to verify user authentication
+    // Web Service: Consume Ng Wayne Xiang's Validate Token API to verify user authentication
     // This ensures the user session is still valid before processing the order
     $authController = app(\App\Http\Controllers\Api\AuthController::class);
     $tokenValidation = $authController->validateToken($request);
@@ -326,7 +326,7 @@ public function store(CreateOrderRequest $request): JsonResponse
 
 ---
 
-### 6.4 Web Service Consumed: Item Availability API (Student 2)
+### 6.4 Web Service Consumed: Item Availability API (Haerine Deepak Singh)
 
 #### 6.4.1 Webservice Mechanism
 
@@ -334,8 +334,8 @@ public function store(CreateOrderRequest $request): JsonResponse
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates menu items are available before creating an order. Consumed during order creation to ensure all items are in stock and vendors are open. |
-| Source Module | Menu & Catalog (Student 2) |
-| Target Module | Order & Pickup (Student 3) |
+| Source Module | Menu & Catalog (Haerine Deepak Singh) |
+| Target Module | Order & Pickup (Low Nam Lee) |
 | URL | http://127.0.0.1:8000/api/menu/{menuItem}/availability |
 | Function Name | checkAvailability() |
 | HTTP Method | GET |
@@ -382,7 +382,7 @@ Accept: application/json
 // routes/api.php
 
 Route::middleware('auth:sanctum')->group(function () {
-    // Orders (Student 3 - Order & Pickup Module)
+    // Orders (Low Nam Lee - Order & Pickup Module)
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/active', [OrderController::class, 'active']);
@@ -391,13 +391,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder']);
     
-    // Web Service: Order Status (Student 3 exposes, Student 4 consumes)
+    // Web Service: Order Status (Low Nam Lee exposes, Lee Song Yan consumes)
     Route::get('/orders/{order}/status', [OrderController::class, 'status']);
     
-    // Web Service: Pickup QR Validation (Student 3 exposes, Vendor module consumes)
+    // Web Service: Pickup QR Validation (Low Nam Lee exposes, Vendor module consumes)
     Route::post('/orders/validate-pickup', [OrderController::class, 'validatePickupQr']);
     
-    // Web Service: Cart Recommendations (Student 3 consumes Student 2's Popular Items)
+    // Web Service: Cart Recommendations (Low Nam Lee consumes Haerine Deepak Singh's Popular Items)
     Route::get('/cart/recommendations', [CartController::class, 'recommendations']);
 });
 ```

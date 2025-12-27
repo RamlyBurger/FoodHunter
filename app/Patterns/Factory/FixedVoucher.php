@@ -4,7 +4,7 @@ namespace App\Patterns\Factory;
 
 /**
  * Factory Pattern - Fixed Discount Voucher
- * Student 5: Vendor Management Module
+ * Lee Kin Hang: Vendor Management Module
  * 
  * Concrete product: Fixed amount discount (e.g., RM5 off)
  */

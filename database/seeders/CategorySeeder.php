@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Category Seeder - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * 
+ * Seeds the categories table with initial food categories.
+ * Categories are used to organize menu items by type.
+ * =============================================================================
+ */
 
 namespace Database\Seeders;
 

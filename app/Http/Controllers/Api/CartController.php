@@ -1,4 +1,19 @@
 <?php
+/**
+ * =============================================================================
+ * Cart API Controller - Lee Song Yan (Cart, Checkout & Notifications Module)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * @pattern    Observer Pattern (for notifications on order events)
+ * 
+ * Handles cart CRUD operations via API. Validates item availability using
+ * Haerine Deepak Singh's Menu API before adding items to cart.
+ * 
+ * Web Service: Exposes Cart Validation API for checkout process.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Api;
 
@@ -96,7 +111,7 @@ class CartController extends Controller
 
     /**
      * Web Service: Expose - Cart Summary API
-     * Student 4 exposes, Student 2 (Menu) consumes to show cart badge
+     * Lee Song Yan exposes, Haerine Deepak Singh (Menu) consumes to show cart badge
      */
     public function summary(Request $request): JsonResponse
     {
@@ -221,7 +236,7 @@ class CartController extends Controller
 
     /**
      * Get cart recommendations
-     * Web Service: Consumes Student 2's Popular Items API for recommendations
+     * Web Service: Consumes Haerine Deepak Singh's Popular Items API for recommendations
      * 
      * @param Request $request
      * @return JsonResponse
@@ -235,7 +250,7 @@ class CartController extends Controller
         // Get category IDs from cart items for targeted recommendations
         $categoryIds = $cartItems->pluck('menuItem.category_id')->unique()->filter()->values();
         
-        // Consume Student 2's Popular Items API internally
+        // Consume Haerine Deepak Singh's Popular Items API internally
         $popularItems = MenuItem::where('is_available', true)
             ->when($categoryIds->isNotEmpty(), fn($q) => $q->whereIn('category_id', $categoryIds))
             ->whereNotIn('id', $cartItems->pluck('menu_item_id'))

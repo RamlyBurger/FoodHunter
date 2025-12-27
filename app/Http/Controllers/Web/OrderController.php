@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Order Controller - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * @pattern    State Pattern (OrderStateManager)
+ * 
+ * Handles customer order viewing, status tracking, cancellation, and reordering.
+ * Integrates with Lee Song Yan's Cart module for reorder functionality.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Web;
 

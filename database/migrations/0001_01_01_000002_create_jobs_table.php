@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Jobs Table Migration - Shared (Laravel Framework)
+ * =============================================================================
+ * 
+ * @author     Laravel Framework / All Students
+ * @module     Shared Infrastructure
+ * 
+ * Creates the jobs table for Laravel's queue system.
+ * Used for background job processing and notifications.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

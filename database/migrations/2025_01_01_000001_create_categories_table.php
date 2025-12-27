@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Categories Table Migration - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * 
+ * Creates the categories table for organizing menu items by type.
+ * Supports sorting, activation status, and image display.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

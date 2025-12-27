@@ -8,8 +8,8 @@
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Checks if a menu item is available and in stock. Used by Cart module to validate items before adding to cart or during checkout. This ensures customers cannot order unavailable items. |
-| Source Module | Menu & Catalog (Student 2) |
-| Target Module | Order & Pickup (Student 3), Cart, Checkout & Notifications (Student 4) |
+| Source Module | Menu & Catalog (Haerine Deepak Singh) |
+| Target Module | Order & Pickup (Low Nam Lee), Cart, Checkout & Notifications (Lee Song Yan) |
 | URL | http://127.0.0.1:8000/api/menu/{menuItem}/availability |
 | Function Name | checkAvailability() |
 | HTTP Method | GET |
@@ -85,7 +85,7 @@ Accept: application/json
 
 /**
  * Web Service: Expose - Check Item Availability
- * Student 3 (Cart) consumes this to validate items before adding
+ * Low Nam Lee (Cart) consumes this to validate items before adding
  * Uses Repository Pattern for data access
  * 
  * @param MenuItem $menuItem
@@ -121,7 +121,7 @@ function addToCart(itemId, quantity = 1, btn = null) {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     }
     
-    // First check item availability using Student 2's API
+    // First check item availability using Haerine Deepak Singh's API
     fetch('/api/menu/' + itemId + '/availability', {
         headers: { 'Accept': 'application/json' }
     })
@@ -147,9 +147,9 @@ function addToCart(itemId, quantity = 1, btn = null) {
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Order & Pickup | Student 3 | Validates items during order creation |
-| Cart, Checkout & Notifications | Student 4 | Validates items before adding to cart |
-| Checkout Page | Student 4 | Re-validates items during checkout |
+| Order & Pickup | Low Nam Lee | Validates items during order creation |
+| Cart, Checkout & Notifications | Lee Song Yan | Validates items before adding to cart |
+| Checkout Page | Lee Song Yan | Re-validates items during checkout |
 
 ---
 
@@ -161,8 +161,8 @@ function addToCart(itemId, quantity = 1, btn = null) {
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Returns a list of popular menu items based on total sales (total_sold). Used by Cart module's "You might also like" section to provide trending recommendations and by Home page to display trending items. |
-| Source Module | Menu & Catalog (Student 2) |
-| Target Module | Order & Pickup (Student 3), Cart, Checkout & Notifications (Student 4), Home Page |
+| Source Module | Menu & Catalog (Haerine Deepak Singh) |
+| Target Module | Order & Pickup (Low Nam Lee), Cart, Checkout & Notifications (Lee Song Yan), Home Page |
 | URL | http://127.0.0.1:8000/api/menu/popular |
 | Function Name | popularItems() |
 | HTTP Method | GET |
@@ -327,7 +327,7 @@ public function popularItems(Request $request): JsonResponse
 
 ```javascript
 // resources/views/home.blade.php (line 597-656)
-// Load and render popular items using Student 2's API
+// Load and render popular items using Haerine Deepak Singh's API
 
 function loadPopularItems() {
     const container = document.getElementById('popular-items-container');
@@ -339,7 +339,7 @@ function loadPopularItems() {
     .then(response => {
         const data = response.data || response;
         if (data.items && data.items.length > 0) {
-            // Render popular items from Student 2's API
+            // Render popular items from Haerine Deepak Singh's API
             container.innerHTML = data.items.map(item => {
                 const price = parseFloat(item.price).toFixed(2);
                 const vendorName = item.vendor?.store_name || 'Vendor';
@@ -371,14 +371,14 @@ document.addEventListener('DOMContentLoaded', loadPopularItems);
 
 ```javascript
 // resources/views/cart/index.blade.php (line 193-261)
-// Load popular items for "You might also like" section using Student 2's API
+// Load popular items for "You might also like" section using Haerine Deepak Singh's API
 
 // Cart item IDs to exclude from popular items
 const cartItemIds = @json($cartItemIds);
 const wishlistIds = @json($wishlistIds);
 
 /**
- * Load popular items from Student 2's Popular Items API
+ * Load popular items from Haerine Deepak Singh's Popular Items API
  * Consumes: GET /api/menu/popular
  * This replaces the random items with trending popular items
  */
@@ -448,13 +448,13 @@ document.addEventListener('DOMContentLoaded', loadPopularItems);
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart Page | Student 4 | Displays popular items as recommendations in cart page |
+| Cart Page | Lee Song Yan | Displays popular items as recommendations in cart page |
 | Home Page | Frontend | Displays trending/popular items section |
 | Menu Page | Frontend | Shows popular items in category |
 
 ---
 
-### 6.3 Web Service Consumed: Token Validation API (Student 1)
+### 6.3 Web Service Consumed: Token Validation API (Ng Wayne Xiang)
 
 #### 6.3.1 Webservice Mechanism
 
@@ -462,8 +462,8 @@ document.addEventListener('DOMContentLoaded', loadPopularItems);
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates user authentication token for wishlist operations. Consumed when user adds/removes items from wishlist to ensure only authenticated users can manage their wishlist. |
-| Source Module | User & Authentication (Student 1) |
-| Target Module | Menu & Catalog (Student 2) |
+| Source Module | User & Authentication (Ng Wayne Xiang) |
+| Target Module | Menu & Catalog (Haerine Deepak Singh) |
 | URL | http://127.0.0.1:8000/api/auth/validate-token |
 | Function Name | validateToken() |
 | HTTP Method | POST |
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', loadPopularItems);
 ```php
 // app/Http/Controllers/Web/WishlistController.php
 // The wishlist controller uses auth:sanctum middleware which internally
-// validates tokens via Student 1's authentication system
+// validates tokens via Ng Wayne Xiang's authentication system
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle']);
@@ -491,7 +491,7 @@ public function toggle(Request $request)
     // Token validation happens automatically via middleware
     // If token is invalid, user gets 401 Unauthorized
     
-    $user = $request->user(); // Validated user from Student 1's auth
+    $user = $request->user(); // Validated user from Ng Wayne Xiang's auth
     
     $wishlistItem = Wishlist::where('user_id', $user->id)
         ->where('menu_item_id', $request->menu_item_id)
@@ -541,7 +541,7 @@ Accept: application/json
 
 ---
 
-### 6.4 Web Service Consumed: Cart Summary API (Student 4)
+### 6.4 Web Service Consumed: Cart Summary API (Lee Song Yan)
 
 #### 6.4.1 Webservice Mechanism
 
@@ -549,8 +549,8 @@ Accept: application/json
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Gets current cart summary to display cart status on menu pages. Consumed to show cart item count and total in the navigation bar. |
-| Source Module | Cart, Checkout & Notifications (Student 4) |
-| Target Module | Menu & Catalog (Student 2) |
+| Source Module | Cart, Checkout & Notifications (Lee Song Yan) |
+| Target Module | Menu & Catalog (Haerine Deepak Singh) |
 | URL | http://127.0.0.1:8000/api/cart/summary |
 | Function Name | summary() |
 | HTTP Method | GET |
@@ -590,20 +590,20 @@ function loadCartDropdown() {
 ```php
 // routes/api.php
 
-// Menu - Public (Student 2)
+// Menu - Public (Haerine Deepak Singh)
 Route::get('/categories', [MenuController::class, 'categories']);
 Route::get('/vendors', [MenuController::class, 'vendors']);
 Route::get('/vendors/{vendor}', [MenuController::class, 'vendorMenu']);
 Route::get('/menu/featured', [MenuController::class, 'featured']);
 Route::get('/menu/search', [MenuController::class, 'search']);
 
-// Web Service: Popular Items (Student 2 exposes, Order/Cart modules consume)
+// Web Service: Popular Items (Haerine Deepak Singh exposes, Order/Cart modules consume)
 Route::get('/menu/popular', [MenuController::class, 'popularItems']);
 
 Route::get('/menu/{menuItem}', [MenuController::class, 'show']);
 Route::get('/menu/{menuItem}/related', [MenuController::class, 'related']);
 
-// Web Service: Menu Item Availability (Student 2 exposes, Student 3 consumes)
+// Web Service: Menu Item Availability (Haerine Deepak Singh exposes, Low Nam Lee consumes)
 Route::get('/menu/{menuItem}/availability', [MenuController::class, 'checkAvailability']);
 ```
 

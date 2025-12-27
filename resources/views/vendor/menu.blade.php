@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Vendor Menu Management - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+|
+| CRUD interface for vendors to manage their menu items.
+| Includes image upload, category assignment, and availability toggle.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'My Menu - Vendor Dashboard')

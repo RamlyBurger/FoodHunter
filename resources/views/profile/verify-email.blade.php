@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Verify New Email Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| OTP verification for email change from profile.
+| Uses Supabase for secure OTP verification.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Verify New Email')

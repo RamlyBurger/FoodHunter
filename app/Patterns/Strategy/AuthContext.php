@@ -6,7 +6,7 @@ use App\Models\User;
 
 /**
  * Strategy Pattern - Auth Context
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * The Context maintains a reference to one of the Strategy objects.
  * The Context does not know the concrete class of a strategy.

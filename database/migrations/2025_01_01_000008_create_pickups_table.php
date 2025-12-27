@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Pickups Table Migration - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * 
+ * Creates the pickups table for QR-based order pickup verification.
+ * Stores queue numbers and digitally signed QR codes.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

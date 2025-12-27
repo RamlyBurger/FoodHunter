@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Email Change OTP Template - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| Email template for OTP verification during email change.
+| Sent via Supabase when user requests email address change.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html>
 <head>

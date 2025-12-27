@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * User Model - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Core user model for authentication and authorization.
+ * Used by all modules for user identification and relationships.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

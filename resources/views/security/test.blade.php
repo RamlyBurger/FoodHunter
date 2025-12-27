@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Security Testing Dashboard - Shared (All Students)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+| @module     Security Testing
+|
+| OWASP security testing dashboard for verifying security controls.
+| Used for testing authentication, authorization, and input validation.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Security Testing Dashboard')
@@ -83,11 +96,11 @@
     @else
 
     <div class="row g-4">
-        <!-- Student 1: Authentication & Session -->
+        <!-- Ng Wayne Xiang: Authentication & Session -->
         <div class="col-12">
             <div class="test-section">
                 <h5>
-                    <span class="student-badge student-1">Student 1</span>
+                    <span class="student-badge student-1">Ng Wayne Xiang</span>
                     User & Authentication Module
                 </h5>
                 <div class="row g-3">
@@ -148,11 +161,11 @@
             </div>
         </div>
 
-        <!-- Student 2: Menu & Catalog -->
+        <!-- Haerine Deepak Singh: Menu & Catalog -->
         <div class="col-12">
             <div class="test-section">
                 <h5>
-                    <span class="student-badge student-2">Student 2</span>
+                    <span class="student-badge student-2">Haerine Deepak Singh</span>
                     Menu & Catalog Module
                 </h5>
                 <div class="row g-3">
@@ -193,11 +206,11 @@
             </div>
         </div>
 
-        <!-- Student 3: Cart & Checkout -->
+        <!-- Low Nam Lee: Cart & Checkout -->
         <div class="col-12">
             <div class="test-section">
                 <h5>
-                    <span class="student-badge student-3">Student 3</span>
+                    <span class="student-badge student-3">Low Nam Lee</span>
                     Cart & Checkout Module
                 </h5>
                 <div class="row g-3">
@@ -238,11 +251,11 @@
             </div>
         </div>
 
-        <!-- Student 4: Order & Pickup -->
+        <!-- Lee Song Yan: Order & Pickup -->
         <div class="col-12">
             <div class="test-section">
                 <h5>
-                    <span class="student-badge student-4">Student 4</span>
+                    <span class="student-badge student-4">Lee Song Yan</span>
                     Order & Pickup Module
                 </h5>
                 <div class="row g-3">
@@ -283,11 +296,11 @@
             </div>
         </div>
 
-        <!-- Student 5: Vouchers & Notifications -->
+        <!-- Lee Kin Hang: Vouchers & Notifications -->
         <div class="col-12">
             <div class="test-section">
                 <h5>
-                    <span class="student-badge student-5">Student 5</span>
+                    <span class="student-badge student-5">Lee Kin Hang</span>
                     Vouchers & Notifications Module
                 </h5>
                 <div class="row g-3">

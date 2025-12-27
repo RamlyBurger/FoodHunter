@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * OrderItem Model - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * 
+ * Represents individual items within an order.
+ * Stores item details at time of purchase for order history.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

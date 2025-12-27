@@ -4,7 +4,7 @@ namespace App\Patterns\Factory;
 
 /**
  * Factory Pattern - Voucher Interface
- * Student 5: Vendor Management Module
+ * Lee Kin Hang: Vendor Management Module
  * 
  * Defines the contract for all voucher types.
  */

@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Vendors Table Migration - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * 
+ * Creates the vendors table for storing vendor store information.
+ * Links to users table and includes store details and status.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

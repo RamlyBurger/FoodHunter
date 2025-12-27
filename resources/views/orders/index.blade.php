@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Orders Page - Low Nam Lee (Order & Pickup Module)
+|==============================================================================
+|
+| @author     Low Nam Lee
+| @module     Order & Pickup Module
+| @pattern    State Pattern (OrderStateManager)
+|
+| Displays customer's order history with status tracking and filtering.
+| Shows QR codes for ready orders via Low Nam Lee's pickup system.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'My Orders')

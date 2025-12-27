@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Vouchers Table Migration - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Creates the vouchers table for discount codes.
+ * Supports percentage and fixed discounts with usage limits.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

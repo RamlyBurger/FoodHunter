@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Voucher Model - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Represents discount vouchers created by vendors.
+ * Discount calculation handled by Factory Pattern (FixedVoucher/PercentageVoucher).
+ * =============================================================================
+ */
 
 namespace App\Models;
 

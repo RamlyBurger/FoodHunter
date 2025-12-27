@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| API Tester Page - Shared (All Students)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+| @module     Development Tools
+|
+| Interactive API testing interface for development and debugging.
+| Allows testing all API endpoints with custom parameters.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -523,8 +535,8 @@
                 { method: 'POST', path: '/api/auth/register', name: 'Register', auth: false, params: { name: 'John Doe', email: 'test@example.com', password: 'password123', password_confirmation: 'password123', phone: '0123456789' } },
                 { method: 'GET', path: '/api/auth/user', name: 'Get User', auth: true },
                 { method: 'POST', path: '/api/auth/logout', name: 'Logout', auth: true },
-                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Validate Token (Student 1 API #1)', auth: true },
-                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ User Stats (Student 1 API #2)', auth: true }
+                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Validate Token (Ng Wayne Xiang API #1)', auth: true },
+                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ User Stats (Ng Wayne Xiang API #2)', auth: true }
             ],
             menu: [
                 { method: 'GET', path: '/api/categories', name: 'List Categories', auth: false },
@@ -532,16 +544,16 @@
                 { method: 'GET', path: '/api/menu/featured', name: 'Featured Items', auth: false },
                 { method: 'GET', path: '/api/menu/search?q=nasi', name: 'Search Menu', auth: false },
                 { method: 'GET', path: '/api/menu/1', name: 'Get Menu Item', auth: false, pathParam: true },
-                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Check Availability (Student 2 API #1)', auth: false, pathParam: true },
+                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Check Availability (Haerine Deepak Singh API #1)', auth: false, pathParam: true },
                 { method: 'GET', path: '/api/menu/1/related', name: 'Related Items', auth: false, pathParam: true },
-                { method: 'GET', path: '/api/menu/popular', name: '⭐ Popular Items (Student 2 API #2)', auth: false, params: { category_id: '', vendor_id: '', limit: 10 } }
+                { method: 'GET', path: '/api/menu/popular', name: '⭐ Popular Items (Haerine Deepak Singh API #2)', auth: false, params: { category_id: '', vendor_id: '', limit: 10 } }
             ],
             cart: [
                 { method: 'GET', path: '/api/cart', name: 'Get Cart', auth: true },
                 { method: 'POST', path: '/api/cart', name: 'Add to Cart', auth: true, params: { menu_item_id: 1, quantity: 2, special_instructions: 'No onions' } },
                 { method: 'PUT', path: '/api/cart/1', name: 'Update Cart Item', auth: true, pathParam: true, params: { quantity: 3 } },
                 { method: 'DELETE', path: '/api/cart/1', name: 'Remove Cart Item', auth: true, pathParam: true },
-                { method: 'GET', path: '/api/cart/summary', name: '⭐ Cart Summary (Student 4 API #1)', auth: true },
+                { method: 'GET', path: '/api/cart/summary', name: '⭐ Cart Summary (Lee Song Yan API #1)', auth: true },
                 { method: 'GET', path: '/api/cart/count', name: 'Cart Item Count', auth: true },
                 { method: 'GET', path: '/api/cart/validate', name: 'Validate Cart', auth: true },
                 { method: 'GET', path: '/api/cart/recommendations', name: 'Cart Recommendations', auth: true },
@@ -553,8 +565,8 @@
                 { method: 'GET', path: '/api/orders/active', name: 'Active Orders', auth: true },
                 { method: 'GET', path: '/api/orders/history', name: 'Order History', auth: true },
                 { method: 'GET', path: '/api/orders/1', name: 'Get Order', auth: true, pathParam: true },
-                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Order Status (Student 3 API #1)', auth: true, pathParam: true },
-                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Validate Pickup QR (Student 3 API #2)', auth: true, params: { qr_code: 'PU-20251222-ABC123' } },
+                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Order Status (Low Nam Lee API #1)', auth: true, pathParam: true },
+                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Validate Pickup QR (Low Nam Lee API #2)', auth: true, params: { qr_code: 'PU-20251222-ABC123' } },
                 { method: 'POST', path: '/api/orders/1/reorder', name: 'Reorder', auth: true, pathParam: true },
                 { method: 'POST', path: '/api/orders/1/cancel', name: 'Cancel Order', auth: true, pathParam: true }
             ],
@@ -564,12 +576,12 @@
                 { method: 'GET', path: '/api/notifications/unread-count', name: 'Unread Count', auth: true },
                 { method: 'POST', path: '/api/notifications/1/read', name: 'Mark As Read', auth: true, pathParam: true },
                 { method: 'POST', path: '/api/notifications/read-all', name: 'Mark All Read', auth: true },
-                { method: 'POST', path: '/api/notifications/send', name: '⭐ Send Notification (Student 4 API #2)', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification message', data: { order_id: 123 } } },
+                { method: 'POST', path: '/api/notifications/send', name: '⭐ Send Notification (Lee Song Yan API #2)', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification message', data: { order_id: 123 } } },
                 { method: 'DELETE', path: '/api/notifications/1', name: 'Delete Notification', auth: true, pathParam: true }
             ],
             vouchers: [
-                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Validate Voucher (Student 5 API #1)', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } },
-                { method: 'GET', path: '/api/vendors/1/availability', name: '⭐ Vendor Availability (Student 5 API #2)', auth: false, pathParam: true }
+                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Validate Voucher (Lee Kin Hang API #1)', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 } },
+                { method: 'GET', path: '/api/vendors/1/availability', name: '⭐ Vendor Availability (Lee Kin Hang API #2)', auth: false, pathParam: true }
             ],
             vendor: [
                 { method: 'GET', path: '/api/vendor/dashboard', name: 'Dashboard', auth: true },
@@ -594,21 +606,21 @@
                 { method: 'DELETE', path: '/api/vendor/vouchers/1', name: 'Delete Voucher', auth: true, pathParam: true }
             ],
             student: [
-                // Student 1: User & Authentication Module
-                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Student 1: Validate Token API', auth: true, description: 'Validates API token and returns user info' },
-                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ Student 1: User Stats API', auth: true, description: 'Returns user statistics (orders, spending)' },
-                // Student 2: Menu & Catalog Module
-                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Student 2: Item Availability API', auth: false, pathParam: true, description: 'Checks if menu item is available' },
-                { method: 'GET', path: '/api/menu/popular', name: '⭐ Student 2: Popular Items API', auth: false, params: { category_id: '', vendor_id: '', limit: 10 }, description: 'Returns popular items by sales' },
-                // Student 3: Order & Pickup Module
-                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Student 3: Order Status API', auth: true, pathParam: true, description: 'Returns real-time order status and pickup info' },
-                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Student 3: Pickup QR Validation API', auth: true, params: { qr_code: 'PU-20251222-ABC123' }, description: 'Validates pickup QR code for order collection' },
-                // Student 4: Cart, Checkout & Notifications Module
-                { method: 'GET', path: '/api/cart/summary', name: '⭐ Student 4: Cart Summary API', auth: true, description: 'Returns cart totals and item count' },
-                { method: 'POST', path: '/api/notifications/send', name: '⭐ Student 4: Send Notification API', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification', data: { order_id: 123 } }, description: 'Sends in-app notification to user' },
-                // Student 5: Vendor Management Module
-                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Student 5: Voucher Validation API', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 }, description: 'Validates voucher and calculates discount' },
-                { method: 'GET', path: '/api/vendors/1/availability', name: '⭐ Student 5: Vendor Availability API', auth: false, pathParam: true, description: 'Returns vendor open/closed status and hours' }
+                // Ng Wayne Xiang: User & Authentication Module
+                { method: 'POST', path: '/api/auth/validate-token', name: '⭐ Ng Wayne Xiang: Validate Token API', auth: true, description: 'Validates API token and returns user info' },
+                { method: 'GET', path: '/api/auth/user-stats', name: '⭐ Ng Wayne Xiang: User Stats API', auth: true, description: 'Returns user statistics (orders, spending)' },
+                // Haerine Deepak Singh: Menu & Catalog Module
+                { method: 'GET', path: '/api/menu/1/availability', name: '⭐ Haerine Deepak Singh: Item Availability API', auth: false, pathParam: true, description: 'Checks if menu item is available' },
+                { method: 'GET', path: '/api/menu/popular', name: '⭐ Haerine Deepak Singh: Popular Items API', auth: false, params: { category_id: '', vendor_id: '', limit: 10 }, description: 'Returns popular items by sales' },
+                // Low Nam Lee: Order & Pickup Module
+                { method: 'GET', path: '/api/orders/1/status', name: '⭐ Low Nam Lee: Order Status API', auth: true, pathParam: true, description: 'Returns real-time order status and pickup info' },
+                { method: 'POST', path: '/api/orders/validate-pickup', name: '⭐ Low Nam Lee: Pickup QR Validation API', auth: true, params: { qr_code: 'PU-20251222-ABC123' }, description: 'Validates pickup QR code for order collection' },
+                // Lee Song Yan: Cart, Checkout & Notifications Module
+                { method: 'GET', path: '/api/cart/summary', name: '⭐ Lee Song Yan: Cart Summary API', auth: true, description: 'Returns cart totals and item count' },
+                { method: 'POST', path: '/api/notifications/send', name: '⭐ Lee Song Yan: Send Notification API', auth: true, params: { user_id: 1, type: 'order', title: 'Test Notification', message: 'This is a test notification', data: { order_id: 123 } }, description: 'Sends in-app notification to user' },
+                // Lee Kin Hang: Vendor Management Module
+                { method: 'POST', path: '/api/vouchers/validate', name: '⭐ Lee Kin Hang: Voucher Validation API', auth: true, params: { code: 'MAKC10OFF', subtotal: 50.00 }, description: 'Validates voucher and calculates discount' },
+                { method: 'GET', path: '/api/vendors/1/availability', name: '⭐ Lee Kin Hang: Vendor Availability API', auth: false, pathParam: true, description: 'Returns vendor open/closed status and hours' }
             ],
             custom: []
         };

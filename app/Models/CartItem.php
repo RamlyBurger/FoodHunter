@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * CartItem Model - Lee Song Yan (Cart, Checkout & Notifications Module)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * 
+ * Represents items in a user's shopping cart before checkout.
+ * Linked to MenuItem for product details and pricing.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

@@ -6,7 +6,7 @@ use App\Models\Order;
 
 /**
  * State Pattern - Order State Interface
- * Student 3: Order & Pickup Module
+ * Low Nam Lee: Order & Pickup Module
  * 
  * Defines the interface for order states.
  * Each state handles transitions and actions specific to that state.

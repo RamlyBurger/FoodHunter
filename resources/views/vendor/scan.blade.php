@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Vendor QR Scanner Page - Low Nam Lee (Order & Pickup Module)
+|==============================================================================
+|
+| @author     Low Nam Lee
+| @module     Order & Pickup Module
+|
+| QR code scanner for vendors to verify customer pickups.
+| Uses digitally signed QR codes for secure order completion.
+|==============================================================================
+--}}
+
 @extends('layouts.vendor')
 
 @section('title', 'Scan QR Code')
@@ -105,11 +118,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const cameraPreview = document.getElementById('cameraPreview');
     let stream = null;
 
-    // AJAX form submission - Uses Student 3's validatePickupQr API
+    // AJAX form submission - Uses Low Nam Lee's validatePickupQr API
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        // Validate QR using Student 3's API (Order & Pickup module)
+        // Validate QR using Low Nam Lee's API (Order & Pickup module)
         fetch('/api/orders/validate-pickup', {
             method: 'POST',
             headers: {
@@ -122,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(res => res.json())
         .then(response => {
-            // Handle Student 3's API response format
+            // Handle Low Nam Lee's API response format
             const data = response.data || response;
             if (response.success && data.valid) {
                 Swal.fire({

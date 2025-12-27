@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Hash;
 
 /**
  * Strategy Pattern - Password Authentication Strategy
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * Authenticates users using email and password credentials.
  */

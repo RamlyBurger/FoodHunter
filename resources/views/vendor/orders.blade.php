@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Vendor Orders Page - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+| @pattern    State Pattern (OrderStateManager via Low Nam Lee)
+|
+| Order management interface for vendors to process customer orders.
+| Integrates with Low Nam Lee's State Pattern for order status updates.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Orders - Vendor Dashboard')

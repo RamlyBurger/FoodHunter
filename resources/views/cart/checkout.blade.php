@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Checkout Page - Lee Song Yan (Cart, Checkout & Notifications Module)
+|==============================================================================
+|
+| @author     Lee Song Yan
+| @module     Cart, Checkout & Notifications Module
+| @pattern    Observer Pattern (triggers notifications on order creation)
+|
+| Secure checkout with payment processing and voucher application.
+| Integrates with Lee Kin Hang's VoucherFactory for discount calculations.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Checkout')
@@ -525,7 +539,7 @@ async function processPayment() {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validating...';
     
     try {
-        // Validate vendor availability using Student 5's API before processing
+        // Validate vendor availability using Lee Kin Hang's API before processing
         @if(isset($vendor) && $vendor)
         const vendorAvailability = await fetch('/api/vendors/{{ $vendor->id }}/availability', {
             headers: { 'Accept': 'application/json' }
@@ -545,7 +559,7 @@ async function processPayment() {
         }
         @endif
         
-        // Validate cart using Student 4's Cart Validation API before processing
+        // Validate cart using Lee Song Yan's Cart Validation API before processing
         const cartValidation = await fetch('/api/cart/validate', {
             headers: {
                 'Accept': 'application/json',

@@ -1,3 +1,15 @@
+{{--
+|==============================================================================
+| Reset Password Page - Ng Wayne Xiang (User & Authentication Module)
+|==============================================================================
+|
+| @author     Ng Wayne Xiang
+| @module     User & Authentication Module
+|
+| New password entry after OTP verification.
+| Enforces password complexity per OWASP guidelines.
+|==============================================================================
+--}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

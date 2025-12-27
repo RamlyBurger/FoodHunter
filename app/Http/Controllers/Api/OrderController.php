@@ -1,4 +1,19 @@
 <?php
+/**
+ * =============================================================================
+ * Order API Controller - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * @pattern    State Pattern (OrderStateManager)
+ * 
+ * Handles order creation, status tracking, and pickup verification via API.
+ * Integrates with Lee Song Yan's Cart module and Lee Kin Hang's Voucher Factory.
+ * 
+ * Web Service: Exposes Order Status API and Pickup Validation API.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Api;
 
@@ -53,7 +68,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
         
-        // Web Service: Consume Student 1's Validate Token API to verify user authentication
+        // Web Service: Consume Ng Wayne Xiang's Validate Token API to verify user authentication
         // This ensures the user session is still valid before processing the order
         $authController = app(\App\Http\Controllers\Api\AuthController::class);
         $tokenValidation = $authController->validateToken($request);
@@ -222,7 +237,7 @@ class OrderController extends Controller
 
     /**
      * Web Service: Expose - Get Order Status API
-     * Student 3 exposes, Student 4 (Notifications) consumes to get order details
+     * Low Nam Lee exposes, Lee Song Yan (Notifications) consumes to get order details
      */
     public function status(Request $request, Order $order): JsonResponse
     {
@@ -376,7 +391,7 @@ class OrderController extends Controller
 
     /**
      * Get order history with user statistics
-     * Web Service: Consumes Student 1's User Stats API for order insights
+     * Web Service: Consumes Ng Wayne Xiang's User Stats API for order insights
      * 
      * @param Request $request
      * @return JsonResponse
@@ -385,7 +400,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
         
-        // Consume Student 1's User Stats internally
+        // Consume Ng Wayne Xiang's User Stats internally
         $totalOrders = Order::where('user_id', $user->id)->count();
         $completedOrders = Order::where('user_id', $user->id)->where('status', 'completed')->count();
         $totalSpent = Order::where('user_id', $user->id)->where('status', 'completed')->sum('total');

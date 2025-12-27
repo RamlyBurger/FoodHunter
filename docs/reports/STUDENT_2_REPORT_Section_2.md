@@ -19,7 +19,7 @@ This layered architecture ensures that changes in one layer don't ripple through
 
 When customers visit the FoodHunter platform, they can browse menu items organized by categories such as Rice, Noodles, Beverages, and Snacks. The browsing experience is designed to be intuitive and efficient:
 
-1. **Homepage Display**: Featured items and popular items (loaded via Student 2's Popular Items API) are prominently displayed to showcase the best offerings
+1. **Homepage Display**: Featured items and popular items (loaded via Haerine Deepak Singh's Popular Items API) are prominently displayed to showcase the best offerings
 2. **Category Navigation**: Categories are displayed with images and item counts, allowing quick navigation to specific food types
 3. **Vendor Discovery**: Customers can browse by vendor to find their favorite stalls or discover new ones
 4. **Visual Presentation**: Each menu item displays an image, name, price, vendor name, and availability status
@@ -41,7 +41,7 @@ The `EloquentMenuItemRepository` class provides methods for common operations: `
 
 A key feature of this module is the web service endpoints that enable integration with other modules:
 
-- **Item Availability API** (`GET /api/menu/{id}/availability`): Consumed by the Cart module (Student 4) to validate items before adding to cart, ensuring customers cannot order unavailable items
+- **Item Availability API** (`GET /api/menu/{id}/availability`): Consumed by the Cart module (Lee Song Yan) to validate items before adding to cart, ensuring customers cannot order unavailable items
 - **Popular Items API** (`GET /api/menu/popular`): Returns trending items based on sales data, consumed by the Home page to display dynamic content
 
 These APIs follow RESTful conventions and return standardized JSON responses with proper error handling.

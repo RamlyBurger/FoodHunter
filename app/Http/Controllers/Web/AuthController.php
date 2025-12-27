@@ -17,7 +17,7 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Services\SecurityLogService;
 
 /**
- * Web Auth Controller - Student 1
+ * Web Auth Controller - Ng Wayne Xiang
  * 
  * Uses Strategy Pattern for authentication via AuthService.
  * Security: Rate Limiting, Session Regeneration

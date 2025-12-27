@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Vendor Order Controller - Student 3
+ * Vendor Order Controller - Low Nam Lee
  * 
  * Uses OrderService for status updates with database locking
  * to prevent race conditions.

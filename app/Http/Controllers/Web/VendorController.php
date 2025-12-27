@@ -1,4 +1,18 @@
 <?php
+/**
+ * =============================================================================
+ * Vendor Controller - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Handles vendor dashboard, menu management, order processing, voucher CRUD,
+ * and store profile management. Integrates with Low Nam Lee's State Pattern
+ * for order status updates and Lee Song Yan's Observer for notifications.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Web;
 

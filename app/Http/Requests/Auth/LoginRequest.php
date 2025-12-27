@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * LoginRequest - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * 
+ * Form request validation for user login.
+ * Validates email and password fields.
+ * =============================================================================
+ */
 
 namespace App\Http\Requests\Auth;
 

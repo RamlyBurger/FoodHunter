@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * CreateOrderRequest - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * 
+ * Form request validation for order creation.
+ * Validates payment method, notes, and voucher code.
+ * =============================================================================
+ */
 
 namespace App\Http\Requests\Order;
 

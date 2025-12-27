@@ -14,7 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Menu API Controller - Student 2
+ * Menu API Controller - Haerine Deepak Singh
  * 
  * Uses Repository Pattern to abstract database access for menu items.
  * The repository encapsulates all data access logic, making the controller
@@ -133,7 +133,7 @@ class MenuController extends Controller
 
     /**
      * Web Service: Expose - Check Item Availability
-     * Student 3 (Cart) consumes this to validate items before checkout
+     * Low Nam Lee (Cart) consumes this to validate items before checkout
      * Uses Repository Pattern for data access
      */
     public function checkAvailability(MenuItem $menuItem): JsonResponse
@@ -254,7 +254,7 @@ class MenuController extends Controller
 
     /**
      * Web Service: Expose - Vendor Availability API
-     * Student 5 (Vendor Management) exposes this
+     * Lee Kin Hang (Vendor Management) exposes this
      * Used by Cart, Order, Menu modules to check vendor open/closed status
      * 
      * @param Vendor $vendor

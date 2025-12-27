@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| My Vouchers Page - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+| @pattern    Factory Pattern (VoucherFactory)
+|
+| Displays user's redeemed vouchers with usage status.
+| Uses AJAX for loading and copy code functionality.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'My Vouchers')

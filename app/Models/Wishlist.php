@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Wishlist Model - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * 
+ * Represents user's saved/favorite menu items.
+ * Part of the menu browsing experience.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

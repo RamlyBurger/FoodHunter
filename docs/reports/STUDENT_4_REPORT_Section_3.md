@@ -69,7 +69,7 @@ namespace App\Patterns\Observer;
 
 /**
  * Observer Pattern - Subject Interface
- * Student 4: Cart, Checkout & Notifications Module
+ * Lee Song Yan: Cart, Checkout & Notifications Module
  * 
  * Defines the interface for objects that can be observed.
  */
@@ -91,7 +91,7 @@ namespace App\Patterns\Observer;
 
 /**
  * Observer Pattern - Observer Interface
- * Student 4: Cart, Checkout & Notifications Module
+ * Lee Song Yan: Cart, Checkout & Notifications Module
  * 
  * Defines the interface for objects that should be notified of changes.
  */
@@ -111,7 +111,7 @@ use App\Models\Order;
 
 /**
  * Observer Pattern - Order Subject
- * Student 4: Cart, Checkout & Notifications Module
+ * Lee Song Yan: Cart, Checkout & Notifications Module
  * 
  * Concrete subject that notifies observers about order events.
  */
@@ -192,7 +192,7 @@ use App\Models\Notification;
 
 /**
  * Observer Pattern - Notification Observer
- * Student 4: Cart, Checkout & Notifications Module
+ * Lee Song Yan: Cart, Checkout & Notifications Module
  * 
  * Creates in-app notifications when order events occur.
  */

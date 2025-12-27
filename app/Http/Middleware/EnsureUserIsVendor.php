@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * EnsureUserIsVendor Middleware - Ng Wayne Xiang (User & Authentication Module)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang
+ * @module     User & Authentication Module
+ * @security   OWASP [77-100]: Access Control
+ * 
+ * Ensures user is a vendor for vendor-only pages.
+ * Prevents customers from accessing vendor dashboard and management routes.
+ * =============================================================================
+ */
 
 namespace App\Http\Middleware;
 
@@ -7,9 +20,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * OWASP [77-100]: Access Control middleware
- */
 class EnsureUserIsVendor
 {
     public function handle(Request $request, Closure $next): Response

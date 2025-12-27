@@ -6,7 +6,7 @@ use App\Models\Notification;
 
 /**
  * Observer Pattern - Notification Observer
- * Student 4: Cart, Checkout & Notifications Module
+ * Lee Song Yan: Cart, Checkout & Notifications Module
  * 
  * Creates in-app notifications when order events occur.
  */

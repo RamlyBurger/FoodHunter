@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * MenuItem Model - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * @pattern    Repository Pattern (EloquentMenuItemRepository)
+ * 
+ * Represents food items available for ordering from vendors.
+ * Accessed through Repository Pattern for data abstraction.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

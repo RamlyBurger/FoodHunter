@@ -69,7 +69,7 @@ namespace App\Patterns\Factory;
 
 /**
  * Factory Pattern - Voucher Interface
- * Student 5: Vendor Management Module
+ * Lee Kin Hang: Vendor Management Module
  * 
  * Defines the contract for all voucher types.
  */
@@ -91,7 +91,7 @@ namespace App\Patterns\Factory;
 
 /**
  * Factory Pattern - Fixed Discount Voucher
- * Student 5: Vendor Management Module
+ * Lee Kin Hang: Vendor Management Module
  * 
  * Concrete product: Fixed amount discount (e.g., RM5 off)
  */
@@ -144,7 +144,7 @@ namespace App\Patterns\Factory;
 
 /**
  * Factory Pattern - Percentage Discount Voucher
- * Student 5: Vendor Management Module
+ * Lee Kin Hang: Vendor Management Module
  * 
  * Concrete product: Percentage discount (e.g., 10% off)
  */
@@ -191,7 +191,7 @@ use App\Models\Voucher;
 
 /**
  * Factory Pattern - Voucher Factory
- * Student 5: Vendor Management Module
+ * Lee Kin Hang: Vendor Management Module
  * 
  * Creates appropriate voucher objects based on voucher type.
  */

@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Category Model - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * 
+ * Represents food categories for organizing menu items.
+ * Used for filtering and browsing the menu catalog.
+ * =============================================================================
+ */
 
 namespace App\Models;
 

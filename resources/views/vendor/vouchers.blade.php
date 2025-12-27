@@ -1,3 +1,17 @@
+{{--
+|==============================================================================
+| Vendor Vouchers Page - Lee Kin Hang (Vendor Management Module)
+|==============================================================================
+|
+| @author     Lee Kin Hang
+| @module     Vendor Management Module
+| @pattern    Factory Pattern (VoucherFactory)
+|
+| CRUD interface for vendors to manage discount vouchers.
+| Uses Factory Pattern for voucher discount calculations.
+|==============================================================================
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Manage Vouchers - ' . $vendor->store_name)

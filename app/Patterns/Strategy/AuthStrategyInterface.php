@@ -6,7 +6,7 @@ use App\Models\User;
 
 /**
  * Strategy Pattern - Authentication Strategy Interface
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * This interface defines the contract for different authentication strategies.
  * Each strategy implements a different way to authenticate users.

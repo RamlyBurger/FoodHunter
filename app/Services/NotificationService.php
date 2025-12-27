@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
- * Notification Service - Student 5
+ * Notification Service - Lee Kin Hang
  * 
  * Uses Observer Pattern with security features:
  * - Cryptographically Secure Random Code Generation

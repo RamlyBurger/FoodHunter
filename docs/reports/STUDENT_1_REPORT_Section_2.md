@@ -33,7 +33,7 @@ The registration flow follows these steps:
 
 6. **Email Verification**: Users must enter the correct OTP to complete registration. Upon successful verification, the user record is created in the database with a hashed password using BCrypt algorithm.
 
-7. **Welcome Notification**: After successful registration, the system automatically sends a welcome notification to the user using Student 4's Notification API, demonstrating web service integration.
+7. **Welcome Notification**: After successful registration, the system automatically sends a welcome notification to the user using Lee Song Yan's Notification API, demonstrating web service integration.
 
 #### 2.1.3 Authentication Mechanisms
 
@@ -78,7 +78,7 @@ Profile management allows authenticated users to view and update their personal 
 - **Avatar Upload**: Upload profile pictures with file type validation and automatic resizing
 - **Email Change**: Update email address with mandatory re-verification via OTP to prevent account hijacking
 - **Password Change**: Update password by providing current password (for verification) and new password (with confirmation)
-- **View User Statistics**: Access order history statistics through Student 1's User Stats API, showing total orders, spending, and loyalty points
+- **View User Statistics**: Access order history statistics through Ng Wayne Xiang's User Stats API, showing total orders, spending, and loyalty points
 
 **Sub-Modules Implemented:**
 

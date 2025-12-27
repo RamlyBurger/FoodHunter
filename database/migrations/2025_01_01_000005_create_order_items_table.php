@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Order Items Table Migration - Low Nam Lee (Order & Pickup Module)
+ * =============================================================================
+ * 
+ * @author     Low Nam Lee
+ * @module     Order & Pickup Module
+ * 
+ * Creates the order_items table for storing items in each order.
+ * Snapshots item details at order time for historical accuracy.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

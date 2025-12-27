@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Menu Items Table Migration - Haerine Deepak Singh (Menu & Catalog Module)
+ * =============================================================================
+ * 
+ * @author     Haerine Deepak Singh
+ * @module     Menu & Catalog Module
+ * 
+ * Creates the menu_items table for storing food items.
+ * Includes pricing, availability, and sales statistics.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

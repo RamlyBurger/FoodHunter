@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Voucher Seeder - Lee Kin Hang (Vendor Management Module)
+ * =============================================================================
+ * 
+ * @author     Lee Kin Hang
+ * @module     Vendor Management Module
+ * @pattern    Factory Pattern (VoucherFactory)
+ * 
+ * Seeds the vouchers table with sample discount vouchers for each vendor.
+ * Creates percentage and fixed discount vouchers for testing.
+ * =============================================================================
+ */
 
 namespace Database\Seeders;
 

@@ -8,7 +8,7 @@
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Validates an API token and returns user information. Used by other modules to verify user authentication status before processing requests. This is a critical security API that ensures only authenticated users can access protected resources across all modules. |
-| Source Module | User & Authentication (Student 1) |
+| Source Module | User & Authentication (Ng Wayne Xiang) |
 | Target Module | All other modules (Menu, Cart, Order, Notification) |
 | URL | http://127.0.0.1:8000/api/auth/validate-token |
 | Function Name | validateToken() |
@@ -108,17 +108,17 @@ public function validateToken(Request $request): JsonResponse
 }
 ```
 
-#### 6.1.8 Backend Consumption Example (Student 3 - Order Module)
+#### 6.1.8 Backend Consumption Example (Low Nam Lee - Order Module)
 
 ```php
 // app/Http/Controllers/Api/OrderController.php (line 56-64)
-// Student 3's Order module consumes Student 1's Validate Token API before creating orders
+// Low Nam Lee's Order module consumes Ng Wayne Xiang's Validate Token API before creating orders
 
 public function store(CreateOrderRequest $request): JsonResponse
 {
     $user = $request->user();
     
-    // Web Service: Consume Student 1's Validate Token API to verify user authentication
+    // Web Service: Consume Ng Wayne Xiang's Validate Token API to verify user authentication
     // This ensures the user session is still valid before processing the order
     $authController = app(\App\Http\Controllers\Api\AuthController::class);
     $tokenValidation = $authController->validateToken($request);
@@ -136,10 +136,10 @@ public function store(CreateOrderRequest $request): JsonResponse
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Menu & Catalog | Student 2 | Wishlist operations authentication |
-| Order & Pickup | Student 3 | Order management authentication |
-| Cart, Checkout & Notifications | Student 4 | Cart operations and notification authentication |
-| Vendor Management | Student 5 | Vendor operations authentication |
+| Menu & Catalog | Haerine Deepak Singh | Wishlist operations authentication |
+| Order & Pickup | Low Nam Lee | Order management authentication |
+| Cart, Checkout & Notifications | Lee Song Yan | Cart operations and notification authentication |
+| Vendor Management | Lee Kin Hang | Vendor operations authentication |
 
 ---
 
@@ -151,8 +151,8 @@ public function store(CreateOrderRequest $request): JsonResponse
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Returns comprehensive user statistics including total orders, completed orders, total spent, and active vouchers. Used by other modules to display user activity data and personalize recommendations. |
-| Source Module | User & Authentication (Student 1) |
-| Target Module | Order & Pickup (Student 3), Menu & Catalog (Student 2) |
+| Source Module | User & Authentication (Ng Wayne Xiang) |
+| Target Module | Order & Pickup (Low Nam Lee), Menu & Catalog (Haerine Deepak Singh) |
 | URL | http://127.0.0.1:8000/api/auth/user-stats |
 | Function Name | userStats() |
 | HTTP Method | GET |
@@ -264,7 +264,7 @@ public function userStats(Request $request): JsonResponse
 
 ```javascript
 // resources/views/profile/index.blade.php (line 933-959)
-// Load user stats using Student 1's API on profile page
+// Load user stats using Ng Wayne Xiang's API on profile page
 
 function loadUserStats() {
     fetch('/api/auth/user-stats', {
@@ -296,13 +296,13 @@ document.addEventListener('DOMContentLoaded', loadUserStats);
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Order & Pickup | Student 3 | Order history() method displays user statistics |
-| Menu & Catalog | Student 2 | Personalized recommendations based on order history |
+| Order & Pickup | Low Nam Lee | Order history() method displays user statistics |
+| Menu & Catalog | Haerine Deepak Singh | Personalized recommendations based on order history |
 | Profile Page | Frontend | Displays user statistics on profile dashboard |
 
 ---
 
-### 6.3 Web Service Consumed: Notification Service (Student 4)
+### 6.3 Web Service Consumed: Notification Service (Lee Song Yan)
 
 #### 6.3.1 Webservice Mechanism
 
@@ -310,8 +310,8 @@ document.addEventListener('DOMContentLoaded', loadUserStats);
 |-------------|-------|
 | Protocol | RESTful |
 | Function Description | Sends a welcome notification to newly registered users. Consumed after successful user registration to provide a personalized onboarding experience. |
-| Source Module | Cart, Checkout & Notifications (Student 4) |
-| Target Module | User & Authentication (Student 1) |
+| Source Module | Cart, Checkout & Notifications (Lee Song Yan) |
+| Target Module | User & Authentication (Ng Wayne Xiang) |
 | URL | http://127.0.0.1:8000/api/notifications/send |
 | Function Name | send() |
 | HTTP Method | POST |
@@ -336,7 +336,7 @@ public function register(RegisterRequest $request): JsonResponse
 
     $token = $user->createToken('auth-token')->plainTextToken;
 
-    // Web Service: Consume Notification Service (Student 4)
+    // Web Service: Consume Notification Service (Lee Song Yan)
     $this->notificationService->send(
         $user->id,
         'welcome',
@@ -391,19 +391,19 @@ public function register(RegisterRequest $request): JsonResponse
 ```php
 // routes/api.php
 
-// Authentication (Student 1) - Public Routes
+// Authentication (Ng Wayne Xiang) - Public Routes
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
-// Authentication (Student 1) - Protected Routes
+// Authentication (Ng Wayne Xiang) - Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/user', [AuthController::class, 'user']);
     
-    // Web Service: Token Validation (Student 1 exposes, others consume)
+    // Web Service: Token Validation (Ng Wayne Xiang exposes, others consume)
     Route::post('/auth/validate-token', [AuthController::class, 'validateToken']);
     
-    // Web Service: User Statistics (Student 1 exposes, Order/Menu modules consume)
+    // Web Service: User Statistics (Ng Wayne Xiang exposes, Order/Menu modules consume)
     Route::get('/auth/user-stats', [AuthController::class, 'userStats']);
 });
 ```

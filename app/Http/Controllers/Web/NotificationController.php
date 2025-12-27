@@ -1,4 +1,17 @@
 <?php
+/**
+ * =============================================================================
+ * Notification Controller - Lee Song Yan (Cart, Checkout & Notifications Module)
+ * =============================================================================
+ * 
+ * @author     Lee Song Yan
+ * @module     Cart, Checkout & Notifications Module
+ * @pattern    Observer Pattern (NotificationObserver)
+ * 
+ * Handles user notification display, marking as read, and deletion.
+ * Notifications are triggered by the Observer Pattern from order events.
+ * =============================================================================
+ */
 
 namespace App\Http\Controllers\Web;
 

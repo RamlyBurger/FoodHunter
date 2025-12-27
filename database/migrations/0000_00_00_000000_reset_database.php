@@ -1,4 +1,16 @@
 <?php
+/**
+ * =============================================================================
+ * Reset Database Migration - Shared (All Students)
+ * =============================================================================
+ * 
+ * @author     Ng Wayne Xiang, Haerine Deepak Singh, Low Nam Lee, Lee Song Yan, Lee Kin Hang
+ * @module     Shared Infrastructure
+ * 
+ * Runs first and resets the entire database by dropping all tables.
+ * Ensures a clean slate for fresh migrations during development.
+ * =============================================================================
+ */
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Schema;

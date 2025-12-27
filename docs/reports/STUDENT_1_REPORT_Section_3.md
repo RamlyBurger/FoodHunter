@@ -65,7 +65,7 @@ use App\Models\User;
 
 /**
  * Strategy Pattern - Authentication Strategy Interface
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * This interface defines the contract for different authentication strategies.
  * Each strategy implements a different way to authenticate users.
@@ -100,7 +100,7 @@ use Illuminate\Support\Facades\Hash;
 
 /**
  * Strategy Pattern - Password Authentication Strategy
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * Authenticates users using email and password credentials.
  */
@@ -142,7 +142,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Strategy Pattern - Token Authentication Strategy
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * Authenticates users using API tokens (Sanctum).
  */
@@ -192,7 +192,7 @@ use App\Models\User;
 
 /**
  * Strategy Pattern - Auth Context
- * Student 1: User & Authentication Module
+ * Ng Wayne Xiang: User & Authentication Module
  * 
  * The Context maintains a reference to one of the Strategy objects.
  * The Context does not know the concrete class of a strategy.

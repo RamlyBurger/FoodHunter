@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * Forgot Password Controller - Student 1
+ * Forgot Password Controller - Ng Wayne Xiang
  * 
  * Uses Supabase for OTP-based password reset.
  * 

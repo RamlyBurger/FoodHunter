@@ -1,3 +1,16 @@
+{{--
+|==============================================================================
+| Quantity Stepper Component - Lee Song Yan (Cart, Checkout & Notifications Module)
+|==============================================================================
+|
+| @author     Lee Song Yan
+| @module     Cart, Checkout & Notifications Module
+|
+| Reusable quantity input component with increment/decrement buttons.
+| Used in cart page and menu item detail pages.
+|==============================================================================
+--}}
+
 @props([
     'value' => 1,
     'min' => 1,

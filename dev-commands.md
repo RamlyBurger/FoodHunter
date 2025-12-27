@@ -95,7 +95,7 @@ php artisan migrate:fresh --seed; php artisan serve
 
 Base URL: `http://127.0.0.1:8000/api`
 
-### Authentication APIs (Student 1)
+### Authentication APIs (Ng Wayne Xiang)
 
 #### POST /api/auth/login - User Login
 Authenticates user credentials and returns an access token.
@@ -158,7 +158,7 @@ Validates an API token. Used by other modules to verify authentication.
 
 ---
 
-### Menu & Catalog APIs (Student 2)
+### Menu & Catalog APIs (Haerine Deepak Singh)
 
 #### GET /api/menu/search?q={query} - Menu Search
 Search menu items by name/description.
@@ -230,7 +230,7 @@ Get related/similar menu items based on category or vendor. Useful for product r
 
 ---
 
-### Order & Pickup APIs (Student 3)
+### Order & Pickup APIs (Low Nam Lee)
 
 #### GET /api/orders - List Orders
 **Headers:** `Authorization: Bearer {token}`
@@ -286,7 +286,7 @@ Quickly reorder items from a past order. Clears cart and adds all available item
 
 ---
 
-### Cart & Checkout APIs (Student 4)
+### Cart & Checkout APIs (Lee Song Yan)
 
 #### GET /api/cart - Get Cart Items
 **Headers:** `Authorization: Bearer {token}`
@@ -331,7 +331,7 @@ Get the total number of items in cart. Useful for shopping cart badge displays.
 
 ---
 
-### Notification APIs (Student 4)
+### Notification APIs (Lee Song Yan)
 
 #### GET /api/notifications - List Notifications
 **Headers:** `Authorization: Bearer {token}`
@@ -371,7 +371,7 @@ Sends notification to a user. Consumed by Auth and Order modules.
 
 ---
 
-### Vendor Management APIs (Student 5)
+### Vendor Management APIs (Lee Kin Hang)
 
 #### GET /api/vendor/dashboard - Dashboard Stats
 **Headers:** `Authorization: Bearer {token}` (Vendor only)
@@ -397,7 +397,7 @@ Sends notification to a user. Consumed by Auth and Order modules.
 
 ---
 
-### Voucher APIs (Student 5)
+### Voucher APIs (Lee Kin Hang)
 
 #### GET /api/vendor/vouchers - List Vouchers
 
@@ -464,7 +464,7 @@ Validates a voucher code and returns discount info. Consumed by Cart module.
 
 ---
 
-### Vendor Order APIs (Student 5)
+### Vendor Order APIs (Lee Kin Hang)
 
 #### GET /api/vendor/orders - List Orders
 
@@ -486,11 +486,11 @@ Valid statuses: `confirmed`, `preparing`, `ready`, `completed`, `cancelled`
 
 | Module | Exposes | Consumes |
 |--------|---------|----------|
-| Student 1 (Auth) | Login API, Token Validation API | Notification API |
-| Student 2 (Menu) | Item Availability API, Search API | Token Validation API |
-| Student 3 (Order) | Order Status API | Item Availability API |
-| Student 4 (Cart & Notifications) | Send Notification API | Order Status API |
-| Student 5 (Vendor) | Validate Voucher API | Notification API |
+| Ng Wayne Xiang (Auth) | Login API, Token Validation API | Notification API |
+| Haerine Deepak Singh (Menu) | Item Availability API, Search API | Token Validation API |
+| Low Nam Lee (Order) | Order Status API | Item Availability API |
+| Lee Song Yan (Cart & Notifications) | Send Notification API | Order Status API |
+| Lee Kin Hang (Vendor) | Validate Voucher API | Notification API |
 
 ---
 
