@@ -171,29 +171,98 @@
                 </div>
             </div>
 
-            <!-- Recommended Items -->
+            <!-- Recommended Items - Popular Items from Student 2's API -->
             @php
-                $recommendedItems = \App\Models\MenuItem::where('is_available', true)
-                    ->whereNotIn('id', $cartItems->pluck('menu_item_id'))
-                    ->inRandomOrder()
-                    ->take(4)
-                    ->get();
+                $cartItemIds = $cartItems->pluck('menu_item_id')->toArray();
                 $wishlistIds = auth()->check() ? auth()->user()->wishlists()->pluck('menu_item_id')->toArray() : [];
             @endphp
-            @if($recommendedItems->count() > 0)
-                <section class="mt-5">
-                    <h5 class="mb-4" style="font-weight: 700;"><i class="bi bi-stars me-2"
-                            style="color: var(--warning-color);"></i>You might also like</h5>
-                    <div class="row g-4">
-                        @foreach($recommendedItems as $recItem)
-                            <x-menu-item-card :item="$recItem" :wishlistIds="$wishlistIds" />
-                        @endforeach
-                    </div>
-                </section>
-            @endif
+            <section class="mt-5" id="popular-items-section" style="display: none;">
+                <h5 class="mb-4" style="font-weight: 700;"><i class="bi bi-fire me-2"
+                        style="color: var(--primary-color);"></i>You might also like</h5>
+                <div class="row g-4" id="popular-items-container">
+                    <!-- Popular items loaded via Student 2's API -->
+                </div>
+            </section>
 
             @push('scripts')
                 <script>
+                    // Cart item IDs to exclude from popular items
+                    const cartItemIds = @json($cartItemIds);
+                    const wishlistIds = @json($wishlistIds);
+
+                    /**
+                     * Load popular items from Student 2's Popular Items API
+                     * Consumes: GET /api/menu/popular
+                     * This replaces the random items with trending popular items
+                     */
+                    function loadPopularItems() {
+                        const container = document.getElementById('popular-items-container');
+                        const section = document.getElementById('popular-items-section');
+                        
+                        if (!container || !section) return;
+
+                        fetch('/api/menu/popular?limit=8', {
+                            headers: { 'Accept': 'application/json' }
+                        })
+                        .then(res => res.json())
+                        .then(response => {
+                            const data = response.data || response;
+                            if (data.items && data.items.length > 0) {
+                                // Filter out items already in cart
+                                const filteredItems = data.items.filter(item => !cartItemIds.includes(item.id));
+                                
+                                if (filteredItems.length > 0) {
+                                    // Take only first 4 items
+                                    const displayItems = filteredItems.slice(0, 4);
+                                    
+                                    container.innerHTML = displayItems.map(item => {
+                                        const price = parseFloat(item.price).toFixed(2);
+                                        const vendorName = item.vendor?.store_name || 'Vendor';
+                                        const totalSold = item.total_sold || 0;
+                                        const isWishlisted = wishlistIds.includes(item.id);
+                                        const fallbackImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200&font-size=0.25&bold=true`;
+                                        
+                                        return `
+                                        <div class="col-6 col-md-3">
+                                            <div class="card h-100 menu-item-card">
+                                                <div class="position-relative">
+                                                    <a href="/menu/${item.id}">
+                                                        <img src="${item.image}" 
+                                                            class="card-img-top" 
+                                                            alt="${item.name}"
+                                                            style="height: 160px; object-fit: cover;"
+                                                            onerror="this.onerror=null; this.src='${fallbackImg}';">
+                                                    </a>
+                                                    <span class="badge bg-danger position-absolute" style="top: 8px; left: 8px;">
+                                                        <i class="bi bi-fire me-1"></i>${totalSold} sold
+                                                    </span>
+                                                </div>
+                                                <div class="card-body p-3">
+                                                    <a href="/menu/${item.id}" class="text-decoration-none text-dark">
+                                                        <h6 class="card-title mb-1" style="font-weight: 600; font-size: 0.95rem;">${item.name}</h6>
+                                                    </a>
+                                                    <small class="text-muted d-block mb-2">${vendorName}</small>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="fw-bold" style="color: var(--primary-color);">RM ${price}</span>
+                                                        <button type="button" class="btn btn-sm btn-primary" onclick="addToCart(${item.id}, 1, this)">
+                                                            <i class="bi bi-cart-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                    }).join('');
+                                    
+                                    section.style.display = 'block';
+                                }
+                            }
+                        })
+                        .catch(err => console.error('Failed to load popular items:', err));
+                    }
+
+                    // Load popular items on page load
+                    document.addEventListener('DOMContentLoaded', loadPopularItems);
+
                     // Override stepper change to update item totals
                     const originalHandleStepperChange = window.handleStepperChange;
                     window.handleStepperChange = function (wrapper, newQty) {

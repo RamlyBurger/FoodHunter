@@ -160,7 +160,7 @@ function addToCart(itemId, quantity = 1, btn = null) {
 | Description | Value |
 |-------------|-------|
 | Protocol | RESTful |
-| Function Description | Returns a list of popular menu items based on total sales (total_sold). Used by Cart module to provide personalized recommendations and by Home page to display trending items. |
+| Function Description | Returns a list of popular menu items based on total sales (total_sold). Used by Cart module's "You might also like" section to provide trending recommendations and by Home page to display trending items. |
 | Source Module | Menu & Catalog (Student 2) |
 | Target Module | Order & Pickup (Student 3), Cart, Checkout & Notifications (Student 4), Home Page |
 | URL | http://127.0.0.1:8000/api/menu/popular |
@@ -323,7 +323,7 @@ public function popularItems(Request $request): JsonResponse
 }
 ```
 
-#### 6.2.8 Frontend Consumption Example
+#### 6.2.8 Frontend Consumption Example (Home Page)
 
 ```javascript
 // resources/views/home.blade.php (line 597-656)
@@ -367,11 +367,88 @@ function loadPopularItems() {
 document.addEventListener('DOMContentLoaded', loadPopularItems);
 ```
 
-#### 6.2.9 Modules That Consume This API
+#### 6.2.9 Modules that Consume This API
+
+```javascript
+// resources/views/cart/index.blade.php (line 193-261)
+// Load popular items for "You might also like" section using Student 2's API
+
+// Cart item IDs to exclude from popular items
+const cartItemIds = @json($cartItemIds);
+const wishlistIds = @json($wishlistIds);
+
+/**
+ * Load popular items from Student 2's Popular Items API
+ * Consumes: GET /api/menu/popular
+ * This replaces the random items with trending popular items
+ */
+function loadPopularItems() {
+    const container = document.getElementById('popular-items-container');
+    const section = document.getElementById('popular-items-section');
+    
+    if (!container || !section) return;
+
+    fetch('/api/menu/popular?limit=8', {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(response => {
+        const data = response.data || response;
+        if (data.items && data.items.length > 0) {
+            // Filter out items already in cart
+            const filteredItems = data.items.filter(item => !cartItemIds.includes(item.id));
+            
+            if (filteredItems.length > 0) {
+                // Take only first 4 items
+                const displayItems = filteredItems.slice(0, 4);
+                
+                container.innerHTML = displayItems.map(item => {
+                    const price = parseFloat(item.price).toFixed(2);
+                    const vendorName = item.vendor?.store_name || 'Vendor';
+                    const totalSold = item.total_sold || 0;
+                    
+                    return `
+                    <div class="col-6 col-md-3">
+                        <div class="card h-100 menu-item-card">
+                            <div class="position-relative">
+                                <a href="/menu/${item.id}">
+                                    <img src="${item.image}" class="card-img-top" alt="${item.name}">
+                                </a>
+                                <span class="badge bg-danger position-absolute">
+                                    <i class="bi bi-fire me-1"></i>${totalSold} sold
+                                </span>
+                            </div>
+                            <div class="card-body p-3">
+                                <a href="/menu/${item.id}" class="text-decoration-none text-dark">
+                                    <h6 class="card-title mb-1">${item.name}</h6>
+                                </a>
+                                <small class="text-muted d-block mb-2">${vendorName}</small>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">RM ${price}</span>
+                                    <button type="button" class="btn btn-sm btn-primary" 
+                                        onclick="addToCart(${item.id}, 1, this)">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+                
+                section.style.display = 'block';
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', loadPopularItems);
+```
+
+#### 6.2.10 Modules That Consume This API
 
 | Module | Student | Usage Context |
 |--------|---------|---------------|
-| Cart, Checkout & Notifications | Student 4 | recommendations() method for cart suggestions |
+| Cart Page | Student 4 | Displays popular items as recommendations in cart page |
 | Home Page | Frontend | Displays trending/popular items section |
 | Menu Page | Frontend | Shows popular items in category |
 

@@ -217,7 +217,7 @@
             </div>
             <div class="col-lg-6 text-center d-none d-lg-block">
                 <div class="position-relative">
-                    <img src="https://scontent.fkul3-5.fna.fbcdn.net/v/t39.30808-6/515318255_24142182252080761_5900394254721126609_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=cf85f3&_nc_ohc=dRej-Ul_PbQQ7kNvwGaqgj2&_nc_oc=AdlNN0BoKjFjYeeleaLnr9rqlegwFJzFQKfmUH-ZwM_z3ZeXxewtEZ0A6rznbEumDY2T6PfmvPpN1KrDuGprGE7J&_nc_zt=23&_nc_ht=scontent.fkul3-5.fna&_nc_gid=byyixzzFsMZVL5118ty14g&oh=00_AflamUvLMaLzhKaeruSE4Fh2Vs83PVC2X30zSOKV6vq-jQ&oe=694DA0C0" 
+                    <img src="intro.jpg" 
                          alt="Delicious Food" 
                          class="img-fluid rounded-4 shadow-lg"
                          style="max-width: 350px; border-radius: 30px !important;">
