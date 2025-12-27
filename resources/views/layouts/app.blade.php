@@ -1351,13 +1351,28 @@
                 });
             })
             .then(res => res ? res.json() : null)
-            .then(data => {
-                if (data && data.success) {
+            .then(response => {
+                if (response && response.success) {
+                    // Handle standardized API response format
+                    const data = response.data || response;
+                    
+                    // Update cart count badge
+                    if (typeof data.cart_count !== 'undefined') {
+                        const cartBadges = document.querySelectorAll('.cart-count, #cart-count');
+                        cartBadges.forEach(badge => {
+                            badge.textContent = data.cart_count;
+                            badge.style.display = data.cart_count > 0 ? 'flex' : 'none';
+                        });
+                    }
+                    
                     // Pulse animation on cart badge
                     pulseCartBadge();
                     loadCartDropdown();
-                } else if (data) {
-                    showToast(data.message || 'Failed to add to cart', 'error');
+                    
+                    // Show success toast
+                    showToast(response.message || 'Added to cart!', 'success');
+                } else if (response) {
+                    showToast(response.message || 'Failed to add to cart', 'error');
                 }
             })
             .catch(err => {
@@ -1409,18 +1424,38 @@
                 body: JSON.stringify({ menu_item_id: itemId })
             })
             .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.in_wishlist) {
+            .then(response => {
+                if (response.success) {
+                    // Handle standardized API response format
+                    const data = response.data || response;
+                    const inWishlist = data.in_wishlist;
+                    
+                    if (inWishlist) {
                         icon.className = 'bi bi-heart-fill text-danger';
+                        btn.classList.add('btn-danger');
+                        btn.classList.remove('btn-outline-secondary');
                     } else {
                         icon.className = 'bi bi-heart';
+                        btn.classList.remove('btn-danger');
+                        btn.classList.add('btn-outline-secondary');
                     }
                     // Pulse animation on icon and badge
                     icon.classList.add('pulse');
                     setTimeout(() => icon.classList.remove('pulse'), 400);
                     pulseWishlistBadge();
                     loadWishlistDropdown();
+                    
+                    // Update wishlist count in navbar
+                    const wishlistCount = data.wishlist_count;
+                    if (typeof wishlistCount !== 'undefined') {
+                        const countEls = document.querySelectorAll('.wishlist-count');
+                        countEls.forEach(el => el.textContent = wishlistCount);
+                    }
+                    
+                    // Show toast feedback
+                    if (typeof showToast === 'function') {
+                        showToast(response.message || (inWishlist ? 'Added to wishlist' : 'Removed from wishlist'), 'success');
+                    }
                 }
             })
             .catch(() => {});

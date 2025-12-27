@@ -560,17 +560,31 @@ function toggleWishlistDetail(itemId, btn) {
         body: JSON.stringify({ menu_item_id: itemId })
     })
     .then(res => res.json())
-    .then(data => {
-        if (data.success) {
+    .then(response => {
+        if (response.success) {
+            // Handle standardized API response format
+            const data = response.data || response;
+            const inWishlist = data.in_wishlist;
             const icon = btn.querySelector('i');
-            if (data.in_wishlist) {
+            
+            if (inWishlist) {
                 icon.className = 'bi bi-heart-fill';
+                btn.classList.add('active');
                 showToast('Added to wishlist', 'success');
             } else {
                 icon.className = 'bi bi-heart';
+                btn.classList.remove('active');
                 showToast('Removed from wishlist', 'success');
             }
-            loadWishlistDropdown();
+            
+            // Update wishlist count
+            if (typeof data.wishlist_count !== 'undefined') {
+                const countEls = document.querySelectorAll('.wishlist-count');
+                countEls.forEach(el => el.textContent = data.wishlist_count);
+            }
+            
+            if (typeof loadWishlistDropdown === 'function') loadWishlistDropdown();
+            if (typeof pulseWishlistBadge === 'function') pulseWishlistBadge();
         }
     })
     .catch(err => console.error('Error:', err));

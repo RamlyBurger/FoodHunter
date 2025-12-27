@@ -113,6 +113,9 @@
             <p class="text-muted">Your saved favorite items</p>
         </div>
         <div class="col-lg-4 text-lg-end">
+            <button type="button" class="btn btn-outline-danger rounded-pill me-2" id="clear-wishlist-btn" onclick="clearWishlist()" style="display: none;">
+                <i class="bi bi-trash me-1"></i> Clear All
+            </button>
             <a href="{{ route('menu.index') }}" class="btn btn-outline-primary rounded-pill">
                 <i class="bi bi-arrow-left me-1"></i> Continue Browsing
             </a>
@@ -223,9 +226,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateWishlistCount(count) {
         const badge = document.getElementById('wishlist-count-badge');
+        const clearBtn = document.getElementById('clear-wishlist-btn');
         if (badge) {
             badge.textContent = count;
             badge.style.display = count > 0 ? 'inline' : 'none';
+        }
+        if (clearBtn) {
+            clearBtn.style.display = count > 0 ? 'inline-block' : 'none';
         }
         // Also update navbar wishlist count
         const navCount = document.querySelector('.wishlist-count');
@@ -290,6 +297,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.success) {
                 const responseData = data.data || data;
+                const newCount = responseData.wishlist_count ?? 0;
+                
                 // Animate and remove item
                 const itemEl = document.getElementById(`wishlist-item-${wishlistId}`);
                 if (itemEl) {
@@ -301,14 +310,65 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Check if wishlist is now empty
                         const remaining = document.querySelectorAll('[id^="wishlist-item-"]');
                         if (remaining.length === 0) {
-                            loadWishlist(); // Reload to show empty state
+                            renderWishlist([]); // Show empty state directly
                         }
                     }, 300);
                 }
-                updateWishlistCount(responseData.wishlist_count || 0);
+                
+                // Update count and navbar dropdown
+                updateWishlistCount(newCount);
+                if (typeof loadWishlistDropdown === 'function') loadWishlistDropdown();
+                if (typeof pulseWishlistBadge === 'function') pulseWishlistBadge();
+                
                 showToast(data.message || 'Removed from wishlist', 'success');
             } else {
                 showToast(data.message || 'Failed to remove', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        } catch (e) {
+            showToast('An error occurred', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    };
+
+    // Clear all wishlist items
+    window.clearWishlist = async function() {
+        const result = await Swal.fire({
+            title: 'Clear Wishlist?',
+            text: 'This will remove all items from your wishlist.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, clear all',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (!result.isConfirmed) return;
+        
+        const btn = document.getElementById('clear-wishlist-btn');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Clearing...';
+        
+        try {
+            const res = await fetch('/wishlist/clear', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                updateWishlistCount(0);
+                loadWishlist(); // Reload to show empty state
+                showToast(data.message || 'Wishlist cleared', 'success');
+            } else {
+                showToast(data.message || 'Failed to clear wishlist', 'error');
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
             }

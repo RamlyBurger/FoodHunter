@@ -122,6 +122,7 @@ Route::middleware(['auth', 'customer'])->group(function () {
     // Wishlist
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/wishlist/clear', [WishlistController::class, 'clear'])->name('wishlist.clear');
     Route::delete('/wishlist/{item}', [WishlistController::class, 'remove'])->name('wishlist.remove');
     Route::get('/wishlist/count', [WishlistController::class, 'count'])->name('wishlist.count');
 

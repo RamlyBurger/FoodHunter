@@ -112,6 +112,19 @@ class WishlistController extends Controller
         return $this->successResponse(['count' => $count]);
     }
 
+    public function clear()
+    {
+        Wishlist::where('user_id', Auth::id())->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return $this->successResponse([
+                'wishlist_count' => 0,
+            ], 'Wishlist cleared.');
+        }
+
+        return back()->with('success', 'Wishlist cleared.');
+    }
+
     public function dropdown()
     {
         $wishlistItems = Wishlist::where('user_id', Auth::id())

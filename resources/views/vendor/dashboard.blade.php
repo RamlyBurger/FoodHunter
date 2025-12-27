@@ -139,7 +139,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="fw-bold" style="color: #FF9500; font-size: 0.85rem;">RM {{ number_format($order->total, 2) }}</span>
+                                            <span class="fw-bold" style="color: #FF9500; font-size: 0.85rem;">RM {{ number_format((float) ($order->total ?? 0), 2) }}</span>
                                         </td>
                                         <td>
                                             @php

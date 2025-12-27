@@ -39,8 +39,8 @@
         </div>
 
         @if(count($cartItems) > 0)
-            <div class="row g-4">
-                <div class="col-md-8">
+            <div class="row g-4" id="cart-content-row">
+                <div class="col-md-8" id="cart-items-column">
                     <div class="card">
                         <div class="card-body p-0">
                             @foreach($cartItems as $index => $item)
@@ -100,7 +100,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-4" id="cart-summary-column">
                     <div class="card" style="position: sticky; top: 100px;">
                         <div class="card-body p-4">
                             <h5 class="mb-4" style="font-weight: 700;">Order Summary</h5>
@@ -279,14 +279,26 @@
                                 body: JSON.stringify({ quantity: newQty })
                             })
                                 .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
+                                .then(response => {
+                                    if (response.success) {
                                         // Handle standardized API response format
-                                        const responseData = data.data || data;
-                                        document.getElementById('item-total-' + cartItemId).textContent = 'RM ' + (responseData.item_total || data.item_total).toFixed(2);
-                                        updateCartSummary(responseData.summary || data.summary);
-                                        pulseCartBadge();
-                                        loadCartDropdown();
+                                        const responseData = response.data || response;
+                                        const itemTotal = responseData.item_total;
+                                        const summary = responseData.summary;
+                                        const cartCount = responseData.cart_count ?? summary?.item_count ?? 0;
+                                        
+                                        document.getElementById('item-total-' + cartItemId).textContent = 'RM ' + parseFloat(itemTotal).toFixed(2);
+                                        updateCartSummary(summary);
+                                        
+                                        // Update cart badge
+                                        const cartBadges = document.querySelectorAll('.cart-count, #cart-count');
+                                        cartBadges.forEach(badge => {
+                                            badge.textContent = cartCount;
+                                            badge.style.display = cartCount > 0 ? 'flex' : 'none';
+                                        });
+                                        
+                                        if (typeof pulseCartBadge === 'function') pulseCartBadge();
+                                        if (typeof loadCartDropdown === 'function') loadCartDropdown();
                                     }
                                 });
                         }
@@ -304,35 +316,47 @@
                             }
                         })
                             .then(res => res.json())
-                            .then(data => {
-                                if (data.success) {
+                            .then(response => {
+                                if (response.success) {
                                     // Handle standardized API response format
-                                    const responseData = data.data || data;
-                                    const summary = responseData.summary || data.summary;
+                                    const responseData = response.data || response;
+                                    const summary = responseData.summary;
+                                    const cartCount = responseData.cart_count ?? summary?.item_count ?? 0;
+                                    
+                                    // Remove the item row from DOM
                                     const row = btn.closest('.p-4');
                                     row.remove();
                                     updateCartSummary(summary);
-                                    pulseCartBadge();
-                                    loadCartDropdown();
+                                    
+                                    // Update cart badge
+                                    const cartBadges = document.querySelectorAll('.cart-count, #cart-count');
+                                    cartBadges.forEach(badge => {
+                                        badge.textContent = cartCount;
+                                        if (cartCount === 0) badge.style.display = 'none';
+                                    });
+                                    
+                                    if (typeof pulseCartBadge === 'function') pulseCartBadge();
+                                    if (typeof loadCartDropdown === 'function') loadCartDropdown();
+                                    showToast(response.message || 'Item removed', 'success');
 
                                     if (summary.item_count === 0) {
-                                        // Show empty cart state
-                                        const cartContainer = document.querySelector('.col-md-8');
-                                        if (cartContainer) {
-                                            cartContainer.innerHTML = `
-                                        <div class="card">
-                                            <div class="card-body text-center py-5">
-                                                <i class="bi bi-cart-x fs-1 text-muted mb-3 d-block"></i>
-                                                <h5 class="text-muted mb-3">Your cart is empty</h5>
-                                                <a href="{{ url('/menu') }}" class="btn btn-primary">
-                                                    <i class="bi bi-arrow-left me-1"></i> Browse Menu
-                                                </a>
-                                            </div>
-                                        </div>
-                                    `;
+                                        // Show empty cart state using specific ID
+                                        const cartContentRow = document.getElementById('cart-content-row');
+                                        if (cartContentRow) {
+                                            cartContentRow.innerHTML = `
+                                                <div class="col-12">
+                                                    <div class="card">
+                                                        <div class="card-body text-center py-5">
+                                                            <i class="bi bi-cart-x fs-1 text-muted mb-3 d-block"></i>
+                                                            <h5 class="text-muted mb-3">Your cart is empty</h5>
+                                                            <a href="{{ url('/menu') }}" class="btn btn-primary">
+                                                                <i class="bi bi-arrow-left me-1"></i> Browse Menu
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
                                         }
-                                        const summaryCard = document.querySelector('.col-md-4');
-                                        if (summaryCard) summaryCard.style.display = 'none';
                                     }
                                 }
                             })
@@ -384,34 +408,43 @@
                             }
                         })
                             .then(res => res.json())
-                            .then(data => {
-                                if (data.success) {
-                                    // Remove all cart items from DOM and show empty state
-                                    const cartContainer = document.querySelector('.col-md-8');
-                                    if (cartContainer) {
-                                        cartContainer.innerHTML = `
-                                    <div class="card">
-                                        <div class="card-body text-center py-5">
-                                            <i class="bi bi-cart-x fs-1 text-muted mb-3 d-block"></i>
-                                            <h5 class="text-muted mb-3">Your cart is empty</h5>
-                                            <a href="{{ url('/menu') }}" class="btn btn-primary">
-                                                <i class="bi bi-arrow-left me-1"></i> Browse Menu
-                                            </a>
-                                        </div>
-                                    </div>
-                                `;
+                            .then(response => {
+                                if (response.success) {
+                                    // Handle standardized API response format
+                                    const data = response.data || response;
+                                    
+                                    // Hide the entire cart content row and show empty state
+                                    const cartContentRow = document.getElementById('cart-content-row');
+                                    if (cartContentRow) {
+                                        cartContentRow.innerHTML = `
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-body text-center py-5">
+                                                        <i class="bi bi-cart-x fs-1 text-muted mb-3 d-block"></i>
+                                                        <h5 class="text-muted mb-3">Your cart is empty</h5>
+                                                        <a href="{{ url('/menu') }}" class="btn btn-primary">
+                                                            <i class="bi bi-arrow-left me-1"></i> Browse Menu
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
                                     }
-                                    // Hide summary card
-                                    const summaryCard = document.querySelector('.col-md-4');
-                                    if (summaryCard) summaryCard.style.display = 'none';
+                                    
+                                    // Update cart badge to 0
+                                    const cartBadges = document.querySelectorAll('.cart-count, #cart-count');
+                                    cartBadges.forEach(badge => {
+                                        badge.textContent = '0';
+                                        badge.style.display = 'none';
+                                    });
 
-                                    pulseCartBadge();
-                                    loadCartDropdown();
-                                    showToast(data.message || 'Cart cleared', 'success');
+                                    if (typeof pulseCartBadge === 'function') pulseCartBadge();
+                                    if (typeof loadCartDropdown === 'function') loadCartDropdown();
+                                    showToast(response.message || 'Cart cleared', 'success');
                                 } else {
                                     btn.disabled = false;
                                     btn.innerHTML = originalContent;
-                                    showToast(data.message || 'Failed to clear cart', 'error');
+                                    showToast(response.message || 'Failed to clear cart', 'error');
                                 }
                             })
                             .catch(err => {
