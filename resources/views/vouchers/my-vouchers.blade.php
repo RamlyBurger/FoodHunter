@@ -156,8 +156,9 @@
         </div>
 
         <!-- Voucher List -->
+        <div id="vouchers-container">
         @if($userVouchers->count() > 0)
-        <div class="voucher-list">
+        <div class="voucher-list" id="voucher-list">
             @foreach($userVouchers as $userVoucher)
             @php
                 $voucher = $userVoucher->voucher;
@@ -223,6 +224,7 @@
             </a>
         </div>
         @endif
+        </div>
 
         <!-- Usage Instructions -->
         <div class="mt-4 p-4 bg-light rounded-3">
@@ -239,10 +241,123 @@
 
 @push('scripts')
 <script>
+// csrfToken is already defined in app.blade.php layout
+
 function copyCode(code) {
     navigator.clipboard.writeText(code).then(function() {
         showToast('Voucher code copied! Use it at checkout.', 'success');
     });
+}
+
+// Load vouchers via AJAX
+async function loadMyVouchers() {
+    const container = document.getElementById('vouchers-container');
+    
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted mt-2">Loading your vouchers...</p>
+        </div>
+    `;
+    
+    try {
+        const res = await fetch('/vouchers/my', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const response = await res.json();
+        
+        if (response.success) {
+            const data = response.data || response;
+            renderMyVouchers(data.vouchers || []);
+        } else {
+            container.innerHTML = `<div class="alert alert-danger">Failed to load vouchers</div>`;
+        }
+    } catch (e) {
+        console.error('Error loading vouchers:', e);
+        container.innerHTML = `<div class="alert alert-danger">An error occurred</div>`;
+    }
+}
+
+// Render my vouchers list
+function renderMyVouchers(vouchers) {
+    const container = document.getElementById('vouchers-container');
+    
+    if (!vouchers || vouchers.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon"><i class="bi bi-wallet2"></i></div>
+                <h5 style="font-weight: 600;">No vouchers yet</h5>
+                <p class="text-muted mb-4">Redeem vouchers from vendors to get discounts on your orders!</p>
+                <a href="/vouchers" class="btn btn-primary">
+                    <i class="bi bi-ticket-perforated me-1"></i> Browse Vouchers
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="voucher-list" id="voucher-list">';
+    vouchers.forEach(uv => {
+        const voucher = uv.voucher;
+        if (!voucher) return;
+        
+        const isUsed = uv.usage_count >= (voucher.per_user_limit || 1);
+        const expiresAt = voucher.expires_at ? new Date(voucher.expires_at) : null;
+        const now = new Date();
+        const isExpired = expiresAt && now > expiresAt;
+        const expiresIn = expiresAt ? Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)) : null;
+        
+        html += `
+            <div class="voucher-item ${isUsed ? 'used' : ''} ${isExpired ? 'expired' : ''}">
+                <div class="voucher-left">
+                    ${voucher.type === 'fixed' 
+                        ? `<div class="value">RM${parseFloat(voucher.value).toFixed(0)}</div><div class="type">OFF</div>`
+                        : `<div class="value">${parseInt(voucher.value)}%</div><div class="type">OFF</div>`
+                    }
+                </div>
+                <div class="voucher-right">
+                    <div class="voucher-info">
+                        <div class="voucher-name">${escapeHtml(voucher.name)}</div>
+                        <div class="voucher-vendor">
+                            <i class="bi bi-shop" style="color: var(--primary-color);"></i> 
+                            ${voucher.vendor?.store_name || 'All Vendors'}
+                            ${voucher.min_order ? `<span class="ms-2 text-muted">• Min RM${parseFloat(voucher.min_order).toFixed(0)}</span>` : ''}
+                        </div>
+                        <div class="voucher-code" onclick="copyCode('${voucher.code}')" style="cursor: pointer;" title="Click to copy">
+                            ${voucher.code} <i class="bi bi-clipboard ms-1"></i>
+                        </div>
+                    </div>
+                    <div class="voucher-status">
+                        ${expiresAt ? `
+                            <div class="voucher-expiry ${expiresIn !== null && expiresIn <= 3 && expiresIn > 0 ? 'expiring-soon' : ''}">
+                                ${isExpired ? 'Expired' : (expiresIn !== null && expiresIn <= 3 ? `${expiresIn} days left` : `Until ${expiresAt.toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}`)}
+                            </div>
+                        ` : ''}
+                        ${isExpired 
+                            ? '<span class="status-badge expired">Expired</span>'
+                            : (isUsed 
+                                ? '<span class="status-badge used">Used</span>' 
+                                : '<span class="status-badge available">Available</span>'
+                            )
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 @endpush

@@ -245,7 +245,7 @@
             <h3 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-grid-3x3-gap me-2" style="color: var(--primary-color);"></i>Categories</h3>
             <a href="{{ url('/menu') }}" class="btn btn-sm btn-outline-secondary">View All</a>
         </div>
-        <div class="row g-3">
+        <div class="row g-3" id="categories-container">
             @forelse($categories as $category)
             <div class="col-6 col-md-2">
                 <a href="{{ url('/menu?category=' . $category->id) }}" class="text-decoration-none">
@@ -277,7 +277,7 @@
             <h3 style="font-weight: 700; letter-spacing: -0.5px;"><i class="bi bi-star-fill me-2" style="color: var(--warning-color);"></i>Featured Items</h3>
             <a href="{{ url('/menu?featured=1') }}" class="btn btn-sm btn-outline-secondary">View All</a>
         </div>
-        <div class="row g-4">
+        <div class="row g-4" id="featured-items-container">
             @forelse($featured as $item)
                 <x-menu-item-card :item="$item" :wishlistIds="$wishlistIds ?? []" />
             @empty

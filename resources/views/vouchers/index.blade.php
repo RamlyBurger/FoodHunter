@@ -232,25 +232,26 @@
         </div>
 
         <!-- Filter Tabs -->
-        <div class="filter-tabs">
-            <a href="{{ route('vouchers.index') }}" class="filter-tab {{ !request('vendor') ? 'active' : '' }}">
+        <div class="filter-tabs" id="voucher-filters">
+            <button type="button" class="filter-tab {{ !request('vendor') ? 'active' : '' }}" data-vendor="" onclick="filterVouchers(null, this)">
                 <i class="bi bi-grid me-1"></i> All Vouchers
-            </a>
+            </button>
             @php
                 $vendors = $vouchers->pluck('vendor')->unique('id');
             @endphp
             @foreach($vendors as $vendor)
             @if($vendor)
-            <a href="{{ route('vouchers.index', ['vendor' => $vendor->id]) }}" class="filter-tab {{ request('vendor') == $vendor->id ? 'active' : '' }}">
+            <button type="button" class="filter-tab {{ request('vendor') == $vendor->id ? 'active' : '' }}" data-vendor="{{ $vendor->id }}" onclick="filterVouchers({{ $vendor->id }}, this)">
                 {{ $vendor->store_name }}
-            </a>
+            </button>
             @endif
             @endforeach
         </div>
 
         <!-- Vouchers Grid -->
+        <div id="vouchers-container">
         @if($vouchers->count() > 0)
-        <div class="voucher-grid">
+        <div class="voucher-grid" id="voucher-grid">
             @foreach($vouchers as $voucher)
             @php
                 $isRedeemed = isset($userVouchers[$voucher->id]);
@@ -330,6 +331,7 @@
             <p class="text-muted">Check back later for new vouchers from vendors!</p>
         </div>
         @endif
+        </div>
 
         <!-- How It Works -->
         <div class="mt-5 p-4 bg-white rounded-3 border">
@@ -377,10 +379,161 @@
 
 @push('scripts')
 <script>
+// csrfToken is already defined in app.blade.php layout
+let currentVendorFilter = null;
+let isLoading = false;
+
 function copyCode(code) {
     navigator.clipboard.writeText(code).then(function() {
         showToast('Voucher code copied!', 'success');
     });
+}
+
+// AJAX filtering for vouchers
+function filterVouchers(vendorId, btn) {
+    if (isLoading) return;
+    
+    // Update active state
+    document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+    btn.classList.add('active');
+    
+    currentVendorFilter = vendorId;
+    loadVouchers(vendorId);
+    
+    // Update URL without reload
+    const url = new URL(window.location);
+    if (vendorId) {
+        url.searchParams.set('vendor', vendorId);
+    } else {
+        url.searchParams.delete('vendor');
+    }
+    history.pushState({}, '', url);
+}
+
+// Load vouchers via AJAX
+async function loadVouchers(vendorId = null) {
+    isLoading = true;
+    const container = document.getElementById('vouchers-container');
+    
+    // Show loading state
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted mt-2">Loading vouchers...</p>
+        </div>
+    `;
+    
+    try {
+        let url = '/vouchers';
+        if (vendorId) url += `?vendor=${vendorId}`;
+        
+        const res = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const response = await res.json();
+        
+        if (response.success) {
+            const data = response.data || response;
+            renderVouchers(data.vouchers || [], data.userVouchers || {});
+            updateStats(data.stats || {});
+        } else {
+            container.innerHTML = `<div class="alert alert-danger">Failed to load vouchers</div>`;
+        }
+    } catch (e) {
+        console.error('Error loading vouchers:', e);
+        container.innerHTML = `<div class="alert alert-danger">An error occurred</div>`;
+    } finally {
+        isLoading = false;
+    }
+}
+
+// Render vouchers grid
+function renderVouchers(vouchers, userVouchers) {
+    const container = document.getElementById('vouchers-container');
+    
+    if (!vouchers || vouchers.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon"><i class="bi bi-ticket-perforated"></i></div>
+                <h5 style="font-weight: 600;">No vouchers available</h5>
+                <p class="text-muted">Check back later for new vouchers from vendors!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="voucher-grid" id="voucher-grid">';
+    vouchers.forEach(voucher => {
+        const isRedeemed = userVouchers && userVouchers[voucher.id];
+        const expiresAt = voucher.expires_at ? new Date(voucher.expires_at) : null;
+        const now = new Date();
+        const expiresIn = expiresAt ? Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)) : null;
+        
+        html += `
+            <div class="voucher-card ${isRedeemed ? 'redeemed' : ''}">
+                <div class="voucher-header">
+                    ${voucher.type === 'fixed' 
+                        ? `<div class="voucher-value">RM${parseFloat(voucher.value).toFixed(0)}</div><div class="voucher-type">Fixed Discount</div>`
+                        : `<div class="voucher-value">${parseInt(voucher.value)}%</div><div class="voucher-type">Percentage Off</div>`
+                    }
+                </div>
+                <div class="voucher-body">
+                    <div class="voucher-name">${escapeHtml(voucher.name)}</div>
+                    <div class="voucher-vendor">
+                        <i class="bi bi-shop"></i> ${voucher.vendor?.store_name || 'All Vendors'}
+                    </div>
+                    
+                    <div class="voucher-details">
+                        ${voucher.min_order ? `<span class="voucher-detail"><i class="bi bi-cart me-1"></i> Min RM${parseFloat(voucher.min_order).toFixed(0)}</span>` : ''}
+                        ${voucher.max_discount ? `<span class="voucher-detail"><i class="bi bi-tag me-1"></i> Max RM${parseFloat(voucher.max_discount).toFixed(0)}</span>` : ''}
+                        <span class="voucher-detail"><i class="bi bi-person me-1"></i> ${voucher.per_user_limit}x use</span>
+                    </div>
+
+                    ${expiresAt ? `
+                        <div class="voucher-expiry ${expiresIn !== null && expiresIn <= 3 ? 'expiring-soon' : ''}">
+                            <i class="bi bi-clock me-1"></i>
+                            ${expiresIn !== null && expiresIn <= 0 ? 'Expired' : (expiresIn !== null && expiresIn <= 3 ? `Expires in ${expiresIn} days` : `Valid until ${expiresAt.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})}`)}
+                        </div>
+                    ` : ''}
+
+                    ${voucher.description ? `<p class="text-muted small mb-3">${escapeHtml(voucher.description)}</p>` : ''}
+
+                    <div class="voucher-action">
+                        ${isRedeemed ? `
+                            <button class="btn btn-success" disabled><i class="bi bi-check-circle me-1"></i> Claimed</button>
+                            <button class="btn btn-outline-secondary" onclick="copyCode('${voucher.code}')"><i class="bi bi-clipboard"></i></button>
+                        ` : `
+                            <button type="button" class="btn btn-primary flex-grow-1" id="redeem-btn-${voucher.id}" onclick="confirmRedeemVoucher(${voucher.id}, '${escapeHtml(voucher.name)}')">
+                                <i class="bi bi-plus-circle me-1"></i> Redeem
+                            </button>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Update stats cards
+function updateStats(stats) {
+    const statCards = document.querySelectorAll('.stat-card .value');
+    if (statCards.length >= 2) {
+        if (stats.myVouchersCount !== undefined) statCards[0].textContent = stats.myVouchersCount;
+        if (stats.availableCount !== undefined) statCards[1].textContent = stats.availableCount;
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function confirmRedeemVoucher(voucherId, voucherName) {

@@ -22,11 +22,14 @@ class VoucherController extends Controller
     {
         $user = Auth::user();
         
-        // Get all active vouchers
-        $vouchers = Voucher::active()
-            ->with('vendor')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Get all active vouchers with optional vendor filter
+        $query = Voucher::active()->with('vendor');
+        
+        if ($request->filled('vendor')) {
+            $query->where('vendor_id', $request->vendor);
+        }
+        
+        $vouchers = $query->orderBy('created_at', 'desc')->get();
 
         // Get user's redeemed vouchers
         $userVouchers = UserVoucher::where('user_id', $user->id)
@@ -46,10 +49,15 @@ class VoucherController extends Controller
                     'value' => (float) $v->value,
                     'min_order' => $v->min_order ? (float) $v->min_order : null,
                     'max_discount' => $v->max_discount ? (float) $v->max_discount : null,
-                    'expires_at' => $v->expires_at?->format('Y-m-d'),
+                    'per_user_limit' => $v->per_user_limit,
+                    'expires_at' => $v->expires_at?->toISOString(),
                     'vendor' => $v->vendor ? ['id' => $v->vendor->id, 'store_name' => $v->vendor->store_name] : null,
-                    'is_redeemed' => isset($userVouchers[$v->id]),
                 ]),
+                'userVouchers' => $userVouchers->mapWithKeys(fn($uv) => [$uv->voucher_id => true]),
+                'stats' => [
+                    'myVouchersCount' => $userVouchers->count(),
+                    'availableCount' => $vouchers->count(),
+                ],
             ]);
         }
 
@@ -122,7 +130,9 @@ class VoucherController extends Controller
                         'name' => $uv->voucher->name,
                         'type' => $uv->voucher->type,
                         'value' => (float) $uv->voucher->value,
-                        'expires_at' => $uv->voucher->expires_at?->format('Y-m-d'),
+                        'min_order' => $uv->voucher->min_order ? (float) $uv->voucher->min_order : null,
+                        'per_user_limit' => $uv->voucher->per_user_limit,
+                        'expires_at' => $uv->voucher->expires_at?->toISOString(),
                         'is_valid' => $uv->voucher->isValid(),
                         'vendor' => $uv->voucher->vendor ? [
                             'id' => $uv->voucher->vendor->id,
@@ -130,6 +140,7 @@ class VoucherController extends Controller
                         ] : null,
                     ] : null,
                 ]),
+                'count' => $userVouchers->count(),
             ]);
         }
 

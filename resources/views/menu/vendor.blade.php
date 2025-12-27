@@ -165,21 +165,23 @@
     </div>
 
     <!-- Top Selling Items -->
-    @if(isset($topItems) && $topItems->count() > 0)
-    <div class="mb-4">
+    <div class="mb-4" id="top-selling-section">
         <h6 class="section-title"><i class="bi bi-fire me-1" style="color: #FF3B30;"></i> Top Selling</h6>
-        <div class="row g-4">
-            @foreach($topItems as $topItem)
-                <x-menu-item-card :item="$topItem" :wishlistIds="$wishlistIds ?? []" :showVendor="false" />
-            @endforeach
+        <div class="row g-4" id="top-selling-container">
+            @if(isset($topItems) && $topItems->count() > 0)
+                @foreach($topItems as $topItem)
+                    <x-menu-item-card :item="$topItem" :wishlistIds="$wishlistIds ?? []" :showVendor="false" />
+                @endforeach
+            @else
+                <div class="col-12"><p class="text-muted">No top selling items yet</p></div>
+            @endif
         </div>
     </div>
-    @endif
 
     <!-- Menu Items -->
-    <h6 class="section-title"><i class="bi bi-grid-3x3-gap me-1"></i> Menu ({{ $items->total() }} items)</h6>
+    <h6 class="section-title"><i class="bi bi-grid-3x3-gap me-1"></i> Menu (<span id="menu-count">{{ $items->total() }}</span> items)</h6>
     
-    <div class="row g-4">
+    <div class="row g-4" id="menu-items-container">
         @forelse($items as $item)
             <x-menu-item-card :item="$item" :wishlistIds="$wishlistIds ?? []" :showVendor="false" />
         @empty
@@ -196,10 +198,172 @@
     </div>
 
     <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-4">
+    <div class="d-flex justify-content-center mt-4" id="pagination-container">
         {{ $items->links('vendor.pagination.custom') }}
     </div>
 </div>
 
 </div>
+
+@push('scripts')
+<script>
+const vendorId = {{ $vendor->id }};
+let wishlistIds = @json($wishlistIds ?? []);
+let currentPage = {{ $items->currentPage() }};
+
+// Load menu items via AJAX
+async function loadMenuItems(page = 1) {
+    const container = document.getElementById('menu-items-container');
+    const paginationContainer = document.getElementById('pagination-container');
+    
+    container.innerHTML = `
+        <div class="col-12 text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted mt-2">Loading menu items...</p>
+        </div>
+    `;
+    
+    try {
+        const res = await fetch(`/menu?vendor=${vendorId}&page=${page}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const response = await res.json();
+        
+        if (response.success) {
+            const data = response.data || response;
+            renderMenuItems(data.items || []);
+            renderPagination(data.pagination || {});
+            document.getElementById('menu-count').textContent = data.pagination?.total || 0;
+            currentPage = page;
+            
+            // Update URL without reload
+            const url = new URL(window.location);
+            url.searchParams.set('page', page);
+            history.pushState({}, '', url);
+        }
+    } catch (e) {
+        console.error('Error loading menu items:', e);
+        container.innerHTML = `<div class="col-12"><div class="alert alert-danger">Failed to load menu items</div></div>`;
+    }
+}
+
+// Render menu items
+function renderMenuItems(items) {
+    const container = document.getElementById('menu-items-container');
+    
+    if (!items || items.length === 0) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 80px; height: 80px; background: var(--gray-100);">
+                        <i class="bi bi-box-seam" style="font-size: 32px; color: var(--gray-400);"></i>
+                    </div>
+                    <h6 style="font-weight: 600;">No menu items available</h6>
+                    <p class="text-muted">This vendor hasn't added any items yet.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = items.map(item => {
+        const isWishlisted = wishlistIds.includes(item.id);
+        const fallbackImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=f3f4f6&color=9ca3af&size=200`;
+        const price = parseFloat(item.price).toFixed(2);
+        
+        return `
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="card h-100 menu-card border-0 shadow-sm" style="border-radius: 16px; overflow: hidden;">
+                    <div class="position-relative">
+                        <a href="/menu/${item.id}">
+                            <img src="${item.image || fallbackImg}" class="card-img-top" alt="${item.name}" 
+                                 style="height: 160px; object-fit: cover;"
+                                 onerror="this.src='${fallbackImg}'">
+                        </a>
+                        ${!item.is_available ? '<span class="badge bg-secondary position-absolute top-0 start-0 m-2">Unavailable</span>' : ''}
+                        <button type="button" class="btn btn-light btn-sm position-absolute top-0 end-0 m-2 rounded-circle p-2" 
+                                onclick="toggleWishlist(${item.id}, this)" style="width: 36px; height: 36px;">
+                            <i class="bi bi-heart${isWishlisted ? '-fill text-danger' : ''}"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-3">
+                        <a href="/menu/${item.id}" class="text-decoration-none">
+                            <h6 class="card-title mb-1 text-dark" style="font-weight: 600;">${item.name}</h6>
+                        </a>
+                        ${item.category ? `<small class="text-muted d-block mb-2">${item.category.name}</small>` : ''}
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="fw-bold" style="color: var(--primary-color);">RM ${price}</span>
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" 
+                                    onclick="addToCart(${item.id}, 1, this)" ${!item.is_available ? 'disabled' : ''}>
+                                <i class="bi bi-cart-plus me-1"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Render pagination
+function renderPagination(pagination) {
+    const container = document.getElementById('pagination-container');
+    if (!pagination || pagination.last_page <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = '<nav><ul class="pagination mb-0">';
+    
+    // Previous
+    html += `<li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); loadMenuItems(${pagination.current_page - 1})">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+    </li>`;
+    
+    // Page numbers
+    const start = Math.max(1, pagination.current_page - 2);
+    const end = Math.min(pagination.last_page, pagination.current_page + 2);
+    
+    if (start > 1) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); loadMenuItems(1)">1</a></li>`;
+        if (start > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+    }
+    
+    for (let i = start; i <= end; i++) {
+        html += `<li class="page-item ${i === pagination.current_page ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault(); loadMenuItems(${i})">${i}</a>
+        </li>`;
+    }
+    
+    if (end < pagination.last_page) {
+        if (end < pagination.last_page - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); loadMenuItems(${pagination.last_page})">${pagination.last_page}</a></li>`;
+    }
+    
+    // Next
+    html += `<li class="page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); loadMenuItems(${pagination.current_page + 1})">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </li>`;
+    
+    html += '</ul></nav>';
+    container.innerHTML = html;
+}
+
+// Handle browser back/forward
+window.addEventListener('popstate', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = parseInt(urlParams.get('page')) || 1;
+    if (page !== currentPage) {
+        loadMenuItems(page);
+    }
+});
+</script>
+@endpush
 @endsection
