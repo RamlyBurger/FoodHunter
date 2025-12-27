@@ -725,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 try {
-                    const res = await fetch(`/vendor/orders/${orderId}/complete-qr`, {
+                    const res = await fetch(`/vendor/orders/${orderId}/complete-pickup`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

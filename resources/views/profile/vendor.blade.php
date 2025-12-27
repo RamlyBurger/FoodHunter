@@ -321,7 +321,7 @@
                 <h5 class="section-title">
                     <i class="bi bi-person text-primary"></i> Account Settings
                 </h5>
-                <form action="{{ route('profile.update') }}" method="POST">
+                <form action="{{ route('profile.update') }}" method="POST" id="accountForm">
                     @csrf
                     @method('PUT')
                     
@@ -655,6 +655,7 @@ async function uploadAvatarAjax(input) {
             const newAvatarUrl = data.data?.avatar_url || data.avatar_url;
             if (newAvatarUrl) {
                 document.querySelectorAll('.profile-avatar').forEach(img => img.src = newAvatarUrl);
+                document.querySelectorAll('.avatar-img').forEach(img => img.src = newAvatarUrl);
                 document.querySelectorAll('.navbar-avatar').forEach(img => img.src = newAvatarUrl);
             }
             // Close modal
@@ -668,6 +669,91 @@ async function uploadAvatarAjax(input) {
         Swal.fire('Error', 'An error occurred', 'error');
     }
 }
+
+// Account Settings Form AJAX submission
+document.getElementById('accountForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Saved!',
+                text: data.message || 'Account updated successfully',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Update displayed name if available
+            const userData = data.data?.user || data.user;
+            if (userData?.name) {
+                document.querySelectorAll('.profile-name').forEach(el => el.textContent = userData.name);
+            }
+        } else {
+            Swal.fire('Error', data.message || 'Failed to update account', 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    })
+    .catch(err => {
+        Swal.fire('Error', 'An error occurred', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
+
+// Remove avatar via AJAX
+window.removeAvatar = async function() {
+    const result = await Swal.fire({
+        title: 'Remove Profile Picture?',
+        text: 'Your profile picture will be removed.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, remove it'
+    });
+    
+    if (!result.isConfirmed) return;
+    
+    try {
+        const res = await fetch('{{ route("profile.avatar.remove") }}', {
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Update avatar to default
+            const defaultAvatar = 'https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=667eea&color=fff&size=200';
+            document.querySelectorAll('.profile-avatar, .avatar-img, .navbar-avatar').forEach(img => img.src = defaultAvatar);
+            showToast(data.message || 'Profile picture removed', 'success');
+        } else {
+            Swal.fire('Error', data.message || 'Failed to remove avatar', 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', 'An error occurred', 'error');
+    }
+};
 </script>
 @endpush
 @endsection

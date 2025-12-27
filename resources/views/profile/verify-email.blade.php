@@ -17,12 +17,14 @@
                         <p class="text-muted">Enter the 6-digit code sent to<br><strong>{{ $email }}</strong></p>
                     </div>
 
-                    <form action="{{ route('profile.verify-email.submit') }}" method="POST">
+                    <form action="{{ route('profile.verify-email.submit') }}" method="POST" id="verify-form">
                         @csrf
+
+                        <div id="verify-error" class="alert alert-danger" style="display: none;"></div>
 
                         <div class="mb-4">
                             <label class="form-label">Verification Code</label>
-                            <input type="text" name="code" class="form-control form-control-lg text-center @error('code') is-invalid @enderror" 
+                            <input type="text" name="code" id="verify-code" class="form-control form-control-lg text-center @error('code') is-invalid @enderror" 
                                    maxlength="6" placeholder="000000" style="letter-spacing: 8px; font-size: 24px;" 
                                    autofocus autocomplete="one-time-code" inputmode="numeric">
                             @error('code')
@@ -30,7 +32,7 @@
                             @enderror
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="verify-btn">
                             <i class="bi bi-check-circle"></i> Verify & Update Email
                         </button>
                     </form>
@@ -38,12 +40,9 @@
                     <hr class="my-4">
 
                     <div class="text-center">
-                        <form action="{{ route('profile.cancel-email-change') }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-link text-danger p-0">
-                                <i class="bi bi-x-circle"></i> Cancel Email Change
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-link text-danger p-0" id="cancel-btn" onclick="cancelEmailChange()">
+                            <i class="bi bi-x-circle"></i> Cancel Email Change
+                        </button>
                     </div>
                 </div>
             </div>
@@ -145,6 +144,119 @@
             sendOtpEmail(userEmail);
         }
     });
+
+    // Verify form AJAX submission
+    document.getElementById('verify-form')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const form = this;
+        const submitBtn = document.getElementById('verify-btn');
+        const errorEl = document.getElementById('verify-error');
+        const codeInput = document.getElementById('verify-code');
+        const originalBtnText = submitBtn.innerHTML;
+        
+        errorEl.style.display = 'none';
+        codeInput.classList.remove('is-invalid');
+        
+        if (!codeInput.value || codeInput.value.length !== 6) {
+            codeInput.classList.add('is-invalid');
+            errorEl.textContent = 'Please enter a valid 6-digit code';
+            errorEl.style.display = 'block';
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Verifying...';
+        
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Show success and redirect
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Email Updated!',
+                    text: data.message || 'Your email has been updated successfully',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = '{{ route("profile.index") }}';
+                });
+            } else {
+                errorEl.textContent = data.message || 'Invalid verification code';
+                errorEl.style.display = 'block';
+                codeInput.classList.add('is-invalid');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        })
+        .catch(err => {
+            errorEl.textContent = 'An error occurred. Please try again.';
+            errorEl.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        });
+    });
+
+    // Cancel email change via AJAX
+    window.cancelEmailChange = async function() {
+        const result = await Swal.fire({
+            title: 'Cancel Email Change?',
+            text: 'Are you sure you want to cancel the email change?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, cancel it',
+            cancelButtonText: 'No, continue'
+        });
+        
+        if (!result.isConfirmed) return;
+        
+        const btn = document.getElementById('cancel-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cancelling...';
+        
+        try {
+            const res = await fetch('{{ route("profile.cancel-email-change") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cancelled',
+                    text: data.message || 'Email change cancelled',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = '{{ route("profile.index") }}';
+                });
+            } else {
+                Swal.fire('Error', data.message || 'Failed to cancel', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-x-circle"></i> Cancel Email Change';
+            }
+        } catch (e) {
+            Swal.fire('Error', 'An error occurred', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-x-circle"></i> Cancel Email Change';
+        }
+    };
 })();
 </script>
 @endpush

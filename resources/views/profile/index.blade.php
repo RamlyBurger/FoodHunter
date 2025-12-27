@@ -568,10 +568,11 @@
                 <h5 class="modal-title" style="font-weight: 700;"><i class="bi bi-key me-2"></i>Change Password</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url('/profile/password') }}" method="POST">
+            <form action="{{ url('/profile/password') }}" method="POST" id="password-form">
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
+                    <div id="password-error" class="alert alert-danger" style="display: none;"></div>
                     <div class="mb-3">
                         <label class="form-label" style="font-weight: 600;">Current Password</label>
                         <div class="input-group">
@@ -609,7 +610,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="password-submit-btn">
                         <i class="bi bi-check-lg me-1"></i> Update Password
                     </button>
                 </div>
@@ -626,9 +627,10 @@
                 <h5 class="modal-title"><i class="bi bi-envelope-at"></i> Change Email Address</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ route('profile.change-email') }}" method="POST">
+            <form action="{{ route('profile.change-email') }}" method="POST" id="email-change-form">
                 @csrf
                 <div class="modal-body">
+                    <div id="email-error" class="alert alert-danger" style="display: none;"></div>
                     <p class="text-muted">A verification code will be sent to your new email address.</p>
                     
                     <div class="mb-3">
@@ -638,18 +640,18 @@
 
                     <div class="mb-3">
                         <label class="form-label">New Email Address</label>
-                        <input type="email" name="new_email" class="form-control" required>
+                        <input type="email" name="new_email" id="new_email" class="form-control" required>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Confirm Password</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <input type="password" name="password" id="email_password" class="form-control" required>
                         <small class="text-muted">Enter your current password to confirm</small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="email-submit-btn">
                         <i class="bi bi-send"></i> Send Verification Code
                     </button>
                 </div>
@@ -957,6 +959,107 @@ function loadUserStats() {
 
 // Load stats on page load
 document.addEventListener('DOMContentLoaded', loadUserStats);
+
+// Password change form AJAX submission
+document.getElementById('password-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = document.getElementById('password-submit-btn');
+    const errorEl = document.getElementById('password-error');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and show success
+            const modal = bootstrap.Modal.getInstance(document.getElementById('passwordModal'));
+            if (modal) modal.hide();
+            form.reset();
+            document.getElementById('pwdStrengthBar').style.width = '0%';
+            document.getElementById('pwdStrengthText').textContent = 'Minimum 8 characters';
+            document.getElementById('pwdMatchText').textContent = '';
+            showToast(data.message || 'Password changed successfully', 'success');
+        } else {
+            errorEl.textContent = data.message || 'Failed to change password';
+            errorEl.style.display = 'block';
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    })
+    .catch(err => {
+        errorEl.textContent = 'An error occurred. Please try again.';
+        errorEl.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
+
+// Email change form AJAX submission
+document.getElementById('email-change-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = document.getElementById('email-submit-btn');
+    const errorEl = document.getElementById('email-error');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and redirect to verify page
+            const modal = bootstrap.Modal.getInstance(document.getElementById('changeEmailModal'));
+            if (modal) modal.hide();
+            showToast(data.message || 'Please verify your new email', 'success');
+            
+            // Redirect to verification page if provided
+            if (data.data?.redirect_url) {
+                setTimeout(() => {
+                    window.location.href = data.data.redirect_url;
+                }, 1500);
+            }
+        } else {
+            errorEl.textContent = data.message || 'Failed to request email change';
+            errorEl.style.display = 'block';
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    })
+    .catch(err => {
+        errorEl.textContent = 'An error occurred. Please try again.';
+        errorEl.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
 </script>
 @endpush
 </div>

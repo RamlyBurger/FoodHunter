@@ -77,9 +77,11 @@ class WishlistController extends Controller
         $wishlistCount = Wishlist::where('user_id', Auth::id())->count();
 
         if ($request->ajax() || $request->wantsJson()) {
+            $menuItem = MenuItem::find($request->menu_item_id);
             return $this->successResponse([
                 'in_wishlist' => $inWishlist,
-                'wishlist_count' => $wishlistCount
+                'wishlist_count' => $wishlistCount,
+                'item_name' => $menuItem ? $menuItem->name : null,
             ], $message);
         }
 

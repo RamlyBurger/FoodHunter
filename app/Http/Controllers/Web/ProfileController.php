@@ -190,11 +190,21 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         if (!Hash::check($request->password, $user->password)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->errorResponse('Incorrect password.', 400);
+            }
             return back()->withErrors(['password' => 'Incorrect password.']);
         }
 
         // Store pending email
         $user->update(['pending_email' => strtolower($request->new_email)]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'pending_email' => $user->pending_email,
+                'redirect_url' => route('profile.verify-email'),
+            ], 'Please verify your new email address.');
+        }
 
         // Supabase will send OTP via frontend JS on the verify-email page
         return redirect()->route('profile.verify-email')->with('success', 'Please verify your new email address.');
@@ -226,6 +236,9 @@ class ProfileController extends Controller
         $result = $supabaseService->verifyOtp($user->pending_email, $request->code, 'magiclink');
 
         if (!$result['success']) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return $this->errorResponse($result['message'], 400);
+            }
             return back()->withErrors(['code' => $result['message']]);
         }
 
@@ -236,13 +249,23 @@ class ProfileController extends Controller
             'email_verified_at' => now(),
         ]);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse([
+                'email' => $user->email,
+            ], 'Your email has been updated successfully!');
+        }
+
         return redirect()->route('profile.index')->with('success', 'Your email has been updated successfully!');
     }
 
-    public function cancelEmailChange()
+    public function cancelEmailChange(Request $request)
     {
         Auth::user()->update(['pending_email' => null]);
         EmailVerification::where('user_id', Auth::id())->where('type', 'email_change')->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return $this->successResponse(null, 'Email change cancelled.');
+        }
 
         return redirect()->route('profile.index')->with('success', 'Email change cancelled.');
     }

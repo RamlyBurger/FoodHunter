@@ -104,8 +104,10 @@ class CartController extends Controller
         }
 
         if ($request->ajax() || $request->wantsJson()) {
+            $cartCount = CartItem::where('user_id', Auth::id())->sum('quantity');
             return $this->successResponse([
                 'item_name' => $item->name,
+                'cart_count' => (int) $cartCount,
             ], $item->name . ' added to cart!');
         }
 
@@ -127,7 +129,8 @@ class CartController extends Controller
             
             return $this->successResponse([
                 'item_total' => $cartItem->menuItem->price * $cartItem->quantity,
-                'summary' => $summary
+                'summary' => $summary,
+                'cart_count' => (int) $cartItems->sum('quantity'),
             ], 'Cart updated.');
         }
 
@@ -147,7 +150,8 @@ class CartController extends Controller
             $summary = $this->calculateSummary($cartItems);
             
             return $this->successResponse([
-                'summary' => $summary
+                'summary' => $summary,
+                'cart_count' => (int) $cartItems->sum('quantity'),
             ], 'Item removed from cart.');
         }
 
@@ -162,7 +166,9 @@ class CartController extends Controller
         session()->forget('applied_voucher');
 
         if (request()->ajax() || request()->wantsJson()) {
-            return $this->successResponse(null, 'Cart cleared.');
+            return $this->successResponse([
+                'cart_count' => 0,
+            ], 'Cart cleared.');
         }
 
         return back()->with('success', 'Cart cleared.');
